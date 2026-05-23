@@ -12,7 +12,7 @@ class JoluTripApp extends StatelessWidget {
       title: 'JoluTrip',
       debugShowCheckedModeBanner: false,
       theme: AppColors.darkTheme,
-      routerConfig: AppRouter.router,
+      routerConfig: AppRouterWithShell.router,
     );
   }
 }
