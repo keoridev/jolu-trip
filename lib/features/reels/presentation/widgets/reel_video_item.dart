@@ -1,4 +1,3 @@
-// lib/features/reels/presentation/widgets/reel_video_item.dart
 
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
@@ -35,7 +34,6 @@ class ReelVideoItemState extends State<ReelVideoItem> {
   }
 
   void _initializePlayer() async {
-    // Уничтожаем старый контроллер если есть
     if (_controller != null) {
       await _controller!.dispose();
     }

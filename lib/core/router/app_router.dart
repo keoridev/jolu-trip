@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/di/service_locator.dart';
-import 'package:jolutrip_app/core/network/video_manager.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
+import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
+import 'package:jolutrip_app/features/auth/presentation/auth_screen.dart';
 import 'package:jolutrip_app/features/navigation/presentation/widgets/jolu_bottom_bar.dart';
+import 'package:jolutrip_app/features/profile/presentation/profile_screen.dart';
 import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/presentation/reels_screen.dart';
 
@@ -16,6 +18,15 @@ class AppRouterWithShell {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/reels',
     routes: [
+      GoRoute(
+        path: '/auth',
+        name: 'auth',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => BlocProvider<AuthCubit>(
+          create: (context) => sl<AuthCubit>(),
+          child: const AuthScreen(),
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return _NavigationWrapper(
@@ -26,7 +37,6 @@ class AppRouterWithShell {
               bottomNavigationBar: JoluBottomBar(
                 currentIndex: navigationShell.currentIndex,
                 onTap: (index) {
-              
                   navigationShell.goBranch(
                     index,
                     initialLocation: index == navigationShell.currentIndex,
@@ -80,10 +90,7 @@ class AppRouterWithShell {
               GoRoute(
                 path: '/profile',
                 name: 'profile',
-                builder: (context, state) => const DummyScreen(
-                  'Профиль и здоровье',
-                  Icons.person_outline_rounded,
-                ),
+                builder: (context, state) => const ProfileScreen(),
               ),
             ],
           ),
@@ -103,7 +110,6 @@ class AppRouterWithShell {
   }
 }
 
-// ✅ Убедись, что этот виджет правильно отслеживает изменения
 class _NavigationWrapper extends StatefulWidget {
   final StatefulNavigationShell navigationShell;
   final Widget child;
@@ -136,12 +142,10 @@ class _NavigationWrapperState extends State<_NavigationWrapper> {
     if (currentIndex != oldIndex) {
       debugPrint('🔄 Смена таба: $oldIndex -> $currentIndex');
 
-      // Если уходим с Reels (индекс 0) на другой таб
       if (oldIndex == 0 && currentIndex != 0) {
         _pauseReelsVideo();
       }
 
-      // Если возвращаемся на Reels
       if (currentIndex == 0 && oldIndex != 0) {
         _resumeReelsVideo();
       }

@@ -1,12 +1,10 @@
-// lib/features/navigation/presentation/main_layout_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/core/di/service_locator.dart';
+import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/features/navigation/presentation/widgets/widgets.dart';
 import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/presentation/reels_screen.dart';
-import '../../../../core/theme/app_colors.dart';
 
 class DummyScreen extends StatelessWidget {
   final String title;
