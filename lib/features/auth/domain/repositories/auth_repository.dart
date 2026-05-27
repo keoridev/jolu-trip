@@ -3,5 +3,8 @@ import 'package:jolutrip_app/core/errors/failures.dart';
 
 abstract class AuthRepository {
   Future<Either<Failure, void>> sendOtp(String phone);
-  Future<Either<Failure, String>> verifyOtp(String phone, String code);
+  Future<Either<Failure, Map<String, dynamic>>> verifyOtp(
+    String phone,
+    String code,
+  );
 }

@@ -9,6 +9,7 @@ import 'package:jolutrip_app/features/navigation/presentation/widgets/jolu_botto
 import 'package:jolutrip_app/features/profile/presentation/profile_screen.dart';
 import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/presentation/reels_screen.dart';
+import 'package:jolutrip_app/features/safety/presentation/safety_screen.dart';
 
 class AppRouterWithShell {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -27,6 +28,14 @@ class AppRouterWithShell {
           child: const AuthScreen(),
         ),
       ),
+
+      GoRoute(
+        path: '/safety',
+        name: 'safety',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SafetyScreen(),
+      ),
+
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return _NavigationWrapper(
@@ -47,20 +56,20 @@ class AppRouterWithShell {
           );
         },
         branches: [
+          // Reels
           StatefulShellBranch(
             routes: [
               GoRoute(
                 path: '/reels',
                 name: 'reels',
-                builder: (context, state) {
-                  return BlocProvider<ReelsCubit>(
-                    create: (context) => sl<ReelsCubit>()..loadReels(),
-                    child: const ReelsScreen(),
-                  );
-                },
+                builder: (context, state) => BlocProvider<ReelsCubit>(
+                  create: (context) => sl<ReelsCubit>()..loadReels(),
+                  child: const ReelsScreen(),
+                ),
               ),
             ],
           ),
+          // Locations
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -73,6 +82,7 @@ class AppRouterWithShell {
               ),
             ],
           ),
+          // Trips
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -85,6 +95,7 @@ class AppRouterWithShell {
               ),
             ],
           ),
+          // Profile
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -94,6 +105,7 @@ class AppRouterWithShell {
               ),
             ],
           ),
+          // ← Safety УДАЛЁН отсюда!
         ],
       ),
     ],

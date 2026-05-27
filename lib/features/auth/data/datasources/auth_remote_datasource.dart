@@ -1,85 +1,59 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:jolutrip_app/core/config/app_config.dart';
-import 'package:jolutrip_app/core/errors/exceptions.dart';
+import '../../../../core/config/app_config.dart';
+import '../../../../core/errors/exceptions.dart';
 
 abstract class AuthRemoteDataSource {
   Future<void> sendOtp(String phone);
-  Future<String> verifyOtp(String phone, String code);
+  Future<Response> verifyOtp(
+    String phone,
+    String code,
+  ); // ← Response вместо String
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final Dio _client;
-
   AuthRemoteDataSourceImpl({required Dio client}) : _client = client;
 
   @override
   Future<void> sendOtp(String phone) async {
     try {
-      final jsonBody = jsonEncode({'phone': phone});
-      debugPrint('📤 Отправка OTP: $jsonBody');
-
-      final response = await _client.post(AppConfig.sendOtp, data: jsonBody);
-
-      debugPrint('📥 Ответ OTP: ${response.statusCode}');
-      debugPrint('📥 Тело: ${response.data}');
-
+      final response = await _client.post(
+        AppConfig.sendOtp,
+        data: {'phone': phone},
+      );
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw ServerException('Ошибка сервера: ${response.statusCode}');
+        throw ServerException('Ошибка: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      debugPrint('❌ Ошибка отправки OTP: ${e.message}');
       throw _handleDioError(e);
     }
   }
 
   @override
-  Future<String> verifyOtp(String phone, String code) async {
+  Future<Response> verifyOtp(String phone, String code) async {
     try {
-      final jsonBody = jsonEncode({'phone': phone, 'code': code});
-      debugPrint('📤 Отправка верификации: $jsonBody');
-
-      final response = await _client.post(AppConfig.verifyOtp, data: jsonBody);
-
-      debugPrint('📥 Ответ верификации: ${response.statusCode}');
-      debugPrint('📥 Тело: ${response.data}');
-
+      final response = await _client.post(
+        AppConfig.verifyOtp,
+        data: {'phone': phone, 'code': code},
+      );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final token = response.data['token'] as String?;
-        if (token == null) throw ServerException('Токен не получен');
-        return token;
+        return response; // ← Возвращаем весь Response
       }
-
       throw ServerException('Ошибка верификации');
     } on DioException catch (e) {
-      debugPrint('❌ Ошибка верификации: ${e.message}');
       throw _handleDioError(e);
     }
   }
 
   Exception _handleDioError(DioException e) {
-    // Пробуем получить сообщение от сервера
-    if (e.response?.data != null) {
-      final data = e.response?.data;
-      if (data is Map && data.containsKey('error')) {
-        return ServerException(data['error'].toString());
-      }
-      if (data is Map && data.containsKey('message')) {
-        return ServerException(data['message'].toString());
-      }
-    }
-
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
-        return NetworkException('Сервер не отвечает. Проверьте интернет.');
+        return NetworkException('Сервер не отвечает');
       case DioExceptionType.connectionError:
-        return NetworkException('Нет подключения к сети.');
-      case DioExceptionType.badResponse:
-        return ServerException('Ошибка сервера: ${e.response?.statusCode}');
+        return NetworkException('Нет подключения');
       default:
-        return ServerException(e.message ?? 'Неизвестная ошибка');
+        return ServerException(e.message ?? 'Ошибка');
     }
   }
 }

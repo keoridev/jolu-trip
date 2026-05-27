@@ -22,10 +22,13 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, String>> verifyOtp(String phone, String code) async {
+  Future<Either<Failure, Map<String, dynamic>>> verifyOtp(
+    String phone,
+    String code,
+  ) async {
     try {
-      final token = await _remote.verifyOtp(phone, code);
-      return Right(token);
+      final response = await _remote.verifyOtp(phone, code);
+      return Right(response.data as Map<String, dynamic>);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {
