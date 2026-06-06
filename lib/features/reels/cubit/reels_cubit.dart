@@ -5,8 +5,6 @@ import 'package:jolutrip_app/features/reels/domain/domain.dart';
 class ReelsCubit extends Cubit<ReelsState> {
   final ReelsRepository _repository;
 
-  final Map<int, dynamic> _videoControllers = {};
-
   ReelsCubit(this._repository) : super(ReelsInitial());
 
   Future<void> loadReels() async {
@@ -19,58 +17,15 @@ class ReelsCubit extends Cubit<ReelsState> {
     }
   }
 
-  void registerVideoController(int index, dynamic controller) {
-    _videoControllers[index] = controller;
-
+  void setCurrentIndex(int index) {
     final currentState = state;
-    if (currentState is ReelsLoaded &&
-        currentState.currentIndex == index &&
-        currentState.isPlaying) {
-      controller.play();
+    if (currentState is ReelsLoaded && currentState.currentIndex != index) {
+      emit(currentState.copyWith(currentIndex: index));
     }
-  }
-
-  void pauseCurrentVideo() {
-    final currentState = state;
-    if (currentState is ReelsLoaded && currentState.isPlaying) {
-      final controller = _videoControllers[currentState.currentIndex];
-      if (controller != null) {
-        controller.pause();
-        emit(currentState.copyWith(isPlaying: false));
-      }
-    }
-  }
-
-  // Возобновление текущего видео
-  void resumeCurrentVideo() {
-    final currentState = state;
-    if (currentState is ReelsLoaded && !currentState.isPlaying) {
-      final controller = _videoControllers[currentState.currentIndex];
-      if (controller != null) {
-        controller.play();
-        emit(currentState.copyWith(isPlaying: true));
-      }
-    }
-  }
-
-void setCurrentIndex(int index) {
-  final currentState = state;
-  if (currentState is ReelsLoaded && currentState.currentIndex != index) {
-    emit(currentState.copyWith(currentIndex: index));
-    // НЕ трогать контроллеры здесь!
-  }
-}
-  // Очистка контроллеров при закрытии
-  void disposeControllers() {
-    for (final controller in _videoControllers.values) {
-      controller.dispose();
-    }
-    _videoControllers.clear();
   }
 
   @override
   Future<void> close() {
-    disposeControllers();
     return super.close();
   }
 }

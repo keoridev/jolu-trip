@@ -13,30 +13,26 @@ class ReelsInitial extends ReelsState {}
 class ReelsLoading extends ReelsState {}
 
 class ReelsLoaded extends ReelsState {
-  const ReelsLoaded(this.reels, {this.currentIndex = 0, this.isPlaying = true});
+  const ReelsLoaded(this.reels, {this.currentIndex = 0});
   final List<ReelModel> reels;
   final int currentIndex;
-  final bool isPlaying;
 
   @override
-  List<Object?> get props => [reels, currentIndex, isPlaying];
+  List<Object?> get props => [reels, currentIndex];
 
   ReelsLoaded copyWith({
     List<ReelModel>? reels,
     int? currentIndex,
-    bool? isPlaying,
   }) {
     return ReelsLoaded(
       reels ?? this.reels,
       currentIndex: currentIndex ?? this.currentIndex,
-      isPlaying: isPlaying ?? this.isPlaying,
     );
   }
 }
 
 class ReelsError extends ReelsState {
   const ReelsError(this.message);
-
   final String message;
 
   @override
