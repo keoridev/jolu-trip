@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/features/reels/data/data.dart';
@@ -62,7 +61,6 @@ class ReelVideoItemState extends State<ReelVideoItem> {
     }
   }
 
-  // Публичный метод для уничтожения видео
   void destroyVideo() {
     if (_controller != null) {
       _controller!.pause();
@@ -77,7 +75,6 @@ class ReelVideoItemState extends State<ReelVideoItem> {
     }
   }
 
-  // Публичный метод для пересоздания видео
   void rebuildVideo() {
     if (!_isInitialized && mounted) {
       _initializePlayer();

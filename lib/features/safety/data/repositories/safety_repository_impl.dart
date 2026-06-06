@@ -1,6 +1,6 @@
 import 'package:geolocator/geolocator.dart';
-import 'package:jolutrip_app/features/safety/data/models/models.dart';
-import 'package:jolutrip_app/features/safety/domain/repositories/safety_repository.dart';
+import '../models/models.dart';
+import '../../domain/repositories/safety_repository.dart';
 
 class SafetyRepositoryImpl implements SafetyRepository {
   @override
@@ -14,7 +14,7 @@ class SafetyRepositoryImpl implements SafetyRepository {
         longitude: position.longitude,
         timestamp: DateTime.now(),
       );
-    } catch (e) {
+    } catch (_) {
       return null;
     }
   }

@@ -4,8 +4,7 @@ import 'package:flutter/foundation.dart';
 
 class EnvironmentSwitch {
   static const String emulatorUrl = 'http://10.0.2.2:8085/api/v1';
-  static const String realDeviceUrl =
-      'http://192.168.1.100:8085/api/v1';
+  static const String realDeviceUrl = 'http://192.168.1.100:8085/api/v1';
   static const String localhostUrl = 'http://localhost:8085/api/v1';
 
   static String get currentUrl {

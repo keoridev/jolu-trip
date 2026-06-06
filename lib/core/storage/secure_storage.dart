@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorage {
@@ -6,8 +7,12 @@ class SecureStorage {
   static const String _tokenKey = 'jwt_token';
   static const String _userIdKey = 'user_id';
   static const String _phoneKey = 'user_phone';
-  static const String _nameKey = 'user_name';
-  static const String _avatarKey = 'user_avatar';
+  static String _nameKey = 'user_name';
+  static String _avatarKey = 'user_avatar';
+
+  // 🔥 Стрим для наблюдения за изменениями авторизации
+  static final _authController = StreamController<void>.broadcast();
+  static Stream<void> get authChanges => _authController.stream;
 
   static Future<void> saveAuthData({
     required String token,
@@ -22,6 +27,14 @@ class SecureStorage {
     if (name != null) await _storage.write(key: _nameKey, value: name);
     if (avatarUrl != null)
       await _storage.write(key: _avatarKey, value: avatarUrl);
+
+    // 🔥 Уведомляем всех слушателей
+    _authController.add(null);
+  }
+
+  static Future<void> clearAll() async {
+    await _storage.deleteAll();
+    _authController.add(null); // 🔥 Уведомляем о выходе
   }
 
   static Future<String?> getToken() => _storage.read(key: _tokenKey);
@@ -29,8 +42,4 @@ class SecureStorage {
   static Future<String?> getPhone() => _storage.read(key: _phoneKey);
   static Future<String?> getName() => _storage.read(key: _nameKey);
   static Future<String?> getAvatar() => _storage.read(key: _avatarKey);
-
-  static Future<void> clearAll() async {
-    await _storage.deleteAll();
-  }
 }

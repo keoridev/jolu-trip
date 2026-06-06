@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jolutrip_app/core/ui/jolu_ui.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
@@ -101,7 +102,7 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
 
             if (state is ReelsLoaded) {
               if (state.reels.isEmpty) {
-                return const Center(
+                return Center(
                   child: Text(
                     'На данный момент экспедиций не найдено.',
                     style: AppTextStyles.body,
@@ -173,6 +174,13 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                           reel: reel,
                           onLikePressed: () {
                             playerKey.currentState?.handleDoubleTap();
+
+                            JoluSnackbar.show(
+                              context: context,
+                              message: 'Добавлено в избранное',
+                              type: JoluSnackbarType.success,
+                              duration: const Duration(microseconds: 8000),
+                            );
                           },
                           onBookPressed: () {
                             debugPrint("Нажали подробнее для ${reel.name}");

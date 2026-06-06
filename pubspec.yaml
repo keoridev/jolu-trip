@@ -24,6 +24,7 @@ dependencies:
   flutter_secure_storage: ^10.3.0
   geolocator: ^14.0.2
   url_launcher: ^6.3.2
+  google_fonts: ^8.1.0
 
 dev_dependencies:
   flutter_test:
@@ -34,9 +35,24 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # assets:
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+  assets:
+    - assets/icons/2gis.png
+    - assets/icons/beeline.png
+    - assets/icons/glovo.png
+    - assets/icons/kicb.png
+    - assets/icons/mbank.png
+    - assets/icons/mega.jpg
+    - assets/icons/namba.webp
+    - assets/icons/o.png
+    - assets/icons/optima.jpg
+    - assets/icons/yandex.png
+    - assets/icons/maps.png
+    - assets/icons/namba_taxi.png
+    - assets/icons/booking.jpg
+    - assets/icons/elsom.png
+    - assets/icons/gorod.png
+    - assets/icons/indrive.webp
+    - assets/icons/whatsapp.png
 
   # fonts:
   #   - family: Schyler

@@ -1,4 +1,3 @@
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/features/reels/cubit/reels_state.dart';
 import 'package:jolutrip_app/features/reels/domain/domain.dart';
@@ -54,27 +53,13 @@ class ReelsCubit extends Cubit<ReelsState> {
     }
   }
 
-  // Смена текущего видео
-  void setCurrentIndex(int index) {
-    final currentState = state;
-    if (currentState is ReelsLoaded && currentState.currentIndex != index) {
-      // Пауза старого видео
-      final oldController = _videoControllers[currentState.currentIndex];
-      if (oldController != null) {
-        oldController.pause();
-        oldController.seekTo(Duration.zero);
-      }
-
-      // Запуск нового видео
-      final newController = _videoControllers[index];
-      if (newController != null && currentState.isPlaying) {
-        newController.play();
-      }
-
-      emit(currentState.copyWith(currentIndex: index));
-    }
+void setCurrentIndex(int index) {
+  final currentState = state;
+  if (currentState is ReelsLoaded && currentState.currentIndex != index) {
+    emit(currentState.copyWith(currentIndex: index));
+    // НЕ трогать контроллеры здесь!
   }
-
+}
   // Очистка контроллеров при закрытии
   void disposeControllers() {
     for (final controller in _videoControllers.values) {

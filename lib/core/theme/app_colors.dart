@@ -8,15 +8,22 @@ class AppColors {
   static const Color warning = Color(0xFFFFB300);
   static const Color error = Color(0xFFFF1744);
 
-  static const Color bgDark = Color(0xFF0A0A0A); // Глубокий черный для экрана
-  static const Color cardDark = Color(0xFF141414); // Чуть светлее для карточек
-  static const Color borderDark = Color(
-    0xFF222222,
-  ); // Для тонких стильных линий
+  static const Color bgDark = Color(0xFF0A0A0A);
+  static const Color cardDark = Color(0xFF141414);
+  static const Color bgElevated = Color(0xFF1A1A1A);
+  static const Color cardElevated = Color(0xFF1E1E1E);
+
+  static const Color borderDark = Color(0xFF222222);
+  static const Color borderSoft = Color(0xFF2A2A2A);
 
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xFF8A8A8F);
+  static const Color textTertiary = Color(0xFF6C6C70);
+  static const Color textMuted = Color(0xFF48484A);
 
+
+  static Color get primarySoft => primary.withOpacity(0.3);
+  static Color get accentSoft => accent.withOpacity(0.3);
   static ThemeData darkTheme = ThemeData(
     brightness: Brightness.dark,
     scaffoldBackgroundColor: bgDark,

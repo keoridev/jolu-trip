@@ -1,7 +1,10 @@
+// lib/features/navigation/presentation/widgets/jolu_bottom_bar.dart
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
+import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 
 class JoluTabItem {
   final IconData iconOutline;
@@ -52,17 +55,15 @@ class JoluBottomBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
-    return ClipRRect(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: AppColors.bgDark.withOpacity(0.8),
-            border: const Border(
-              top: BorderSide(color: AppColors.borderDark, width: 0.5),
-            ),
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgDark.withOpacity(0.95),
+        border: const Border(
+          top: BorderSide(color: AppColors.borderDark, width: 0.3),
+        ),
+      ),
+      child: SafeArea(
+        child: Padding(
           padding: EdgeInsets.only(
             top: AppDimens.spaceS,
             bottom: bottomPadding > 0 ? bottomPadding : AppDimens.spaceS,
@@ -96,44 +97,43 @@ class _JoluTabCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedScale(
-      scale: isSelected ? 1.05 : 1.0,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutCubic,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
-            padding: isSelected
-                ? const EdgeInsets.all(AppDimens.spaceXS)
-                : EdgeInsets.zero,
-            decoration: isSelected
-                ? BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary.withOpacity(0.1),
-                  )
-                : null,
-            child: Icon(
-              isSelected ? tab.iconFilled : tab.iconOutline,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-              size: isSelected ? 26 : 24,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Индикатор сверху (только для активного)
+        if (isSelected)
+          Container(
+            width: 24,
+            height: 3,
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary,
+              borderRadius: BorderRadius.circular(1.5),
             ),
+          )
+        else
+          const SizedBox(height: 11),
+
+        // Иконка
+        Icon(
+          isSelected ? tab.iconFilled : tab.iconOutline,
+          color: isSelected ? AppColors.primary : AppColors.textSecondary,
+          size: isSelected ? 24 : 22,
+        ),
+
+        const SizedBox(height: 4),
+
+        // Текст
+        Text(
+          tab.label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+            letterSpacing: -0.2,
+            color: isSelected ? AppColors.primary : AppColors.textSecondary,
           ),
-          const SizedBox(height: 4),
-          AnimatedDefaultTextStyle(
-            duration: const Duration(milliseconds: 200),
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              letterSpacing: -0.2,
-              color: isSelected ? AppColors.primary : AppColors.textSecondary,
-            ),
-            child: Text(tab.label),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

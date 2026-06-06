@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
+import 'package:jolutrip_app/core/ui/buttons/jolu_button.dart';
 import 'package:jolutrip_app/core/utils/string_formatter.dart';
 import 'package:jolutrip_app/features/reels/data/data.dart';
 
@@ -62,7 +63,6 @@ class ReelInfoOverlay extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Профиль гида (Сверху над кнопками)
               GestureDetector(
                 onTap: onProfilePressed,
                 child: Container(
@@ -135,7 +135,6 @@ class ReelInfoOverlay extends StatelessWidget {
               ),
               const SizedBox(height: AppDimens.spaceS),
 
-              // Название локации (Стильный жирный шрифт Inter)
               Text(
                 reel.name,
                 style: AppTextStyles.headline.copyWith(
@@ -169,7 +168,13 @@ class ReelInfoOverlay extends StatelessWidget {
               ),
               const SizedBox(height: AppDimens.spaceM),
 
-              _buildCtaButton(),
+              JoluButton(
+                text: 'от ${reel.priceStartsFrom} сом • Подробнее',
+                variant: JoluButtonVariant.secondary,
+                size: JoluButtonSize.small,
+                onPressed: onBookPressed,
+                trailingIcon: Icons.arrow_forward_rounded,
+              ),
             ],
           ),
         ),
@@ -231,62 +236,6 @@ class ReelInfoOverlay extends StatelessWidget {
           color: Colors.white.withOpacity(0.5),
           fontSize: 14,
           fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCtaButton() {
-    return GestureDetector(
-      onTap: onBookPressed,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(AppDimens.radiusRound),
-              border: Border.all(color: Colors.white.withOpacity(0.25)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Цена слева
-                Text(
-                  'от ${reel.priceStartsFrom} сом',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Container(
-                  width: 1,
-                  height: 14,
-                  color: Colors.white.withOpacity(0.25),
-                ),
-                const SizedBox(width: 12),
-                // Текст-призыв
-                const Text(
-                  'Подробнее',
-                  style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.arrow_forward_rounded,
-                  size: 15,
-                  color: AppColors.primary,
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

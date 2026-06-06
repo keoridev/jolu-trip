@@ -25,13 +25,12 @@ class AuthOtpSent extends AuthState {
 }
 
 class AuthSuccess extends AuthState {
-  const AuthSuccess({required this.token, this.user});
+  const AuthSuccess({this.user, required String token});
 
-  final String token;
   final UserModel? user;
 
   @override
-  List<Object?> get props => [token, user];
+  List<Object?> get props => [user];
 }
 
 class AuthError extends AuthState {

@@ -21,7 +21,6 @@ class PhoneInputField extends StatefulWidget {
 }
 
 class _PhoneInputFieldState extends State<PhoneInputField> {
-  /// Форматирует 9 цифр в +996 (XXX) XX-XX-XX
   String _formatDigits(String digits) {
     if (digits.isEmpty) return '+996 ';
 
@@ -52,12 +51,9 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     return buffer.toString();
   }
 
-  /// Извлекает только 9 цифр после +996
   String _extractDigits(String text) {
-    // Убираем всё кроме цифр
     final allDigits = text.replaceAll(RegExp(r'\D'), '');
-    // Убираем префикс 996 если есть
-    if (allDigits.startsWith('996')) {
+   if (allDigits.startsWith('996')) {
       return allDigits.substring(3);
     }
     return allDigits;
@@ -66,7 +62,6 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   @override
   void initState() {
     super.initState();
-    // Устанавливаем начальное значение +996
     widget.controller.text = '+996 ';
     widget.controller.selection = TextSelection.fromPosition(
       const TextPosition(offset: 5),

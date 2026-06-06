@@ -1,4 +1,4 @@
-import '../../data/models/gps_coordinates.dart';
+import 'package:jolutrip_app/features/safety/data/models/models.dart';
 
 abstract class SafetyRepository {
   Future<GpsCoordinates?> getCurrentLocation();

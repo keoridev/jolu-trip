@@ -1,40 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:jolutrip_app/features/safety/presentation/safety_screen.dart';
+import 'package:jolutrip_app/core/theme/app_colors.dart';
+import 'package:jolutrip_app/core/theme/app_dimens.dart';
+import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_dimens.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../bloc/profile_cubit.dart';
-import '../bloc/profile_state.dart';
+import 'package:jolutrip_app/core/ui/jolu_ui.dart';
+import 'package:jolutrip_app/features/profile/bloc/profile_cubit.dart';
+import 'package:jolutrip_app/features/profile/bloc/profile_state.dart';
+import 'package:jolutrip_app/features/safety/presentation/safety_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) => ProfileCubit()..loadProfile(),
-      child: Scaffold(
-        backgroundColor: AppColors.bgDark,
-        body: SafeArea(
-          child: BlocBuilder<ProfileCubit, ProfileState>(
-            builder: (context, state) {
-              if (state is ProfileLoading) {
-                return const _LoadingView();
-              }
-              if (state is ProfileAuthenticated) {
-                return _AuthenticatedView(
-                  name: state.name,
-                  phone: state.phone,
-                  avatarUrl: state.avatarUrl,
-                  ecoPoints: state.ecoPoints,
-                );
-              }
-              return const _GuestView();
-            },
-          ),
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      body: SafeArea(
+        child: BlocBuilder<ProfileCubit, ProfileState>(
+          builder: (context, state) {
+            if (state is ProfileLoading) {
+              return const _LoadingView();
+            }
+            if (state is ProfileAuthenticated) {
+              return _AuthenticatedView(
+                name: state.name,
+                phone: state.phone,
+                avatarUrl: state.avatarUrl,
+                ecoPoints: state.ecoPoints,
+              );
+            }
+            return const _GuestView();
+          },
         ),
       ),
     );
@@ -99,23 +97,18 @@ class _GuestView extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 56,
-            child: ElevatedButton(
+            child: JoluButton(
+              text: 'Войти в аккаунт',
+              variant: JoluButtonVariant.primary,
+              size: JoluButtonSize.large,
+              isFullWidth: true,
+              leadingIcon: Icons.login_rounded,
               onPressed: () async {
                 await context.push('/auth');
-                // После возврата с auth перечитываем профиль
                 if (context.mounted) {
                   context.read<ProfileCubit>().loadProfile();
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.black,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusM),
-                ),
-              ),
-              child: Text('Войти', style: AppTextStyles.button),
             ),
           ),
 
@@ -141,6 +134,8 @@ class _AuthenticatedView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final profileCubit = context.read<ProfileCubit>();
+
     final hasAvatar = avatarUrl != null && avatarUrl!.isNotEmpty;
 
     return SingleChildScrollView(
@@ -315,16 +310,13 @@ class _AuthenticatedView extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             height: 52,
-            child: OutlinedButton(
-              onPressed: () => context.read<ProfileCubit>().logout(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.error,
-                side: BorderSide(color: AppColors.error.withOpacity(0.3)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppDimens.radiusM),
-                ),
-              ),
-              child: const Text('Выйти из аккаунта'),
+            child: JoluButton(
+              text: 'Выйти',
+              variant: JoluButtonVariant.error,
+              size: JoluButtonSize.large,
+              isFullWidth: true,
+              leadingIcon: Icons.logout_rounded,
+              onPressed: () => _showLogoutDialog(context, profileCubit),
             ),
           ),
 
@@ -333,6 +325,34 @@ class _AuthenticatedView extends StatelessWidget {
       ),
     );
   }
+}
+
+void _showLogoutDialog(BuildContext context, ProfileCubit cubit) {
+  showDialog(
+    context: context,
+    builder: (dialogContext) => JoluDialog(
+      title: 'Выход из аккаунта',
+      message:
+          'Вы уверены, что хотите выйти? Все несохранённые данные будут потеряны.',
+      icon: Icons.logout_rounded,
+      iconColor: AppColors.error,
+      confirmText: 'Выйти',
+      cancelText: 'Отмена',
+      onConfirm: () {
+        Navigator.pop(dialogContext);
+
+        cubit.logout();
+
+        if (context.mounted) {
+          JoluSnackbar.show(
+            context: context,
+            message: 'Вы вышли из аккаунта',
+            type: JoluSnackbarType.success,
+          );
+        }
+      },
+    ),
+  );
 }
 
 // ═══════════════════════════════════════════════════

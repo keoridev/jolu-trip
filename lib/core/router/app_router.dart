@@ -6,6 +6,7 @@ import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/presentation/auth_screen.dart';
 import 'package:jolutrip_app/features/navigation/presentation/widgets/jolu_bottom_bar.dart';
+import 'package:jolutrip_app/features/profile/bloc/profile_cubit.dart'; // Добавить импорт
 import 'package:jolutrip_app/features/profile/presentation/profile_screen.dart';
 import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/presentation/reels_screen.dart';
@@ -15,9 +16,14 @@ class AppRouterWithShell {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
       GlobalKey<NavigatorState>(debugLabel: 'root');
 
+  // Создаем ProfileCubit на уровне всего приложения
+  static final ProfileCubit _profileCubit = ProfileCubit();
+
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/reels',
+    // Оборачиваем все приложение в провайдер ProfileCubit
+    routerNeglect: false,
     routes: [
       GoRoute(
         path: '/auth',
@@ -38,19 +44,27 @@ class AppRouterWithShell {
 
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
-          return _NavigationWrapper(
-            navigationShell: navigationShell,
-            child: Scaffold(
-              backgroundColor: AppColors.bgDark,
-              body: navigationShell,
-              bottomNavigationBar: JoluBottomBar(
-                currentIndex: navigationShell.currentIndex,
-                onTap: (index) {
-                  navigationShell.goBranch(
-                    index,
-                    initialLocation: index == navigationShell.currentIndex,
-                  );
-                },
+          // Оборачиваем Shell в BlocProvider для ProfileCubit
+          return BlocProvider<ProfileCubit>.value(
+            value: _profileCubit,
+            child: _NavigationWrapper(
+              navigationShell: navigationShell,
+              child: Scaffold(
+                backgroundColor: AppColors.bgDark,
+                body: navigationShell,
+                bottomNavigationBar: JoluBottomBar(
+                  currentIndex: navigationShell.currentIndex,
+                  onTap: (index) {
+                    // При переходе на профиль обновляем данные
+                    if (index == 3) {
+                      _profileCubit.loadProfile();
+                    }
+                    navigationShell.goBranch(
+                      index,
+                      initialLocation: index == navigationShell.currentIndex,
+                    );
+                  },
+                ),
               ),
             ),
           );
@@ -95,7 +109,7 @@ class AppRouterWithShell {
               ),
             ],
           ),
-          // Profile
+          // Profile - теперь ProfileCubit доступен через провайдер выше
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -105,21 +119,10 @@ class AppRouterWithShell {
               ),
             ],
           ),
-          // ← Safety УДАЛЁН отсюда!
         ],
       ),
     ],
   );
-
-  static void _pauseReelsVideo(BuildContext context) {
-    try {
-      final reelsCubit = context.read<ReelsCubit>();
-      reelsCubit.pauseCurrentVideo();
-      debugPrint('🎬 Видео поставлено на паузу при смене таба');
-    } catch (e) {
-      debugPrint('⚠️ Не удалось поставить видео на паузу: $e');
-    }
-  }
 }
 
 class _NavigationWrapper extends StatefulWidget {
@@ -142,6 +145,10 @@ class _NavigationWrapperState extends State<_NavigationWrapper> {
   void initState() {
     super.initState();
     _previousIndex = widget.navigationShell.currentIndex;
+    // Загружаем профиль при старте
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<ProfileCubit>().loadProfile();
+    });
   }
 
   @override

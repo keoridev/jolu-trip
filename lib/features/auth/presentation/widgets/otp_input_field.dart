@@ -46,11 +46,14 @@ class OtpInputField extends StatelessWidget {
           counterText: '',
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimens.radiusM),
-            borderSide: BorderSide(color: AppColors.borderDark, width: 1.5),
+            borderSide: const BorderSide(
+              color: AppColors.borderDark,
+              width: 1.5,
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimens.radiusM),
-            borderSide: BorderSide(color: AppColors.primary, width: 2),
+            borderSide: const BorderSide(color: AppColors.primary, width: 2),
           ),
           filled: true,
           fillColor: AppColors.cardDark,

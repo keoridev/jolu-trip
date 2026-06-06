@@ -1,7 +1,11 @@
+import 'package:equatable/equatable.dart';
 import 'package:jolutrip_app/features/safety/data/models/models.dart';
 
-abstract class SafetyState {
+abstract class SafetyState extends Equatable {
   const SafetyState();
+
+  @override
+  List<Object?> get props => [];
 }
 
 class SafetyInitial extends SafetyState {}
@@ -14,18 +18,22 @@ class SafetyLocationLoaded extends SafetyState {
 
   const SafetyLocationLoaded({this.coordinates, this.isLoading = false});
 
-  SafetyLocationLoaded copyWith({
-    GpsCoordinates? coordinates,
-    bool? isLoading,
-  }) {
-    return SafetyLocationLoaded(
-      coordinates: coordinates ?? this.coordinates,
-      isLoading: isLoading ?? this.isLoading,
-    );
-  }
+  @override
+  List<Object?> get props => [coordinates, isLoading];
+}
+
+class SafetyLocationLoading extends SafetyState {
+  final GpsCoordinates? previousCoords;
+  const SafetyLocationLoading({this.previousCoords});
+
+  @override
+  List<Object?> get props => [previousCoords];
 }
 
 class SafetyError extends SafetyState {
   final String message;
   const SafetyError(this.message);
+
+  @override
+  List<Object?> get props => [message];
 }

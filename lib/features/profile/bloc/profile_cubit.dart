@@ -1,10 +1,17 @@
 // features/profile/bloc/profile_cubit.dart
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/storage/secure_storage.dart';
 import 'profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
-  ProfileCubit() : super(const ProfileLoading());
+  ProfileCubit() : super(const ProfileLoading()) {
+    _authSubscription = SecureStorage.authChanges.listen((_) {
+      loadProfile();
+    });
+  }
+  StreamSubscription<void>? _authSubscription;
 
   Future<void> loadProfile() async {
     emit(const ProfileLoading());
@@ -35,6 +42,11 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> logout() async {
     await SecureStorage.clearAll();
-    emit(const ProfileGuest());
+  }
+
+  @override
+  Future<void> close() {
+    _authSubscription?.cancel();
+    return super.close();
   }
 }

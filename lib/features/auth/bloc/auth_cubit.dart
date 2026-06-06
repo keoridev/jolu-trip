@@ -1,4 +1,3 @@
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/features/auth/domain/repositories/repositories.dart';
 import '../../../core/storage/secure_storage.dart';
@@ -23,23 +22,20 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> verifyOtp(String phone, String code) async {
     emit(const AuthLoading());
     final result = await _authRepository.verifyOtp(phone, code);
+
     result.fold((failure) => emit(AuthError(message: failure.message)), (
       response,
     ) async {
+      // Парсим ответ
       final token = response['token'] as String;
       final user = response['user'] as Map<String, dynamic>;
 
-      final userId = user['id'] as String;
-      final fullName = user['full_name'] as String? ?? '';
-      final avatarUrl = user['avatar_url'] as String? ?? '';
-
-      // Сохраняем ВСЕ данные
       await SecureStorage.saveAuthData(
         token: token,
-        userId: userId,
+        userId: user['id'] as String,
         phone: user['phone'] as String,
-        name: fullName.isNotEmpty ? fullName : null,
-        avatarUrl: avatarUrl.isNotEmpty ? avatarUrl : null,
+        name: user['full_name'] as String? ?? '',
+        avatarUrl: user['avatar_url'] as String? ?? '',
       );
 
       emit(AuthSuccess(token: token));
