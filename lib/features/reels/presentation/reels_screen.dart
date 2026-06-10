@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/features/reels/data/models/model.dart';
 import 'package:jolutrip_app/features/reels/presentation/widgets/widgets.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -18,7 +19,11 @@ class ReelsScreen extends StatefulWidget {
   State<ReelsScreen> createState() => _ReelsScreenState();
 }
 
-class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
+class _ReelsScreenState extends State<ReelsScreen>
+    with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
+
   late final PageController _pageController;
   int _currentIndex = 0;
   bool _isScreenVisible = true;
@@ -64,7 +69,6 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
     for (final entry in _playerKeys.entries) {
       entry.value.currentState?.destroyVideo();
     }
-    _playerKeys.clear();
   }
 
   void _resumeCurrentVideo() {
@@ -115,6 +119,7 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return VisibilityDetector(
       key: const Key('reels_screen'),
       onVisibilityChanged: (info) {
@@ -162,7 +167,6 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                             setState(() => _currentIndex = index);
                             context.read<ReelsCubit>().setCurrentIndex(index);
 
-                            // 🔥 Предзагрузка следующих
                             _prefetchVideos(reels, index);
                             _cleanupDistantVideos();
                           },
@@ -226,9 +230,7 @@ class _ReelsScreenState extends State<ReelsScreen> with WidgetsBindingObserver {
                                     onLikePressed: () => playerKey.currentState
                                         ?.handleDoubleTap(),
                                     onBookPressed: () {
-                                      debugPrint(
-                                        "📌 Бронирование: ${reel.name}",
-                                      );
+                                      context.push('/location/${reel.id}');
                                     },
                                   ),
                                 ],

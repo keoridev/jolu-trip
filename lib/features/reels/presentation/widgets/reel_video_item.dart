@@ -55,7 +55,6 @@ class ReelVideoItemState extends State<ReelVideoItem> {
       debugPrint('📦 Cache HIT: ${widget.reel.name}');
 
       await _setupController(file.path, isLocal: true);
-
     } catch (e) {
       debugPrint('⚠️ Cache MISS/FAIL [${widget.reel.name}]: $e');
       _isCached = false;
@@ -80,13 +79,15 @@ class ReelVideoItemState extends State<ReelVideoItem> {
         _controller?.pause();
       }
       debugPrint('🚀 Preloaded: ${widget.reel.name}');
-
     } catch (e) {
       debugPrint('⚠️ Preload failed [${widget.reel.name}]: $e');
     }
   }
 
-  Future<void> _setupController(String pathOrUrl, {required bool isLocal}) async {
+  Future<void> _setupController(
+    String pathOrUrl, {
+    required bool isLocal,
+  }) async {
     try {
       if (isLocal) {
         _controller = VideoPlayerController.file(File(pathOrUrl));
@@ -145,17 +146,20 @@ class ReelVideoItemState extends State<ReelVideoItem> {
     debugPrint('🗑️ Видео уничтожено: ${widget.reel.name}');
   }
 
-
   void destroyVideo() => _disposeController();
 
   void rebuildVideo() {
     if (!widget.isCurrent) return;
-    if (_isInitialized) {
-      _controller?.play();
-      _isPaused = false;
-    } else {
-      _initializePlayer();
+
+    if (_isInitialized && _controller != null) {
+      _controller!.play();
+      setState(() => _isPaused = false);
+      debugPrint('▶️ Возобновлено (контроллер жив): ${widget.reel.name}');
+      return;
     }
+
+    debugPrint('🔄 Переинициализация: ${widget.reel.name}');
+    _initializePlayer();
   }
 
   void handleTap() {
@@ -221,8 +225,7 @@ class ReelVideoItemState extends State<ReelVideoItem> {
       } else {
         _initializePlayer();
       }
-    }
-    else if (!widget.isCurrent && oldWidget.isCurrent) {
+    } else if (!widget.isCurrent && oldWidget.isCurrent) {
       if (_isInitialized) {
         _controller?.pause();
         _controller?.seekTo(Duration.zero);
@@ -288,7 +291,9 @@ class ReelVideoItemState extends State<ReelVideoItem> {
                   height: 40,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.primary,
+                    ),
                   ),
                 ),
               ),
@@ -298,7 +303,10 @@ class ReelVideoItemState extends State<ReelVideoItem> {
             Positioned(
               top: 60,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.6),
                   borderRadius: BorderRadius.circular(20),
@@ -306,7 +314,11 @@ class ReelVideoItemState extends State<ReelVideoItem> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.fast_forward_rounded, color: AppColors.primary, size: 16),
+                    Icon(
+                      Icons.fast_forward_rounded,
+                      color: AppColors.primary,
+                      size: 16,
+                    ),
                     SizedBox(width: 6),
                     Text(
                       '2.0x Ускорение',

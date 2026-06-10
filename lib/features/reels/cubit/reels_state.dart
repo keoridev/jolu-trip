@@ -20,10 +20,7 @@ class ReelsLoaded extends ReelsState {
   @override
   List<Object?> get props => [reels, currentIndex];
 
-  ReelsLoaded copyWith({
-    List<ReelModel>? reels,
-    int? currentIndex,
-  }) {
+  ReelsLoaded copyWith({List<ReelModel>? reels, int? currentIndex}) {
     return ReelsLoaded(
       reels ?? this.reels,
       currentIndex: currentIndex ?? this.currentIndex,

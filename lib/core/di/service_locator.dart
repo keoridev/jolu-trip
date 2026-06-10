@@ -4,6 +4,10 @@ import 'package:jolutrip_app/core/di/dio_client.dart';
 import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/data/data.dart';
 import 'package:jolutrip_app/features/auth/domain/repositories/repositories.dart';
+import 'package:jolutrip_app/features/location-detail/bloc/location_detail_cubit.dart';
+import 'package:jolutrip_app/features/location-detail/data/datasources/location_detail_remote_datasource.dart';
+import 'package:jolutrip_app/features/location-detail/data/repositories/location_detail_repository_impl.dart';
+import 'package:jolutrip_app/features/location-detail/domain/domain.dart';
 import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/data/data.dart';
 import 'package:jolutrip_app/features/reels/data/datasources/reels_remote_datasource.dart';
@@ -38,4 +42,11 @@ void setupDependencies() {
 
   sl.registerLazySingleton<SafetyRepository>(() => SafetyRepositoryImpl());
   sl.registerFactory(() => SafetyCubit(repository: sl()));
+  sl.registerLazySingleton<LocationDetailRemoteDataSource>(
+    () => LocationDetailRemoteDataSourceImpl(client: sl()),
+  );
+  sl.registerLazySingleton<LocationDetailRepository>(
+    () => LocationDetailRepositoryImpl(remote: sl()),
+  );
+  sl.registerFactory(() => LocationDetailCubit(sl()));
 }

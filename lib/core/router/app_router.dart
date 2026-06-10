@@ -5,6 +5,8 @@ import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/presentation/auth_screen.dart';
+import 'package:jolutrip_app/features/location-detail/bloc/location_detail_cubit.dart';
+import 'package:jolutrip_app/features/location-detail/presentation/location_detail_screen.dart';
 import 'package:jolutrip_app/features/navigation/presentation/widgets/jolu_bottom_bar.dart';
 import 'package:jolutrip_app/features/profile/bloc/profile_cubit.dart';
 import 'package:jolutrip_app/features/profile/presentation/profile_screen.dart';
@@ -30,6 +32,19 @@ class AppRouterWithShell {
           create: (_) => sl<AuthCubit>(),
           child: const AuthScreen(),
         ),
+      ),
+      GoRoute(
+        path: '/location/:id',
+        name: 'locationDetail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final locationId = state.pathParameters['id']!;
+          return BlocProvider<LocationDetailCubit>(
+            create: (_) =>
+                sl<LocationDetailCubit>()..loadLocationDetail(locationId),
+            child: LocationDetailScreen(locationId: locationId),
+          );
+        },
       ),
 
       GoRoute(
@@ -59,6 +74,7 @@ class AppRouterWithShell {
             ),
           );
         },
+
         branches: [
           // Reels — Cubit поднимаем ЗДЕСЬ, а не в builder
           StatefulShellBranch(
