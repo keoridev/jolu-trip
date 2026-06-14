@@ -7,10 +7,9 @@ class SecureStorage {
   static const String _tokenKey = 'jwt_token';
   static const String _userIdKey = 'user_id';
   static const String _phoneKey = 'user_phone';
-  static String _nameKey = 'user_name';
-  static String _avatarKey = 'user_avatar';
+  static const String _nameKey = 'user_name'; // 🔥 const!
+  static const String _avatarKey = 'user_avatar'; // 🔥 const!
 
-  // 🔥 Стрим для наблюдения за изменениями авторизации
   static final _authController = StreamController<void>.broadcast();
   static Stream<void> get authChanges => _authController.stream;
 
@@ -25,16 +24,18 @@ class SecureStorage {
     await _storage.write(key: _userIdKey, value: userId);
     await _storage.write(key: _phoneKey, value: phone);
     if (name != null) await _storage.write(key: _nameKey, value: name);
-    if (avatarUrl != null)
-      await _storage.write(key: _avatarKey, value: avatarUrl);
-
-    // 🔥 Уведомляем всех слушателей
+    if (avatarUrl != null) await _storage.write(key: _avatarKey, value: avatarUrl);
     _authController.add(null);
   }
 
   static Future<void> clearAll() async {
     await _storage.deleteAll();
-    _authController.add(null); // 🔥 Уведомляем о выходе
+    _authController.add(null);
+  }
+
+  // 🔥 Не забудь вызвать при выходе из приложения
+  static void dispose() {
+    _authController.close();
   }
 
   static Future<String?> getToken() => _storage.read(key: _tokenKey);

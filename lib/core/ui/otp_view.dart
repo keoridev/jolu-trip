@@ -1,18 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
-import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
-import 'package:jolutrip_app/features/auth/bloc/auth_state.dart';
-import 'package:jolutrip_app/features/auth/presentation/widgets/otp_input_field.dart';
 
 class OtpView extends StatefulWidget {
   final String phone;
+  final VoidCallback? onBack;
+  final ValueChanged<String> onVerify;
+  final VoidCallback? onResend;
+  final bool isLoading;
 
-  const OtpView({super.key, required this.phone});
+  const OtpView({
+    super.key,
+    required this.phone,
+    this.onBack,
+    required this.onVerify,
+    this.onResend,
+    this.isLoading = false,
+  });
 
   @override
   State<OtpView> createState() => _OtpViewState();
@@ -74,12 +81,12 @@ class _OtpViewState extends State<OtpView> {
 
   void _verifyCode() {
     if (_isCodeComplete) {
-      context.read<AuthCubit>().verifyOtp(widget.phone, _code);
+      widget.onVerify(_code);
     }
   }
 
   void _resendCode() {
-    context.read<AuthCubit>().sendOtp(widget.phone);
+    widget.onResend?.call();
     _startTimer();
     for (var c in _controllers) c.clear();
     _focusNodes[0].requestFocus();
@@ -87,23 +94,23 @@ class _OtpViewState extends State<OtpView> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthCubit>().state is AuthLoading;
-
     return SingleChildScrollView(
       padding: AppDimens.screenPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 80),
-          _buildBackButton(),
-          const SizedBox(height: AppDimens.spaceXL),
+          if (widget.onBack != null) ...[
+            _buildBackButton(),
+            const SizedBox(height: AppDimens.spaceXL),
+          ],
           _buildHeaderText(),
           const SizedBox(height: AppDimens.spaceXL * 1.5),
           _buildOtpInputs(),
           const SizedBox(height: AppDimens.spaceXL),
           _buildTimerSection(),
           const SizedBox(height: AppDimens.spaceXL * 2),
-          _buildSubmitButton(isLoading),
+          _buildSubmitButton(),
           const SizedBox(height: AppDimens.spaceL),
         ],
       ),
@@ -112,7 +119,7 @@ class _OtpViewState extends State<OtpView> {
 
   Widget _buildBackButton() {
     return GestureDetector(
-      onTap: () => context.read<AuthCubit>().reset(),
+      onTap: widget.onBack,
       child: Container(
         padding: const EdgeInsets.all(AppDimens.spaceXS),
         decoration: BoxDecoration(
@@ -162,7 +169,7 @@ class _OtpViewState extends State<OtpView> {
       children: List.generate(4, (index) {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: OtpInputField(
+          child: _OtpInputField(
             controller: _controllers[index],
             focusNode: _focusNodes[index],
             index: index,
@@ -222,14 +229,69 @@ class _OtpViewState extends State<OtpView> {
     );
   }
 
-  Widget _buildSubmitButton(bool isLoading) {
+  Widget _buildSubmitButton() {
     return JoluButton(
       text: 'Войти',
       variant: JoluButtonVariant.primary,
       size: JoluButtonSize.large,
       isFullWidth: true,
-      isLoading: isLoading,
-      onPressed: _isCodeComplete && !isLoading ? _verifyCode : null,
+      isLoading: widget.isLoading,
+      onPressed: _isCodeComplete && !widget.isLoading ? _verifyCode : null,
+    );
+  }
+}
+
+class _OtpInputField extends StatelessWidget {
+  final TextEditingController controller;
+  final FocusNode focusNode;
+  final int index;
+  final bool isLast;
+  final VoidCallback onCompleted;
+
+  const _OtpInputField({
+    required this.controller,
+    required this.focusNode,
+    required this.index,
+    required this.isLast,
+    required this.onCompleted,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 56,
+      height: 64,
+      child: TextField(
+        controller: controller,
+        focusNode: focusNode,
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        maxLength: 1,
+        style: AppTextStyles.headline.copyWith(fontSize: 28),
+        decoration: InputDecoration(
+          counterText: '',
+          filled: true,
+          fillColor: AppColors.cardDark,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppDimens.radiusM),
+            borderSide: BorderSide(color: AppColors.borderDark),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppDimens.radiusM),
+            borderSide: BorderSide(color: AppColors.primary, width: 2),
+          ),
+        ),
+        onChanged: (value) {
+          if (value.isNotEmpty) {
+            if (isLast) {
+              focusNode.unfocus();
+              onCompleted();
+            } else {
+              FocusScope.of(context).nextFocus();
+            }
+          }
+        },
+      ),
     );
   }
 }

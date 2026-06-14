@@ -5,14 +5,15 @@ import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/presentation/auth_screen.dart';
-import 'package:jolutrip_app/features/location-detail/bloc/location_detail_cubit.dart';
-import 'package:jolutrip_app/features/location-detail/presentation/location_detail_screen.dart';
+import 'package:jolutrip_app/features/auth/presentation/role_selection_screen.dart';
+import 'package:jolutrip_app/features/guide_auth/bloc/guide_auth_cubit.dart';
+import 'package:jolutrip_app/features/guide_auth/presentation/guide_auth_screen.dart';
+import 'package:jolutrip_app/features/guide_auth/presentation/guide_onboarding_screen.dart';
 import 'package:jolutrip_app/features/navigation/presentation/widgets/jolu_bottom_bar.dart';
 import 'package:jolutrip_app/features/profile/bloc/profile_cubit.dart';
 import 'package:jolutrip_app/features/profile/presentation/profile_screen.dart';
 import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/presentation/reels_screen.dart';
-import 'package:jolutrip_app/features/safety/presentation/safety_screen.dart';
 
 class AppRouterWithShell {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -24,36 +25,64 @@ class AppRouterWithShell {
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/reels',
     routes: [
+      // ═══════════════════════════════════════════════════
+      // СТАРТОВЫЙ ЭКРАН ВЫБОРА РОЛИ
+      // ═══════════════════════════════════════════════════
       GoRoute(
         path: '/auth',
         name: 'auth',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const RoleSelectionScreen(),
+      ),
+
+      // ═══════════════════════════════════════════════════
+      // АВТОРИЗАЦИЯ ТУРИСТА
+      // ═══════════════════════════════════════════════════
+      GoRoute(
+        path: '/auth/tourist',
+        name: 'touristAuth',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) => BlocProvider<AuthCubit>(
           create: (_) => sl<AuthCubit>(),
           child: const AuthScreen(),
         ),
       ),
+
+      // ═══════════════════════════════════════════════════
+      // АВТОРИЗАЦИЯ ГИДА
+      // ═══════════════════════════════════════════════════
       GoRoute(
-        path: '/location/:id',
-        name: 'locationDetail',
+        path: '/auth/guide',
+        name: 'guideAuth',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          final locationId = state.pathParameters['id']!;
-          return BlocProvider<LocationDetailCubit>(
-            create: (_) =>
-                sl<LocationDetailCubit>()..loadLocationDetail(locationId),
-            child: LocationDetailScreen(locationId: locationId),
+          debugPrint('🛠️ Building GuideAuthScreen with BlocProvider.value');
+          return BlocProvider<GuideAuthCubit>.value(
+            value: sl<GuideAuthCubit>(), // 🔥 Берём из DI
+            child: const GuideAuthScreen(),
           );
         },
       ),
 
+      // ═══════════════════════════════════════════════════
+      // ONBOARDING ГИДА (shared Cubit)
+      // ═══════════════════════════════════════════════════
       GoRoute(
-        path: '/safety',
-        name: 'safety',
+        path: '/guide/onboarding',
+        name: 'guideOnboarding',
         parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) => const SafetyScreen(),
+        builder: (context, state) {
+          debugPrint('🛠️ Building GuideOnboardingScreen with shared Cubit');
+          return BlocProvider<GuideAuthCubit>.value(
+            value: sl<GuideAuthCubit>(), // 🔥 Тот же экземпляр!
+            child: const GuideOnboardingScreen(),
+          );
+        },
       ),
 
+      // ═══════════════════════════════════════════════════
+      // ОСНОВНАЯ НАВИГАЦИЯ (Shell)
+      // ═══════════════════════════════════════════════════
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return BlocProvider<ProfileCubit>.value(
@@ -74,9 +103,8 @@ class AppRouterWithShell {
             ),
           );
         },
-
         branches: [
-          // Reels — Cubit поднимаем ЗДЕСЬ, а не в builder
+          // Reels
           StatefulShellBranch(
             routes: [
               GoRoute(
@@ -144,7 +172,11 @@ class DummyScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 64, color: AppColors.primary.withOpacity(0.3)),
+            Icon(
+              icon,
+              size: 64,
+              color: AppColors.primary.withValues(alpha: 0.3),
+            ),
             const SizedBox(height: 24),
             Text(
               title,

@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:jolutrip_app/core/config/app_config.dart';
 import 'package:jolutrip_app/core/errors/exceptions.dart';
-import '../models/location_detail_model.dart';
+import 'package:jolutrip_app/features/location-detail/data/models/models.dart';
 
 abstract class LocationDetailRemoteDataSource {
   Future<LocationDetailModel> getLocationDetail(String locationId);

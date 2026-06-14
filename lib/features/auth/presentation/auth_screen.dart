@@ -3,10 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
+
 import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/bloc/auth_state.dart';
-import 'package:jolutrip_app/features/auth/presentation/widgets/otp_view.dart';
-import 'package:jolutrip_app/features/auth/presentation/widgets/phone_view.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
@@ -19,14 +18,38 @@ class AuthScreen extends StatelessWidget {
         child: BlocConsumer<AuthCubit, AuthState>(
           listener: _handleStateChange,
           builder: (context, state) {
+            final isLoading = state is AuthLoading;
+
             return AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
-              transitionBuilder: (child, animation) {
-                return FadeTransition(opacity: animation, child: child);
+              child: switch (state) {
+                AuthInitial() => PhoneView(
+                  title: 'Вход для туристов',
+                  subtitle:
+                      'Войдите, чтобы бронировать туры\nи сохранять локации',
+                  isLoading: isLoading,
+                  onBack: () => context.pop(), // ← КНОПКА НАЗАД
+                  onSubmit: (phone) => context.read<AuthCubit>().sendOtp(phone),
+                ),
+
+                AuthOtpSent(phone: final phone) => OtpView(
+                  phone: phone,
+                  isLoading: isLoading,
+                  onBack: () =>
+                      context.read<AuthCubit>().reset(), // ← НАЗАД К ТЕЛЕФОНУ
+                  onVerify: (code) =>
+                      context.read<AuthCubit>().verifyOtp(phone, code),
+                  onResend: () => context.read<AuthCubit>().sendOtp(phone),
+                ),
+
+                AuthLoading() => const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation(AppColors.primary),
+                  ),
+                ),
+
+                _ => const SizedBox.shrink(),
               },
-              child: state is AuthOtpSent
-                  ? OtpView(phone: state.phone)
-                  : const PhoneView(),
             );
           },
         ),

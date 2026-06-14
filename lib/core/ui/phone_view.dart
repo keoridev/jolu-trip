@@ -1,17 +1,27 @@
-// lib/features/auth/presentation/widgets/phone_view.dart
-
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
-import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
-import 'package:jolutrip_app/features/auth/bloc/auth_state.dart';
-import 'package:jolutrip_app/features/auth/presentation/widgets/phone_input_field.dart';
 
 class PhoneView extends StatefulWidget {
-  const PhoneView({super.key});
+  final String title;
+  final String? subtitle;
+  final String? hintText;
+  final VoidCallback? onBack;
+  final ValueChanged<String> onSubmit;
+  final bool isLoading;
+
+  const PhoneView({
+    super.key,
+    required this.title,
+    this.subtitle,
+    this.hintText,
+    this.onBack,
+    required this.onSubmit,
+    this.isLoading = false,
+  });
 
   @override
   State<PhoneView> createState() => _PhoneViewState();
@@ -21,6 +31,15 @@ class _PhoneViewState extends State<PhoneView> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
   bool _isValid = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.text = '+996 ';
+    _controller.selection = TextSelection.fromPosition(
+      const TextPosition(offset: 5),
+    );
+  }
 
   @override
   void dispose() {
@@ -36,21 +55,21 @@ class _PhoneViewState extends State<PhoneView> {
 
   @override
   Widget build(BuildContext context) {
-    final isLoading = context.watch<AuthCubit>().state is AuthLoading;
-
     return SingleChildScrollView(
       padding: AppDimens.screenPadding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: 80),
-          _buildLogo(),
-          const SizedBox(height: AppDimens.spaceXL),
+          if (widget.onBack != null) ...[
+            _buildBackButton(),
+            const SizedBox(height: AppDimens.spaceXL),
+          ],
           _buildHeaderText(),
           const SizedBox(height: AppDimens.spaceXL * 2),
           _buildPhoneInput(),
           const SizedBox(height: AppDimens.spaceXL * 2),
-          _buildSubmitButton(isLoading),
+          _buildSubmitButton(),
           const SizedBox(height: AppDimens.spaceL),
           _buildHintText(),
           const SizedBox(height: AppDimens.spaceXL),
@@ -59,16 +78,20 @@ class _PhoneViewState extends State<PhoneView> {
     );
   }
 
-  Widget _buildLogo() {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        borderRadius: BorderRadius.circular(AppDimens.radiusM),
-      ),
-      child: const Center(
-        child: Icon(Icons.explore_rounded, color: Colors.black, size: 28),
+  Widget _buildBackButton() {
+    return GestureDetector(
+      onTap: widget.onBack,
+      child: Container(
+        padding: const EdgeInsets.all(AppDimens.spaceXS),
+        decoration: BoxDecoration(
+          color: AppColors.cardDark,
+          shape: BoxShape.circle,
+        ),
+        child: const Icon(
+          Icons.arrow_back_rounded,
+          color: AppColors.textPrimary,
+          size: 20,
+        ),
       ),
     );
   }
@@ -78,14 +101,16 @@ class _PhoneViewState extends State<PhoneView> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Добро пожаловать\nв JoLuTrip',
+          widget.title,
           style: AppTextStyles.headline.copyWith(height: 1.2, fontSize: 32),
         ),
-        const SizedBox(height: AppDimens.spaceS),
-        Text(
-          'Войдите, чтобы исследовать горы\nКыргызстана',
-          style: AppTextStyles.subtext.copyWith(fontSize: 15, height: 1.4),
-        ),
+        if (widget.subtitle != null) ...[
+          const SizedBox(height: AppDimens.spaceS),
+          Text(
+            widget.subtitle!,
+            style: AppTextStyles.subtext.copyWith(fontSize: 15, height: 1.4),
+          ),
+        ],
       ],
     );
   }
@@ -102,15 +127,39 @@ class _PhoneViewState extends State<PhoneView> {
           ),
         ),
         const SizedBox(height: AppDimens.spaceS),
-        PhoneInputField(
+        TextField(
           controller: _controller,
           focusNode: _focusNode,
-          onPhoneChanged: (value) {
+          keyboardType: TextInputType.phone,
+          style: AppTextStyles.title.copyWith(
+            fontSize: 24,
+            letterSpacing: 1,
+            color: AppColors.textPrimary,
+          ),
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(12),
+          ],
+          decoration: InputDecoration(
+            hintText: widget.hintText ?? '+996 (XXX) XX-XX-XX',
+            hintStyle: AppTextStyles.title.copyWith(
+              color: AppColors.textSecondary.withOpacity(0.3),
+              fontSize: 24,
+            ),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.borderDark, width: 1.5),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.primary, width: 2),
+            ),
+            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+          ),
+          onChanged: (value) {
             final digits = value.replaceAll(RegExp(r'\D'), '');
             setState(() => _isValid = digits.length == 12);
           },
         ),
-        if (!_isValid && _controller.text.isNotEmpty)
+        if (!_isValid && _controller.text.length > 5)
           Padding(
             padding: const EdgeInsets.only(top: AppDimens.spaceS),
             child: Row(
@@ -137,15 +186,15 @@ class _PhoneViewState extends State<PhoneView> {
     );
   }
 
-  Widget _buildSubmitButton(bool isLoading) {
+  Widget _buildSubmitButton() {
     return JoluButton(
       text: 'Получить код',
       variant: JoluButtonVariant.primary,
       size: JoluButtonSize.large,
       isFullWidth: true,
-      isLoading: isLoading,
-      onPressed: _isValid && !isLoading
-          ? () => context.read<AuthCubit>().sendOtp(_getCleanPhone())
+      isLoading: widget.isLoading,
+      onPressed: _isValid && !widget.isLoading
+          ? () => widget.onSubmit(_getCleanPhone())
           : null,
     );
   }

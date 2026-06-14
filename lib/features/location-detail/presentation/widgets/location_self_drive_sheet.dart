@@ -1,9 +1,11 @@
+// lib/features/location_detail/presentation/widgets/location_self_drive_sheet.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
-import 'package:jolutrip_app/features/location-detail/domain/domain.dart';
+import '../../domain/entities/location_detail_entity.dart';
 
 class LocationSelfDriveSheet extends StatelessWidget {
   final LocationDetailEntity location;
@@ -45,12 +47,12 @@ class LocationSelfDriveSheet extends StatelessWidget {
           Text('Самостоятельная поездка', style: AppTextStyles.headlineMedium),
           const SizedBox(height: AppDimens.spaceS),
           Text(
-            'Скопируйте координаты и постройте маршрут в удобном навигаторе',
+            'Скопируйте координаты или откройте навигатор',
             style: AppTextStyles.bodySmall,
           ),
           const SizedBox(height: AppDimens.spaceXL),
 
-          // Координаты
+          // Координаты с кнопкой копирования
           Container(
             padding: const EdgeInsets.all(AppDimens.spaceM),
             decoration: BoxDecoration(
@@ -60,43 +62,56 @@ class LocationSelfDriveSheet extends StatelessWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.location_on, color: AppColors.primary),
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(AppDimens.radiusS),
+                  ),
+                  child: const Icon(
+                    Icons.location_on,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
                 const SizedBox(width: AppDimens.spaceM),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Координаты', style: AppTextStyles.badge),
-                      const SizedBox(height: 2),
+                      const SizedBox(height: 4),
                       Text(
                         location.formattedCoordinates,
-                        style: AppTextStyles.mono,
+                        style: AppTextStyles.mono.copyWith(fontSize: 14),
                       ),
                     ],
                   ),
                 ),
                 GestureDetector(
-                  onTap: () {
-                    Clipboard.setData(
-                      ClipboardData(text: location.formattedCoordinates),
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Координаты скопированы'),
-                        duration: Duration(seconds: 2),
-                      ),
-                    );
-                  },
+                  onTap: () => _copyCoordinates(context),
                   child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(AppDimens.radiusS),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
                     ),
-                    child: const Icon(
-                      Icons.copy,
+                    decoration: BoxDecoration(
                       color: AppColors.primary,
-                      size: 20,
+                      borderRadius: BorderRadius.circular(AppDimens.radiusM),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.copy, color: Colors.black, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Копировать',
+                          style: AppTextStyles.button.copyWith(
+                            color: Colors.black,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -105,24 +120,40 @@ class LocationSelfDriveSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppDimens.spaceXL),
 
-          // Кнопки навигаторов
-          Text('Открыть в навигаторе', style: AppTextStyles.title),
-          const SizedBox(height: AppDimens.spaceM),
+          // Разделитель
+          Row(
+            children: [
+              Expanded(child: Divider(color: AppColors.borderDark)),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Text(
+                  'или откройте в',
+                  style: AppTextStyles.subtext.copyWith(fontSize: 12),
+                ),
+              ),
+              Expanded(child: Divider(color: AppColors.borderDark)),
+            ],
+          ),
+          const SizedBox(height: AppDimens.spaceXL),
+
+          // Кнопки навигаторов — сетка 2x2
           Row(
             children: [
               Expanded(
-                child: _NavigatorButton(
+                child: _NavButton(
                   label: '2GIS',
-                  iconPath: 'assets/icons/2gis.png',
-                  onTap: () => _open2Gis(location),
+                  icon: Icons.map,
+                  color: const Color(0xFF00AAFF),
+                  onTap: () => _open2Gis(context),
                 ),
               ),
               const SizedBox(width: AppDimens.spaceM),
               Expanded(
-                child: _NavigatorButton(
+                child: _NavButton(
                   label: 'Google Maps',
-                  iconPath: 'assets/icons/maps.png',
-                  onTap: () => _openGoogleMaps(location),
+                  icon: Icons.public,
+                  color: const Color(0xFF34A853),
+                  onTap: () => _openGoogle(context),
                 ),
               ),
             ],
@@ -131,54 +162,96 @@ class LocationSelfDriveSheet extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _NavigatorButton(
+                child: _NavButton(
                   label: 'Yandex Maps',
-                  iconPath: 'assets/icons/yandex.png',
-                  onTap: () => _openYandexMaps(location),
+                  icon: Icons.location_city,
+                  color: const Color(0xFFFF3333),
+                  onTap: () => _openYandex(context),
                 ),
               ),
               const SizedBox(width: AppDimens.spaceM),
               Expanded(
-                child: _NavigatorButton(
+                child: _NavButton(
                   label: 'Apple Maps',
                   icon: Icons.apple,
-                  onTap: () => _openAppleMaps(location),
+                  color: Colors.white,
+                  onTap: () => _openApple(context),
                 ),
               ),
             ],
+          ),
+
+          // Дополнительно: поделиться
+          const SizedBox(height: AppDimens.spaceXL),
+          GestureDetector(
+            onTap: () => _shareLocation(context),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              decoration: BoxDecoration(
+                color: AppColors.bgElevated,
+                borderRadius: BorderRadius.circular(AppDimens.radiusM),
+                border: Border.all(color: AppColors.borderDark),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.share, color: AppColors.textSecondary, size: 18),
+                  const SizedBox(width: 8),
+                  Text('Поделиться локацией', style: AppTextStyles.bodyMedium),
+                ],
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _open2Gis(LocationDetailEntity location) {
-    // geo:// или https://2gis.kg/
+  void _copyCoordinates(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: location.formattedCoordinates));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Координаты скопированы'),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDimens.radiusM),
+        ),
+      ),
+    );
   }
 
-  void _openGoogleMaps(LocationDetailEntity location) {
-    // https://www.google.com/maps/search/?api=1&query=lat,lng
+  void _shareLocation(BuildContext context) {
+    /* TODO: Share Plus */
   }
 
-  void _openYandexMaps(LocationDetailEntity location) {
-    // yandexmaps://maps.yandex.ru/?pt=lng,lat
+  void _open2Gis(BuildContext context) {
+    /* TODO: url_launcher */
   }
 
-  void _openAppleMaps(LocationDetailEntity location) {
-    // http://maps.apple.com/?q=lat,lng
+  void _openGoogle(BuildContext context) {
+    /* TODO: url_launcher */
+  }
+
+  void _openYandex(BuildContext context) {
+    /* TODO: url_launcher */
+  }
+
+  void _openApple(BuildContext context) {
+    /* TODO: url_launcher */
   }
 }
 
-class _NavigatorButton extends StatelessWidget {
+class _NavButton extends StatelessWidget {
   final String label;
-  final String? iconPath;
-  final IconData? icon;
+  final IconData icon;
+  final Color color;
   final VoidCallback? onTap;
 
-  const _NavigatorButton({
+  const _NavButton({
     required this.label,
-    this.iconPath,
-    this.icon,
+    required this.icon,
+    required this.color,
     this.onTap,
   });
 
@@ -187,20 +260,17 @@ class _NavigatorButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+        padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
           color: AppColors.bgElevated,
           borderRadius: BorderRadius.circular(AppDimens.radiusM),
           border: Border.all(color: AppColors.borderDark),
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            if (iconPath != null)
-              Image.asset(iconPath!, width: 20, height: 20)
-            else if (icon != null)
-              Icon(icon, size: 20, color: AppColors.textPrimary),
-            const SizedBox(width: 8),
+            Icon(icon, color: color, size: 28),
+            const SizedBox(height: 8),
             Text(label, style: AppTextStyles.bodyMedium),
           ],
         ),

@@ -119,4 +119,6 @@ class AppTextStyles {
     fontFamily: 'monospace',
     letterSpacing: 0.5,
   );
+
+  static get caption => null;
 }

@@ -26,9 +26,9 @@ class DioClient {
       _dio.interceptors.add(
         LogInterceptor(
           requestBody: true,
-          responseBody: true, 
-          requestHeader: true, 
-          responseHeader: true, 
+          responseBody: true,
+          requestHeader: true,
+          responseHeader: true,
           logPrint: (obj) => debugPrint('🌐 $obj'),
         ),
       );
@@ -46,7 +46,7 @@ class DioClient {
 
           debugPrint('📤 ====== ЗАПРОС ======');
           debugPrint('📤 ${options.method} ${options.uri}');
-          debugPrint('📤 Headers: ${options.headers}'); 
+          debugPrint('📤 Headers: ${options.headers}');
           debugPrint('📤 Body: ${options.data}');
           debugPrint('📤 ===================');
           return handler.next(options);
@@ -56,10 +56,8 @@ class DioClient {
           debugPrint(
             '📥 ${response.statusCode} ${response.requestOptions.uri}',
           );
-          debugPrint(
-            '📥 Headers: ${response.headers}',
-          );
-          debugPrint('📥 Data: ${response.data}'); 
+          debugPrint('📥 Headers: ${response.headers}');
+          debugPrint('📥 Data: ${response.data}');
           debugPrint('📥 ==================');
           return handler.next(response);
         },

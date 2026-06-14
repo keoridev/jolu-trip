@@ -94,6 +94,7 @@ class _GuestView extends StatelessWidget {
 
           const SizedBox(height: AppDimens.spaceXL),
 
+          // В _GuestView — изменить кнопку:
           SizedBox(
             width: double.infinity,
             height: 56,
@@ -104,7 +105,7 @@ class _GuestView extends StatelessWidget {
               isFullWidth: true,
               leadingIcon: Icons.login_rounded,
               onPressed: () async {
-                await context.push('/auth');
+                await context.push('/auth'); // ← Теперь открывает выбор роли!
                 if (context.mounted) {
                   context.read<ProfileCubit>().loadProfile();
                 }

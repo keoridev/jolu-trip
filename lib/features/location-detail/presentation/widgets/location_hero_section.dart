@@ -18,13 +18,12 @@ class LocationHeroSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        // Фоновое изображение/видео
         AspectRatio(
           aspectRatio: 16 / 10,
           child: Image.network(
             location.thumbnailUrl,
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: AppColors.cardDark,
               child: const Center(
                 child: Icon(
@@ -47,7 +46,10 @@ class LocationHeroSection extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Colors.transparent, AppColors.bgDark.withOpacity(0.9)],
+                colors: [
+                  Colors.transparent,
+                  AppColors.bgDark.withValues(alpha: 0.9),
+                ],
               ),
             ),
           ),
@@ -55,7 +57,7 @@ class LocationHeroSection extends StatelessWidget {
 
         // Категория
         Positioned(
-          top: AppDimens.spaceM,
+          bottom: AppDimens.spaceM,
           left: AppDimens.spaceM,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -77,7 +79,7 @@ class LocationHeroSection extends StatelessWidget {
 
         // Название + короткое описание
         Positioned(
-          bottom: AppDimens.spaceM,
+          bottom: 45,
           left: AppDimens.spaceM,
           right: AppDimens.spaceM,
           child: Column(
@@ -85,37 +87,9 @@ class LocationHeroSection extends StatelessWidget {
             children: [
               Text(location.name, style: AppTextStyles.headline),
               const SizedBox(height: 4),
-              Text(
-                location.shortDescription,
-                style: AppTextStyles.bodySmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
             ],
           ),
         ),
-
-        // Кнопка play (если есть видео)
-        if (location.videoUrl.isNotEmpty)
-          Center(
-            child: GestureDetector(
-              onTap: onVideoTap,
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(0.5),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white.withOpacity(0.3)),
-                ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  color: Colors.white,
-                  size: 32,
-                ),
-              ),
-            ),
-          ),
       ],
     );
   }

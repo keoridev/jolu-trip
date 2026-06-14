@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
-import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 
 class PhoneInputField extends StatefulWidget {
@@ -27,8 +26,8 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     final buffer = StringBuffer('+996 ');
 
     // (XXX)
-    if (digits.length >= 1) buffer.write('(');
-    if (digits.length >= 1)
+    if (digits.isNotEmpty) buffer.write('(');
+    if (digits.isNotEmpty)
       buffer.write(digits.substring(0, digits.length.clamp(1, 3)));
     if (digits.length >= 3) buffer.write(') ');
 
@@ -53,7 +52,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
 
   String _extractDigits(String text) {
     final allDigits = text.replaceAll(RegExp(r'\D'), '');
-   if (allDigits.startsWith('996')) {
+    if (allDigits.startsWith('996')) {
       return allDigits.substring(3);
     }
     return allDigits;
@@ -87,7 +86,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
       decoration: InputDecoration(
         hintText: '+996 (XXX) XX-XX-XX',
         hintStyle: AppTextStyles.title.copyWith(
-          color: AppColors.textSecondary.withOpacity(0.3),
+          color: AppColors.textSecondary.withValues(alpha: 0.3),
           fontSize: 24,
         ),
         enabledBorder: UnderlineInputBorder(
