@@ -9,6 +9,13 @@ import 'package:jolutrip_app/features/guide_auth/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/data/datasources/guide_auth_remote_datasource.dart';
 import 'package:jolutrip_app/features/guide_auth/data/repositories/guide_auth_repository_impl.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/repositories/guide_auth_repository.dart';
+
+// 🔥 Импорты для онбординга
+import 'package:jolutrip_app/features/guide_onboarding/bloc/guide_onboarding_cubit.dart';
+import 'package:jolutrip_app/features/guide_onboarding/data/datasources/guide_onboarding_remote_datasource.dart';
+import 'package:jolutrip_app/features/guide_onboarding/data/repositories/guide_onboarding_repository_impl.dart';
+import 'package:jolutrip_app/features/guide_onboarding/domain/repositories/guide_onboarding_repository.dart';
+
 import 'package:jolutrip_app/features/location-detail/bloc/location_detail_cubit.dart';
 import 'package:jolutrip_app/features/location-detail/data/datasources/location_detail_remote_datasource.dart';
 import 'package:jolutrip_app/features/location-detail/data/repositories/location_detail_repository_impl.dart';
@@ -52,8 +59,24 @@ void setupDependencies() {
   sl.registerLazySingleton<GuideAuthRepository>(
     () => GuideAuthRepositoryImpl(remote: sl()),
   );
-  // 🔥 Только LazySingleton — shared между AuthScreen и OnboardingScreen
   sl.registerLazySingleton(() => GuideAuthCubit(sl<GuideAuthRepository>()));
+
+  // ═══════════════════════════════════════════════════
+  // 🔥 GUIDE ONBOARDING — РЕГИСТРИРУЕМ!
+  // ═══════════════════════════════════════════════════
+  sl.registerLazySingleton<GuideOnboardingRemoteDataSource>(
+    () => GuideOnboardingRemoteDataSourceImpl(dio: sl<Dio>()),
+  );
+
+  sl.registerLazySingleton<GuideOnboardingRepository>(
+    () => GuideOnboardingRepositoryImpl(sl<GuideOnboardingRemoteDataSource>()),
+  );
+
+  // 🔥 ВАЖНО: Используем Factory, а не LazySingleton
+  // Потому что каждый экран онбординга должен иметь свой экземпляр
+  sl.registerFactory<GuideOnboardingCubit>(
+    () => GuideOnboardingCubit(sl<GuideOnboardingRepository>()),
+  );
 
   // ─── Location Detail ───────────────────────────
   sl.registerLazySingleton<LocationDetailRemoteDataSource>(

@@ -120,5 +120,9 @@ class AppTextStyles {
     letterSpacing: 0.5,
   );
 
-  static get caption => null;
+
+  static TextStyle? copyWith({
+    required Color color,
+    required FontWeight fontWeight,
+  }) {}
 }

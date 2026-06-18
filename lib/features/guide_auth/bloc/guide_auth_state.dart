@@ -1,3 +1,5 @@
+// lib/features/guide_auth/presentation/bloc/guide_auth_state.dart
+
 import 'package:equatable/equatable.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
 
@@ -43,11 +45,6 @@ class GuideRegisterOtpSent extends GuideAuthState {
   List<Object?> get props => [fullName, gender, phone];
 }
 
-// ═══════════════════════════════════════════════════
-// NEW: Auth completed, but need to check status
-// ═══════════════════════════════════════════════════
-
-/// Гид успешно авторизовался, но нужно проверить статус
 class GuideAuthAuthenticated extends GuideAuthState {
   final String token;
   final GuideEntity guide;
@@ -56,7 +53,6 @@ class GuideAuthAuthenticated extends GuideAuthState {
   List<Object?> get props => [token, guide];
 }
 
-/// Гиду нужно пройти onboarding (статус unverified)
 class GuideNeedsOnboarding extends GuideAuthState {
   final String token;
   final GuideEntity guide;
@@ -65,7 +61,6 @@ class GuideNeedsOnboarding extends GuideAuthState {
   List<Object?> get props => [token, guide];
 }
 
-/// Гид отправил документы, ждёт модерации (статус pending)
 class GuideOnboardingPending extends GuideAuthState {
   final GuideEntity guide;
   const GuideOnboardingPending({required this.guide});
@@ -73,7 +68,6 @@ class GuideOnboardingPending extends GuideAuthState {
   List<Object?> get props => [guide];
 }
 
-/// Гид полностью верифицирован (статус verified)
 class GuideAuthSuccess extends GuideAuthState {
   final String token;
   final GuideEntity guide;

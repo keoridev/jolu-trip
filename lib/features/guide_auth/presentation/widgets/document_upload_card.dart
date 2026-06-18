@@ -131,7 +131,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard>
                               ),
                               child: Text(
                                 '!',
-                                style: AppTextStyles.caption.copyWith(
+                                style: AppTextStyles.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -167,7 +167,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard>
                                   ),
                                   child: Text(
                                     widget.sideHint!,
-                                    style: AppTextStyles.caption.copyWith(
+                                    style: AppTextStyles.copyWith(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -229,8 +229,9 @@ class _DocumentUploadCardState extends State<DocumentUploadCard>
               Expanded(
                 child: Text(
                   'Как правильно сфотографировать:',
-                  style: AppTextStyles.caption.copyWith(
+                  style: AppTextStyles.copyWith(
                     color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
@@ -242,7 +243,7 @@ class _DocumentUploadCardState extends State<DocumentUploadCard>
                 ),
                 child: Text(
                   'Пример',
-                  style: AppTextStyles.caption.copyWith(
+                  style: AppTextStyles.copyWith(
                     color: AppColors.primary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -286,7 +287,8 @@ class _DocumentUploadCardState extends State<DocumentUploadCard>
         Expanded(
           child: Text(
             text,
-            style: AppTextStyles.caption.copyWith(
+            style: AppTextStyles.copyWith(
+              fontWeight: FontWeight.w600,
               color: isImportant ? AppColors.warning : AppColors.textSecondary,
             ),
           ),
@@ -392,8 +394,9 @@ class _DocumentUploadCardState extends State<DocumentUploadCard>
         Expanded(
           child: Text(
             description,
-            style: AppTextStyles.caption.copyWith(
+            style: AppTextStyles.copyWith(
               color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),

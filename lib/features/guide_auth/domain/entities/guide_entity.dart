@@ -1,5 +1,3 @@
-// lib/features/guide_auth/domain/entities/guide_entity.dart
-
 enum GuideGender { male, female }
 
 enum GuideStatus { unverified, pending, verified, rejected }
@@ -13,15 +11,6 @@ class GuideEntity {
   final GuideStatus status;
   final DateTime createdAt;
 
-  // Onboarding fields (nullable until filled)
-  final int? experienceYears;
-  final String? carModel;
-  final String? carNumber;
-  final List<String>? languages;
-  final String? passportScanUrl;
-  final String? licensePhotoUrl;
-  final List<String>? carPhotosUrls;
-
   const GuideEntity({
     required this.id,
     required this.fullName,
@@ -30,13 +19,6 @@ class GuideEntity {
     this.avatarUrl,
     required this.status,
     required this.createdAt,
-    this.experienceYears,
-    this.carModel,
-    this.carNumber,
-    this.languages,
-    this.passportScanUrl,
-    this.licensePhotoUrl,
-    this.carPhotosUrls,
   });
 
   bool get needsOnboarding =>

@@ -7,8 +7,12 @@ import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/presentation/auth_screen.dart';
 import 'package:jolutrip_app/features/auth/presentation/role_selection_screen.dart';
 import 'package:jolutrip_app/features/guide_auth/bloc/guide_auth_cubit.dart';
+import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
 import 'package:jolutrip_app/features/guide_auth/presentation/guide_auth_screen.dart';
-import 'package:jolutrip_app/features/guide_auth/presentation/guide_onboarding_screen.dart';
+import 'package:jolutrip_app/features/guide_onboarding/bloc/guide_onboarding_cubit.dart';
+import 'package:jolutrip_app/features/guide_onboarding/domain/entities/onboarding_entity.dart';
+import 'package:jolutrip_app/features/guide_onboarding/screens/guide_onboarding_screen.dart';
+import 'package:jolutrip_app/features/guide_profile/screens/guide_profile_screen.dart';
 import 'package:jolutrip_app/features/navigation/presentation/widgets/jolu_bottom_bar.dart';
 import 'package:jolutrip_app/features/profile/bloc/profile_cubit.dart';
 import 'package:jolutrip_app/features/profile/presentation/profile_screen.dart';
@@ -58,25 +62,71 @@ class AppRouterWithShell {
         builder: (context, state) {
           debugPrint('🛠️ Building GuideAuthScreen with BlocProvider.value');
           return BlocProvider<GuideAuthCubit>.value(
-            value: sl<GuideAuthCubit>(), // 🔥 Берём из DI
+            value: sl<GuideAuthCubit>(),
             child: const GuideAuthScreen(),
           );
         },
       ),
 
       // ═══════════════════════════════════════════════════
-      // ONBOARDING ГИДА (shared Cubit)
+      // ONBOARDING ГИДА
       // ═══════════════════════════════════════════════════
       GoRoute(
         path: '/guide/onboarding',
         name: 'guideOnboarding',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          debugPrint('🛠️ Building GuideOnboardingScreen with shared Cubit');
-          return BlocProvider<GuideAuthCubit>.value(
-            value: sl<GuideAuthCubit>(), // 🔥 Тот же экземпляр!
-            child: const GuideOnboardingScreen(),
+          debugPrint('🛠️ Building GuideOnboardingScreen');
+
+          final extra = state.extra as Map<String, dynamic>?;
+          final guideId = extra?['guideId'] as String? ?? '';
+          final token = extra?['token'] as String? ?? '';
+
+          return BlocProvider<GuideOnboardingCubit>(
+            create: (_) => sl<GuideOnboardingCubit>(),
+            child: GuideOnboardingScreen(guideId: guideId, token: token),
           );
+        },
+      ),
+
+      // ═══════════════════════════════════════════════════
+      // PROFILE ГИДА (ТОЛЬКО ОДИН РАЗ!)
+      // ═══════════════════════════════════════════════════
+      GoRoute(
+        path: '/guide/profile',
+        name: 'guideProfile',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          debugPrint('🛠️ Building GuideProfileScreen');
+
+          final extra = state.extra as Map<String, dynamic>?;
+          
+          final guideId = extra?['guideId'] as String? ?? '';
+          final token = extra?['token'] as String? ?? '';
+          final fullName = extra?['fullName'] as String? ?? 'Гид';
+          final phone = extra?['phone'] as String? ?? '';
+          final onboarding = extra?['onboarding'] as OnboardingEntity?;
+
+          if (onboarding == null) {
+            return const Scaffold(
+              body: Center(
+                child: Text('Ошибка загрузки данных профиля'),
+              ),
+            );
+          }
+
+          // Создаем GuideEntity с pending статусом
+          final guide = GuideEntity(
+            id: guideId,
+            fullName: fullName,
+            phone: phone,
+            gender: GuideGender.male,
+            avatarUrl: null,
+            status: GuideStatus.pending,
+            createdAt: DateTime.now(),
+          );
+
+          return GuideProfileScreen(guide: guide, onboarding: onboarding);
         },
       ),
 

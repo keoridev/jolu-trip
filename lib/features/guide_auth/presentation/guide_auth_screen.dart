@@ -1,13 +1,11 @@
-// lib/features/guide_auth/presentation/guide_auth_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
-
 import 'package:jolutrip_app/features/guide_auth/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/bloc/guide_auth_state.dart';
+
 import 'package:jolutrip_app/features/guide_auth/presentation/widgets/guide_mode_selection.dart';
 import 'package:jolutrip_app/features/guide_auth/presentation/widgets/guide_register_form.dart';
 
@@ -16,25 +14,13 @@ class GuideAuthScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🔥 Проверяем, что Cubit доступен
-    try {
-      context.read<GuideAuthCubit>();
-      debugPrint('✅ GuideAuthCubit найден');
-    } catch (e) {
-      debugPrint('❌ GuideAuthCubit НЕ найден: $e');
-    }
-
     return Scaffold(
       backgroundColor: AppColors.bgDark,
       body: SafeArea(
         child: BlocConsumer<GuideAuthCubit, GuideAuthState>(
-          listener: (context, state) {
-            debugPrint('📊 State changed: ${state.runtimeType}');
-            _handleStateChange(context, state);
-          },
+          listener: (context, state) => _handleStateChange(context, state),
           builder: (context, state) {
             final isLoading = state is GuideAuthLoading;
-
             return AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
               child: _buildContent(context, state, isLoading),
@@ -140,31 +126,6 @@ class GuideAuthScreen extends StatelessWidget {
           ),
         ),
 
-      // 🔥 NEW: Обрабатываем все промежуточные состояния
-      GuideNeedsOnboarding() => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
-
-      GuideOnboardingPending() => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
-
-      GuideAuthAuthenticated() => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
-
-      GuideAuthSuccess() => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
-
       GuideAuthLoading() => const Center(
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation(AppColors.primary),
@@ -173,21 +134,14 @@ class GuideAuthScreen extends StatelessWidget {
 
       GuideAuthError(message: final msg) => _buildErrorView(context, msg),
 
-      _ => _buildInitial(context),
+      _ => const SizedBox.shrink(),
     };
   }
 
   Widget _buildInitial(BuildContext context) {
-    debugPrint('🏗️ Building GuideModeSelection');
     return GuideModeSelection(
-      onLogin: () {
-        debugPrint('🔑 onLogin callback');
-        context.read<GuideAuthCubit>().selectMode(true);
-      },
-      onRegister: () {
-        debugPrint('📝 onRegister callback');
-        context.read<GuideAuthCubit>().selectMode(false);
-      },
+      onLogin: () => context.read<GuideAuthCubit>().selectMode(true),
+      onRegister: () => context.read<GuideAuthCubit>().selectMode(false),
     );
   }
 
@@ -214,25 +168,22 @@ class GuideAuthScreen extends StatelessWidget {
 
   void _handleStateChange(BuildContext context, GuideAuthState state) {
     if (state is GuideNeedsOnboarding) {
-      debugPrint(
-        '📝 Needs onboarding, token: ${state.token.substring(0, 20)}...',
+      context.go(
+        '/guide/onboarding',
+        extra: {'token': state.token, 'guideId': state.guide.id},
       );
-      // Переходим на onboarding с тем же Cubit
-      context.go('/guide/onboarding');
     }
 
-    if (state is GuideOnboardingPending) {
-      debugPrint('⏳ Pending moderation');
-      context.go('/guide/pending');
-    }
+    // ❌ УБИРАЕМ этот переход, так как теперь идем на профиль
+    // if (state is GuideOnboardingPending) {
+    //   context.go('/guide/pending');
+    // }
 
     if (state is GuideAuthSuccess) {
-      debugPrint('✅ Verified, going to dashboard');
       context.go('/guide/dashboard');
     }
 
     if (state is GuideAuthError) {
-      debugPrint('❌ Error: ${state.message}');
       JoluSnackbar.show(
         context: context,
         message: state.message,

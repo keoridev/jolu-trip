@@ -1,9 +1,11 @@
+// lib/features/guide_auth/presentation/bloc/guide_auth_cubit.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/core/storage/secure_storage.dart';
 import 'package:jolutrip_app/features/guide_auth/data/models/guide_model.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
-import 'package:jolutrip_app/features/guide_auth/domain/repositories/repositories.dart';
+import 'package:jolutrip_app/features/guide_auth/domain/repositories/guide_auth_repository.dart';
 import 'guide_auth_state.dart';
 
 class GuideAuthCubit extends Cubit<GuideAuthState> {
@@ -14,16 +16,13 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
 
   GuideAuthCubit(this._repository) : super(GuideAuthInitial());
 
-  // === Геттеры для UI ===
   String? get currentToken => _currentToken;
   GuideEntity? get currentGuide => _currentGuide;
 
-  // === Выбор режима ===
   void selectMode(bool isLogin) =>
       emit(GuideAuthModeSelection(isLogin: isLogin));
   void reset() => emit(GuideAuthInitial());
 
-  // === ВХОД (существующий гид) ===
   Future<void> sendLoginOtp(String phone) async {
     emit(GuideAuthLoading());
     final result = await _repository.sendLoginOtp(phone);
@@ -42,7 +41,6 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     );
   }
 
-  // === РЕГИСТРАЦИЯ (новый гид) ===
   void proceedToRegister(String phone) => emit(GuideRegisterStep1(phone));
 
   Future<void> sendRegisterOtp({
@@ -83,53 +81,6 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     );
   }
 
-  // ═══════════════════════════════════════════════════
-  // ONBOARDING: Submit documents
-  // ═══════════════════════════════════════════════════
-  Future<void> submitOnboarding({
-    required int experienceYears,
-    required String carModel,
-    required String carNumber,
-    required List<String> languages,
-    required List<int> passportScanBytes,
-    required List<int> licensePhotoBytes,
-    required List<List<int>> carPhotosBytes,
-  }) async {
-    if (_currentToken == null || _currentGuide == null) {
-      emit(const GuideAuthError('Сессия истекла. Войдите заново.'));
-      return;
-    }
-
-    emit(GuideAuthLoading());
-    final result = await _repository.submitOnboarding(
-      guideId: _currentGuide!.id,
-      experienceYears: experienceYears,
-      carModel: carModel,
-      carNumber: carNumber,
-      languages: languages,
-      passportScanBytes: passportScanBytes,
-      licensePhotoBytes: licensePhotoBytes,
-      carPhotosBytes: carPhotosBytes,
-    );
-
-    result.fold((failure) => emit(GuideAuthError(failure.message)), (guide) {
-      _currentGuide = guide;
-
-      // 🔥 Если бэкенд вернул новый токен — сохраняем
-      // (в текущей реализации токен в ответе, парсим в datasource)
-      // Для безопасности обновим токен через SecureStorage если нужно
-
-      if (guide.isPending) {
-        emit(GuideOnboardingPending(guide: guide));
-      } else {
-        emit(GuideAuthSuccess(token: _currentToken!, guide: guide));
-      }
-    });
-  }
-
-  // ═══════════════════════════════════════════════════
-  // INTERNAL: Parse auth response and route by status
-  // ═══════════════════════════════════════════════════
   void _handleAuthResponse(Map<String, dynamic> data) {
     try {
       final token = data['token'] as String?;
@@ -138,16 +89,12 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
         return;
       }
 
-      // 🔥 Сохраняем токен в SecureStorage
       final userId = data['id'] as String? ?? '';
-
-      // Парсим гида — может быть минимальный ответ
       final guide = GuideModel.fromJson(data);
 
       _currentToken = token;
       _currentGuide = guide;
 
-      // Сохраняем в SecureStorage для будущих запросов
       SecureStorage.saveAuthData(
         token: token,
         userId: userId,
@@ -157,7 +104,6 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
         debugPrint('⚠️ Failed to save auth data: $e');
       });
 
-      // Route by status
       if (guide.needsOnboarding) {
         emit(GuideNeedsOnboarding(token: token, guide: guide));
       } else if (guide.isPending) {
