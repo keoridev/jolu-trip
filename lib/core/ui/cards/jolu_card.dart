@@ -38,7 +38,12 @@ class JoluCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppDimens.radiusM),
         child: Padding(
-          padding: padding ?? AppDimens.cardContentPadding,
+          padding:
+              padding ??
+              EdgeInsets.symmetric(
+                horizontal: AppDimens.space16,
+                vertical: AppDimens.space16,
+              ),
           child: child,
         ),
       ),

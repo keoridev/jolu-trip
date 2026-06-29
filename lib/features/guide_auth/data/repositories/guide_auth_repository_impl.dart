@@ -1,5 +1,3 @@
-// lib/features/guide_auth/data/repositories/guide_auth_repository_impl.dart
-
 import 'package:dartz/dartz.dart';
 import 'package:jolutrip_app/core/errors/exceptions.dart';
 import 'package:jolutrip_app/core/errors/failures.dart';
@@ -23,6 +21,18 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
   }
 
   @override
+  Future<Either<Failure, void>> resendSms(String phone) async {
+    try {
+      await _remote.resendSms(phone);
+      return const Right(null);
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    }
+  }
+
+  @override
   Future<Either<Failure, void>> sendLoginOtp(String phone) async {
     try {
       await _remote.sendLoginOtp(phone);
@@ -30,7 +40,7 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     }
   }
 
@@ -45,7 +55,7 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     }
   }
 
@@ -65,7 +75,7 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     }
   }
 
@@ -87,7 +97,7 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
     }
   }
 }

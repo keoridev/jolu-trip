@@ -3,21 +3,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
-import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
-import 'package:jolutrip_app/features/auth/presentation/auth_screen.dart';
-import 'package:jolutrip_app/features/auth/presentation/role_selection_screen.dart';
-import 'package:jolutrip_app/features/guide_auth/bloc/guide_auth_cubit.dart';
-import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
-import 'package:jolutrip_app/features/guide_auth/presentation/guide_auth_screen.dart';
-import 'package:jolutrip_app/features/guide_onboarding/bloc/guide_onboarding_cubit.dart';
-import 'package:jolutrip_app/features/guide_onboarding/domain/entities/onboarding_entity.dart';
-import 'package:jolutrip_app/features/guide_onboarding/screens/guide_onboarding_screen.dart';
-import 'package:jolutrip_app/features/guide_profile/screens/guide_profile_screen.dart';
-import 'package:jolutrip_app/features/navigation/presentation/widgets/jolu_bottom_bar.dart';
-import 'package:jolutrip_app/features/profile/bloc/profile_cubit.dart';
-import 'package:jolutrip_app/features/profile/presentation/profile_screen.dart';
-import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
-import 'package:jolutrip_app/features/reels/presentation/reels_screen.dart';
+import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
+import 'package:jolutrip_app/features/auth/view/auth_screen.dart';
+import 'package:jolutrip_app/features/auth/view/role_selection_screen.dart';
+import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
+import 'package:jolutrip_app/features/guide_auth/view/guide_auth_screen.dart';
+import 'package:jolutrip_app/features/guide_onboarding/view/bloc/guide_onboarding_cubit.dart';
+
+import 'package:jolutrip_app/features/guide_onboarding/view/guide_onboarding_screen.dart';
+import 'package:jolutrip_app/features/navigation/view/widgets/jolu_bottom_bar.dart';
+import 'package:jolutrip_app/features/profile/view/bloc/profile_cubit.dart';
+import 'package:jolutrip_app/features/profile/view/profile_router_screen.dart';
+import 'package:jolutrip_app/features/profile/view/profile_screen.dart';
+import 'package:jolutrip_app/features/reels/view/bloc/reels_cubit.dart';
+import 'package:jolutrip_app/features/reels/view/reels_screen.dart';
 
 class AppRouterWithShell {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -76,8 +75,6 @@ class AppRouterWithShell {
         name: 'guideOnboarding',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          debugPrint('🛠️ Building GuideOnboardingScreen');
-
           final extra = state.extra as Map<String, dynamic>?;
           final guideId = extra?['guideId'] as String? ?? '';
           final token = extra?['token'] as String? ?? '';
@@ -92,43 +89,6 @@ class AppRouterWithShell {
       // ═══════════════════════════════════════════════════
       // PROFILE ГИДА (ТОЛЬКО ОДИН РАЗ!)
       // ═══════════════════════════════════════════════════
-      GoRoute(
-        path: '/guide/profile',
-        name: 'guideProfile',
-        parentNavigatorKey: _rootNavigatorKey,
-        builder: (context, state) {
-          debugPrint('🛠️ Building GuideProfileScreen');
-
-          final extra = state.extra as Map<String, dynamic>?;
-          
-          final guideId = extra?['guideId'] as String? ?? '';
-          final token = extra?['token'] as String? ?? '';
-          final fullName = extra?['fullName'] as String? ?? 'Гид';
-          final phone = extra?['phone'] as String? ?? '';
-          final onboarding = extra?['onboarding'] as OnboardingEntity?;
-
-          if (onboarding == null) {
-            return const Scaffold(
-              body: Center(
-                child: Text('Ошибка загрузки данных профиля'),
-              ),
-            );
-          }
-
-          // Создаем GuideEntity с pending статусом
-          final guide = GuideEntity(
-            id: guideId,
-            fullName: fullName,
-            phone: phone,
-            gender: GuideGender.male,
-            avatarUrl: null,
-            status: GuideStatus.pending,
-            createdAt: DateTime.now(),
-          );
-
-          return GuideProfileScreen(guide: guide, onboarding: onboarding);
-        },
-      ),
 
       // ═══════════════════════════════════════════════════
       // ОСНОВНАЯ НАВИГАЦИЯ (Shell)
@@ -199,13 +159,14 @@ class AppRouterWithShell {
               GoRoute(
                 path: '/profile',
                 name: 'profile',
-                builder: (context, state) => const ProfileScreen(),
+                builder: (context, state) =>
+                    const ProfileRouterScreen(), // ← ЗДЕСЬ
               ),
             ],
           ),
         ],
       ),
-    ],
+    ],      
   );
 }
 

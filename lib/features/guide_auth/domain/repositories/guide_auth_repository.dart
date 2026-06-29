@@ -6,6 +6,7 @@ import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.da
 
 abstract class GuideAuthRepository {
   Future<Either<Failure, void>> sendLoginOtp(String phone);
+  Future<Either<Failure, void>> resendSms(String phone);
 
   Future<Either<Failure, Map<String, dynamic>>> verifyLoginOtp(
     String phone,

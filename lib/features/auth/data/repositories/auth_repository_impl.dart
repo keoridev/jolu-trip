@@ -1,3 +1,4 @@
+// features/auth/data/repositories/auth_repository_impl.dart
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
@@ -27,8 +28,8 @@ class AuthRepositoryImpl implements AuthRepository {
     String code,
   ) async {
     try {
-      final response = await _remote.verifyOtp(phone, code);
-      return Right(response.data as Map<String, dynamic>);
+      final data = await _remote.verifyOtp(phone, code); // ← Теперь Map
+      return Right(data);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {

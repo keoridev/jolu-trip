@@ -92,7 +92,7 @@ class _KyrgyzPlateInputState extends State<KyrgyzPlateInput> {
             widget.label!,
             style: AppTextStyles.subtext.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: AppDimens.spaceS),
+          const SizedBox(height: AppDimens.space12),
         ],
 
         // Live preview
@@ -123,7 +123,7 @@ class _KyrgyzPlateInputState extends State<KyrgyzPlateInput> {
                 ),
         ),
 
-        const SizedBox(height: AppDimens.spaceM),
+        const SizedBox(height: AppDimens.space16),
 
         // Поле ввода
         TextFormField(
@@ -163,8 +163,8 @@ class _KyrgyzPlateInputState extends State<KyrgyzPlateInput> {
               borderSide: BorderSide(color: AppColors.primary, width: 2),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppDimens.spaceM,
-              vertical: AppDimens.spaceM,
+              horizontal: AppDimens.space16,
+              vertical: AppDimens.space16,
             ),
           ),
         ),
@@ -172,7 +172,7 @@ class _KyrgyzPlateInputState extends State<KyrgyzPlateInput> {
         // Подсказка
         if (plate == null && _controller.text.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.only(top: AppDimens.spaceS),
+            padding: const EdgeInsets.only(top: AppDimens.space12),
             child: Row(
               children: [
                 const Icon(

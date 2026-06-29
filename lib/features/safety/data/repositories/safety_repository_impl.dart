@@ -1,6 +1,7 @@
 import 'package:geolocator/geolocator.dart';
-import '../models/models.dart';
+
 import '../../domain/repositories/safety_repository.dart';
+import '../models/model.dart';
 
 class SafetyRepositoryImpl implements SafetyRepository {
   @override

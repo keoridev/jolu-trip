@@ -37,7 +37,7 @@ class JoluDialog extends StatelessWidget {
         side: BorderSide(color: AppColors.borderDark),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppDimens.spaceL),
+        padding: const EdgeInsets.all(AppDimens.space24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -54,19 +54,19 @@ class JoluDialog extends StatelessWidget {
                   size: 28,
                 ),
               ),
-            if (icon != null) const SizedBox(height: AppDimens.spaceM),
+            if (icon != null) const SizedBox(height: AppDimens.space16),
             Text(
               title,
               style: AppTextStyles.headlineMedium,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDimens.spaceS),
+            const SizedBox(height: AppDimens.space12),
             Text(
               message,
               style: AppTextStyles.subtext,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppDimens.spaceL),
+            const SizedBox(height: AppDimens.space24),
             Row(
               children: [
                 if (cancelText != null)
@@ -78,7 +78,7 @@ class JoluDialog extends StatelessWidget {
                       onPressed: onCancel ?? () => Navigator.pop(context),
                     ),
                   ),
-                if (cancelText != null) const SizedBox(width: AppDimens.spaceM),
+                if (cancelText != null) const SizedBox(width: AppDimens.space16),
                 Expanded(
                   child: JoluButton(
                     text: confirmText,

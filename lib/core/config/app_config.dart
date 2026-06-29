@@ -24,21 +24,20 @@ class AppConfig {
   // Tours
   static String get tours => '$baseUrl/tours';
 
-  // ═══════════════════════════════════════════════════
-  // GUIDE AUTH — правильные пути по Swagger
-  // ═══════════════════════════════════════════════════
+
   static String get guides => '$baseUrl/guides';
   static String get guideLogin => '$guides/login';
   static String get guideLoginVerify => '$guides/login/verify';
   static String get guideRegister => '$guides/register';
   static String get guideVerify => '$guides/verify';
-  
-  // 🔥 Onboarding = profile/verify (не /onboarding!)
+  static String get guideResendSms => '$guides/resend-sms';
+
   static String get guideProfileVerify => '$guides/profile/verify';
-  
+
   // PATCH профиля и аватар
   static String get guideProfile => '$guides/profile';
   static String get guideAvatar => '$guides/profile/avatar';
+   static String get guideMe => '$guides/me';
 
   static void logEndpoints() {
     if (kDebugMode) {

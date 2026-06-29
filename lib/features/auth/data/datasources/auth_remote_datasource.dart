@@ -1,13 +1,11 @@
 import 'package:dio/dio.dart';
-import '../../../../core/config/app_config.dart';
-import '../../../../core/errors/exceptions.dart';
+import 'package:jolutrip_app/core/config/app_config.dart';
+import 'package:jolutrip_app/core/errors/exceptions.dart';
+
 
 abstract class AuthRemoteDataSource {
   Future<void> sendOtp(String phone);
-  Future<Response> verifyOtp(
-    String phone,
-    String code,
-  ); // ← Response вместо String
+  Future<Map<String, dynamic>> verifyOtp(String phone, String code); // ← Map вместо Response
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -30,14 +28,14 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
-  Future<Response> verifyOtp(String phone, String code) async {
+  Future<Map<String, dynamic>> verifyOtp(String phone, String code) async {
     try {
       final response = await _client.post(
         AppConfig.verifyOtp,
         data: {'phone': phone, 'code': code},
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return response; // ← Возвращаем весь Response
+        return response.data as Map<String, dynamic>; // ← Сразу парсим
       }
       throw ServerException('Ошибка верификации');
     } on DioException catch (e) {

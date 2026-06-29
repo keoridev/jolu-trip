@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
@@ -27,52 +28,106 @@ class PhoneView extends StatefulWidget {
   State<PhoneView> createState() => _PhoneViewState();
 }
 
-class _PhoneViewState extends State<PhoneView> {
-  final _controller = TextEditingController();
-  final _focusNode = FocusNode();
-  bool _isValid = false;
+class _PhoneViewState extends State<PhoneView> with TickerProviderStateMixin {
+  final TextEditingController _controller = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
+
+  late final MaskTextInputFormatter _maskFormatter;
+  late final AnimationController _inputFocusController;
+  late final AnimationController _progressController;
+
+  bool _isFocused = false;
 
   @override
   void initState() {
     super.initState();
-    _controller.text = '+996 ';
-    _controller.selection = TextSelection.fromPosition(
-      const TextPosition(offset: 5),
+
+    _maskFormatter = MaskTextInputFormatter(
+      mask: '+996 (###) ##-##-##',
+      filter: {'#': RegExp(r'[0-9]')},
+      type: MaskAutoCompletionType.lazy,
     );
+
+    _inputFocusController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _progressController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    _controller.text = '+996 ';
+    _controller.selection = TextSelection.collapsed(offset: 5);
+
+    _focusNode.addListener(_onFocusChange);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  void _onFocusChange() {
+    setState(() => _isFocused = _focusNode.hasFocus);
+    if (_focusNode.hasFocus) {
+      _inputFocusController.forward();
+    } else {
+      _inputFocusController.reverse();
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
+    _inputFocusController.dispose();
+    _progressController.dispose();
     super.dispose();
   }
 
   String _getCleanPhone() {
     final digits = _controller.text.replaceAll(RegExp(r'\D'), '');
-    return digits.startsWith('996') ? '+$digits' : '+996$digits';
+    return '+$digits';
+  }
+
+  bool get _hasFullNumber {
+    final digits = _controller.text.replaceAll(RegExp(r'\D'), '');
+    return digits.length == 12;
+  }
+
+  int get _digitCount {
+    return _controller.text.replaceAll(RegExp(r'\D'), '').length;
   }
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      padding: AppDimens.screenPadding,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimens.screenPadding.left,
+        vertical: AppDimens.screenPadding.top,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 80),
+          const SizedBox(height: 40),
           if (widget.onBack != null) ...[
             _buildBackButton(),
-            const SizedBox(height: AppDimens.spaceXL),
+            const SizedBox(height: 32),
           ],
           _buildHeaderText(),
-          const SizedBox(height: AppDimens.spaceXL * 2),
+          const SizedBox(height: 56),
           _buildPhoneInput(),
-          const SizedBox(height: AppDimens.spaceXL * 2),
+          const SizedBox(height: 24),
+          _buildProgressIndicator(),
+          const SizedBox(height: 48),
           _buildSubmitButton(),
-          const SizedBox(height: AppDimens.spaceL),
+          const SizedBox(height: 20),
           _buildHintText(),
-          const SizedBox(height: AppDimens.spaceXL),
+          const SizedBox(height: 32),
         ],
       ),
     );
@@ -82,15 +137,11 @@ class _PhoneViewState extends State<PhoneView> {
     return GestureDetector(
       onTap: widget.onBack,
       child: Container(
-        padding: const EdgeInsets.all(AppDimens.spaceXS),
-        decoration: BoxDecoration(
-          color: AppColors.cardDark,
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(
+        padding: const EdgeInsets.all(8),
+        child: Icon(
           Icons.arrow_back_rounded,
           color: AppColors.textPrimary,
-          size: 20,
+          size: 24,
         ),
       ),
     );
@@ -102,13 +153,22 @@ class _PhoneViewState extends State<PhoneView> {
       children: [
         Text(
           widget.title,
-          style: AppTextStyles.headline.copyWith(height: 1.2, fontSize: 32),
+          style: AppTextStyles.headline.copyWith(
+            height: 1.1,
+            fontSize: 36,
+            fontWeight: FontWeight.w700,
+          ),
         ),
         if (widget.subtitle != null) ...[
-          const SizedBox(height: AppDimens.spaceS),
+          const SizedBox(height: 12),
           Text(
             widget.subtitle!,
-            style: AppTextStyles.subtext.copyWith(fontSize: 15, height: 1.4),
+            style: AppTextStyles.subtext.copyWith(
+              fontSize: 16,
+              height: 1.5,
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w400,
+            ),
           ),
         ],
       ],
@@ -119,69 +179,176 @@ class _PhoneViewState extends State<PhoneView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Номер телефона',
-          style: AppTextStyles.subtext.copyWith(
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.5,
-          ),
-        ),
-        const SizedBox(height: AppDimens.spaceS),
-        TextField(
-          controller: _controller,
-          focusNode: _focusNode,
-          keyboardType: TextInputType.phone,
-          style: AppTextStyles.title.copyWith(
-            fontSize: 24,
-            letterSpacing: 1,
-            color: AppColors.textPrimary,
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(12),
+        // Label с иконкой статуса
+        Row(
+          children: [
+            Text(
+              'Номер телефона',
+              style: AppTextStyles.subtext.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                letterSpacing: 0.3,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const Spacer(),
+            AnimatedOpacity(
+              opacity: _hasFullNumber ? 1 : 0,
+              duration: const Duration(milliseconds: 300),
+              child: _hasFullNumber
+                  ? Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.check_circle_rounded,
+                          color: AppColors.success,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Готово',
+                          style: AppTextStyles.subtext.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    )
+                  : const SizedBox.shrink(),
+            ),
           ],
-          decoration: InputDecoration(
-            hintText: widget.hintText ?? '+996 (XXX) XX-XX-XX',
-            hintStyle: AppTextStyles.title.copyWith(
-              color: AppColors.textSecondary.withOpacity(0.3),
-              fontSize: 24,
-            ),
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.borderDark, width: 1.5),
-            ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.primary, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
-          ),
-          onChanged: (value) {
-            final digits = value.replaceAll(RegExp(r'\D'), '');
-            setState(() => _isValid = digits.length == 12);
-          },
         ),
-        if (!_isValid && _controller.text.length > 5)
-          Padding(
-            padding: const EdgeInsets.only(top: AppDimens.spaceS),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.info_outline,
-                  size: 14,
-                  color: AppColors.warning,
+        const SizedBox(height: 12),
+        // Поле ввода
+        AnimatedBuilder(
+          animation: _inputFocusController,
+          builder: (context, child) {
+            return Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: _isFocused
+                        ? AppColors.primary.withOpacity(0.1)
+                        : Colors.transparent,
+                    blurRadius: 12,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [_maskFormatter],
+                style: AppTextStyles.title.copyWith(
+                  fontSize: 28,
+                  letterSpacing: 0.5,
+                  color: AppColors.textPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    'Введите полный номер: +996 XXX XX-XX-XX',
-                    style: AppTextStyles.subtext.copyWith(
-                      color: AppColors.warning,
-                      fontSize: 12,
+                decoration: InputDecoration(
+                  hintText: '+996 (XXX) XX-XX-XX',
+                  hintStyle: AppTextStyles.title.copyWith(
+                    color: AppColors.textSecondary.withOpacity(0.25),
+                    fontSize: 28,
+                    letterSpacing: 0.5,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  filled: true,
+                  fillColor: AppColors.cardDark.withOpacity(0.4),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _hasFullNumber
+                          ? AppColors.success.withOpacity(0.3)
+                          : AppColors.borderDark.withOpacity(0.3),
+                      width: 1.5,
                     ),
                   ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: _hasFullNumber
+                          ? AppColors.success
+                          : AppColors.primary,
+                      width: 2,
+                    ),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 18,
+                    vertical: 18,
+                  ),
                 ),
-              ],
+                onChanged: (_) => setState(() {}),
+                onEditingComplete: () {
+                  if (_hasFullNumber) {
+                    _submitPhone();
+                  }
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProgressIndicator() {
+    final progress = (_digitCount - 3) / 9;
+    final clampedProgress = progress.clamp(0.0, 1.0);
+
+    if (_digitCount < 4) {
+      return const SizedBox.shrink();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Прогресс бар
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: LinearProgressIndicator(
+            value: clampedProgress,
+            minHeight: 4,
+            backgroundColor: AppColors.borderDark.withOpacity(0.3),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              _hasFullNumber ? AppColors.success : AppColors.primary,
             ),
           ),
+        ),
+        const SizedBox(height: 10),
+        // Текст прогресса
+        Row(
+          children: [
+            Text(
+              _hasFullNumber
+                  ? 'Номер подтвержден'
+                  : 'Введите оставшиеся символы',
+              style: AppTextStyles.subtext.copyWith(
+                fontSize: 12,
+                color: _hasFullNumber
+                    ? AppColors.success
+                    : AppColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '$_digitCount/12',
+              style: AppTextStyles.subtext.copyWith(
+                fontSize: 12,
+                color: AppColors.textSecondary.withOpacity(0.6),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
@@ -193,17 +360,25 @@ class _PhoneViewState extends State<PhoneView> {
       size: JoluButtonSize.large,
       isFullWidth: true,
       isLoading: widget.isLoading,
-      onPressed: _isValid && !widget.isLoading
-          ? () => widget.onSubmit(_getCleanPhone())
-          : null,
+      onPressed: _hasFullNumber && !widget.isLoading ? _submitPhone : null,
     );
+  }
+
+  void _submitPhone() {
+    if (_hasFullNumber) {
+      widget.onSubmit(_getCleanPhone());
+    }
   }
 
   Widget _buildHintText() {
     return Center(
       child: Text(
         'Мы отправим SMS с кодом подтверждения',
-        style: AppTextStyles.subtext.copyWith(fontSize: 12),
+        style: AppTextStyles.subtext.copyWith(
+          fontSize: 13,
+          color: AppColors.textSecondary.withOpacity(0.7),
+          fontWeight: FontWeight.w400,
+        ),
         textAlign: TextAlign.center,
       ),
     );

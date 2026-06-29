@@ -23,7 +23,27 @@ class GuideEntity {
 
   bool get needsOnboarding =>
       status == GuideStatus.unverified || status == GuideStatus.rejected;
-
   bool get isPending => status == GuideStatus.pending;
   bool get isVerified => status == GuideStatus.verified;
+
+  // 🔥 ДОБАВЛЯЕМ copyWith
+  GuideEntity copyWith({
+    String? id,
+    String? fullName,
+    String? phone,
+    GuideGender? gender,
+    String? avatarUrl,
+    GuideStatus? status,
+    DateTime? createdAt,
+  }) {
+    return GuideEntity(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      phone: phone ?? this.phone,
+      gender: gender ?? this.gender,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

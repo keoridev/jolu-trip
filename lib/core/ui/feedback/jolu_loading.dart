@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
@@ -25,7 +24,7 @@ class JoluLoading extends StatelessWidget {
             ),
           ),
           if (message != null) ...[
-            const SizedBox(height: AppDimens.spaceM),
+            const SizedBox(height: AppDimens.space16),
             Text(
               message!,
               style: AppTextStyles.subtext,
@@ -39,7 +38,7 @@ class JoluLoading extends StatelessWidget {
     if (isOverlay) {
       return Stack(
         children: [
-          Container(color: Colors.black.withOpacity(0.7)),
+          Container(color: Colors.black.withValues(alpha: 0.7)),
           child,
         ],
       );

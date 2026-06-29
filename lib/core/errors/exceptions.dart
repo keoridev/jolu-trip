@@ -1,9 +1,11 @@
 class ServerException implements Exception {
   final String message;
-  ServerException(this.message);
+  final int? statusCode;
+
+  ServerException(this.message, {this.statusCode});
 
   @override
-  String toString() => 'ServerException: $message';
+  String toString() => 'ServerException: $message (status: $statusCode)';
 }
 
 class NetworkException implements Exception {

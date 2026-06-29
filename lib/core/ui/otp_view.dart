@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
@@ -9,16 +8,22 @@ class OtpView extends StatefulWidget {
   final String phone;
   final VoidCallback? onBack;
   final ValueChanged<String> onVerify;
-  final VoidCallback? onResend;
+  final VoidCallback onResend;
+  final int? invalidAttempt;
   final bool isLoading;
+  final int secondsLeft;
+  final bool canResend;
 
   const OtpView({
     super.key,
     required this.phone,
     this.onBack,
     required this.onVerify,
-    this.onResend,
+    required this.onResend,
+    this.invalidAttempt,
     this.isLoading = false,
+    this.secondsLeft = 59,
+    this.canResend = false,
   });
 
   @override
@@ -26,44 +31,58 @@ class OtpView extends StatefulWidget {
 }
 
 class _OtpViewState extends State<OtpView> {
-  final List<TextEditingController> _controllers = List.generate(
+ final List<TextEditingController> _controllers = List.generate(
     4,
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
-  Timer? _timer;
-  int _secondsLeft = 59;
-  bool _canResend = false;
+  
+  // Отслеживаем, был ли сброс таймера
+  bool _wasResent = false;
 
   @override
   void initState() {
     super.initState();
-    _startTimer();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _focusNodes[0].requestFocus(),
     );
   }
 
   @override
-  void dispose() {
-    _timer?.cancel();
-    for (var c in _controllers) c.dispose();
-    for (var f in _focusNodes) f.dispose();
-    super.dispose();
+  void didUpdateWidget(OtpView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    // 1. Очищаем поля при неверном коде
+    if (widget.invalidAttempt != null &&
+        widget.invalidAttempt != oldWidget.invalidAttempt) {
+      _clearInputs();
+    }
+    
+    // 2. Очищаем поля при повторной отправке (таймер сброшен)
+    // Если canResend изменился с true на false (начался новый таймер)
+    if (widget.canResend != oldWidget.canResend && 
+        widget.canResend == false &&
+        oldWidget.canResend == true) {
+      _clearInputs();
+      _wasResent = true;
+    }
+    
+    // 3. Если секунды обнулились и canResend стал true - таймер закончился
+    if (widget.secondsLeft == 0 && 
+        widget.canResend == true &&
+        oldWidget.secondsLeft != 0) {
+      // Таймер закончился, ничего не делаем
+    }
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    setState(() {
-      _secondsLeft = 59;
-      _canResend = false;
-    });
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_secondsLeft == 0) {
-        timer.cancel();
-        setState(() => _canResend = true);
-      } else {
-        setState(() => _secondsLeft--);
+  void _clearInputs() {
+    for (var c in _controllers) {
+      c.clear();
+    }
+    // Фокус на первое поле
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNodes[0].requestFocus();
       }
     });
   }
@@ -80,16 +99,9 @@ class _OtpViewState extends State<OtpView> {
   bool get _isCodeComplete => _code.length == 4;
 
   void _verifyCode() {
-    if (_isCodeComplete) {
+    if (_isCodeComplete && !widget.isLoading) {
       widget.onVerify(_code);
     }
-  }
-
-  void _resendCode() {
-    widget.onResend?.call();
-    _startTimer();
-    for (var c in _controllers) c.clear();
-    _focusNodes[0].requestFocus();
   }
 
   @override
@@ -102,16 +114,16 @@ class _OtpViewState extends State<OtpView> {
           const SizedBox(height: 80),
           if (widget.onBack != null) ...[
             _buildBackButton(),
-            const SizedBox(height: AppDimens.spaceXL),
+            const SizedBox(height: AppDimens.space32),
           ],
           _buildHeaderText(),
-          const SizedBox(height: AppDimens.spaceXL * 1.5),
+          const SizedBox(height: AppDimens.space32 * 1.5),
           _buildOtpInputs(),
-          const SizedBox(height: AppDimens.spaceXL),
+          const SizedBox(height: AppDimens.space32),
           _buildTimerSection(),
-          const SizedBox(height: AppDimens.spaceXL * 2),
+          const SizedBox(height: AppDimens.space32 * 2),
           _buildSubmitButton(),
-          const SizedBox(height: AppDimens.spaceL),
+          const SizedBox(height: AppDimens.space24),
         ],
       ),
     );
@@ -121,7 +133,7 @@ class _OtpViewState extends State<OtpView> {
     return GestureDetector(
       onTap: widget.onBack,
       child: Container(
-        padding: const EdgeInsets.all(AppDimens.spaceXS),
+        padding: const EdgeInsets.all(AppDimens.space8),
         decoration: BoxDecoration(
           color: AppColors.cardDark,
           shape: BoxShape.circle,
@@ -143,7 +155,7 @@ class _OtpViewState extends State<OtpView> {
           'Подтверждение',
           style: AppTextStyles.headline.copyWith(height: 1.2),
         ),
-        const SizedBox(height: AppDimens.spaceS),
+        const SizedBox(height: AppDimens.space12),
         RichText(
           text: TextSpan(
             text: 'Код отправлен на номер ',
@@ -159,6 +171,32 @@ class _OtpViewState extends State<OtpView> {
             ],
           ),
         ),
+        if (widget.invalidAttempt != null) ...[
+          const SizedBox(height: AppDimens.space12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.red.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(AppDimens.radiusM),
+              border: Border.all(color: Colors.red.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Неверный код. Попробуйте снова. Осталось попыток: ${4 - (widget.invalidAttempt ?? 0)}',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -172,9 +210,9 @@ class _OtpViewState extends State<OtpView> {
           child: _OtpInputField(
             controller: _controllers[index],
             focusNode: _focusNodes[index],
-            index: index,
             isLast: index == 3,
             onCompleted: _verifyCode,
+            hasError: widget.invalidAttempt != null,
           ),
         );
       }),
@@ -183,13 +221,13 @@ class _OtpViewState extends State<OtpView> {
 
   Widget _buildTimerSection() {
     return Center(
-      child: _canResend
+      child: widget.canResend
           ? TextButton(
-              onPressed: _resendCode,
+              onPressed: widget.isLoading ? null : widget.onResend,
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: AppDimens.spaceM,
-                  vertical: AppDimens.spaceS,
+                  horizontal: AppDimens.space16,
+                  vertical: AppDimens.space12,
                 ),
               ),
               child: Text(
@@ -217,7 +255,7 @@ class _OtpViewState extends State<OtpView> {
                     borderRadius: BorderRadius.circular(AppDimens.radiusRound),
                   ),
                   child: Text(
-                    '00:${_secondsLeft.toString().padLeft(2, '0')}',
+                    '00:${widget.secondsLeft.toString().padLeft(2, '0')}',
                     style: AppTextStyles.title.copyWith(
                       fontSize: 16,
                       color: AppColors.primary,
@@ -244,16 +282,16 @@ class _OtpViewState extends State<OtpView> {
 class _OtpInputField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode focusNode;
-  final int index;
   final bool isLast;
   final VoidCallback onCompleted;
+  final bool hasError;
 
   const _OtpInputField({
     required this.controller,
     required this.focusNode,
-    required this.index,
     required this.isLast,
     required this.onCompleted,
+    this.hasError = false,
   });
 
   @override
@@ -272,13 +310,27 @@ class _OtpInputField extends StatelessWidget {
           counterText: '',
           filled: true,
           fillColor: AppColors.cardDark,
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppDimens.radiusM),
+            borderSide: const BorderSide(color: Colors.red, width: 2),
+          ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimens.radiusM),
             borderSide: BorderSide(color: AppColors.borderDark),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppDimens.radiusM),
-            borderSide: BorderSide(color: AppColors.primary, width: 2),
+            borderSide: BorderSide(
+              color: hasError ? Colors.red : AppColors.primary,
+              width: 2,
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppDimens.radiusM),
+            borderSide: BorderSide(
+              color: hasError ? Colors.red : AppColors.borderDark,
+              width: hasError ? 2 : 1,
+            ),
           ),
         ),
         onChanged: (value) {

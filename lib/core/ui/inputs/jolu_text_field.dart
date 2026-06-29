@@ -42,7 +42,7 @@ class JoluTextField extends StatelessWidget {
             label!,
             style: AppTextStyles.subtext.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: AppDimens.spaceS),
+          const SizedBox(height: AppDimens.space12),
         ],
         TextFormField(
           controller: controller,
@@ -71,8 +71,8 @@ class JoluTextField extends StatelessWidget {
             focusedBorder: _buildFocusedBorder(),
             errorBorder: _buildErrorBorder(),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppDimens.spaceM,
-              vertical: AppDimens.spaceM,
+              horizontal: AppDimens.space16,
+              vertical: AppDimens.space16,
             ),
           ),
         ),

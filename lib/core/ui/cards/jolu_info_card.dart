@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
@@ -27,11 +26,14 @@ class JoluInfoCard extends StatelessWidget {
     final accentColor = color ?? AppColors.primary;
 
     return Container(
-      padding: AppDimens.cardContentPadding,
+      padding: EdgeInsets.symmetric(
+        horizontal: AppDimens.space16,
+        vertical: AppDimens.space16,
+      ),
       decoration: BoxDecoration(
-        color: accentColor.withOpacity(0.1),
+        color: accentColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppDimens.radiusM),
-        border: Border.all(color: accentColor.withOpacity(0.2)),
+        border: Border.all(color: accentColor.withValues(alpha: 0.2)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,12 +41,12 @@ class JoluInfoCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: accentColor.withOpacity(0.15),
+              color: accentColor.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(AppDimens.radiusS),
             ),
             child: Icon(icon, color: accentColor, size: 20),
           ),
-          const SizedBox(width: AppDimens.spaceM),
+          const SizedBox(width: AppDimens.space16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +55,7 @@ class JoluInfoCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(message, style: AppTextStyles.bodySmall),
                 if (onAction != null && actionLabel != null) ...[
-                  const SizedBox(height: AppDimens.spaceS),
+                  const SizedBox(height: AppDimens.space12),
                   GestureDetector(
                     onTap: onAction,
                     child: Text(

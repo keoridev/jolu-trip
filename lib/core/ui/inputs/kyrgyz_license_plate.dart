@@ -63,7 +63,6 @@ class KyrgyzLicensePlate extends StatelessWidget {
       ),
       child: Row(
         children: [
-
           Container(
             width: width * 0.22,
             height: double.infinity,

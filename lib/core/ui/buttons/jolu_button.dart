@@ -70,11 +70,11 @@ class JoluButton extends StatelessWidget {
       children: [
         if (leadingIcon != null) ...[
           Icon(leadingIcon, size: _getIconSize()),
-          const SizedBox(width: AppDimens.spaceS),
+          const SizedBox(width: AppDimens.space12),
         ],
         Text(text, style: _getTextStyle()),
         if (trailingIcon != null) ...[
-          const SizedBox(width: AppDimens.spaceS),
+          const SizedBox(width: AppDimens.space12),
           Icon(trailingIcon, size: _getIconSize()),
         ],
       ],
@@ -96,7 +96,7 @@ class JoluButton extends StatelessWidget {
         side: _getBorderSide(),
       ),
       shadowColor: variant == JoluButtonVariant.primary
-          ? AppColors.primary.withOpacity(0.3)
+          ? AppColors.primary.withValues(alpha: 0.3)
           : Colors.transparent,
     );
   }

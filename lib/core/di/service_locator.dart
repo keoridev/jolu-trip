@@ -1,40 +1,42 @@
 import 'package:dio/dio.dart';
 import 'package:get_it/get_it.dart';
 import 'package:jolutrip_app/core/di/dio_client.dart';
-import 'package:jolutrip_app/features/auth/bloc/auth_cubit.dart';
+import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:jolutrip_app/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:jolutrip_app/features/auth/domain/repositories/auth_repository.dart';
-import 'package:jolutrip_app/features/guide_auth/bloc/guide_auth_cubit.dart';
+import 'package:jolutrip_app/features/guide-profile/data/data.dart';
+import 'package:jolutrip_app/features/guide-profile/data/datasources/datasources.dart';
+import 'package:jolutrip_app/features/guide-profile/domain/repositories/guide_profile_repository.dart';
+import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
+import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/data/datasources/guide_auth_remote_datasource.dart';
 import 'package:jolutrip_app/features/guide_auth/data/repositories/guide_auth_repository_impl.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/repositories/guide_auth_repository.dart';
 
 // 🔥 Импорты для онбординга
-import 'package:jolutrip_app/features/guide_onboarding/bloc/guide_onboarding_cubit.dart';
+import 'package:jolutrip_app/features/guide_onboarding/view/bloc/guide_onboarding_cubit.dart';
 import 'package:jolutrip_app/features/guide_onboarding/data/datasources/guide_onboarding_remote_datasource.dart';
 import 'package:jolutrip_app/features/guide_onboarding/data/repositories/guide_onboarding_repository_impl.dart';
 import 'package:jolutrip_app/features/guide_onboarding/domain/repositories/guide_onboarding_repository.dart';
 
-import 'package:jolutrip_app/features/location-detail/bloc/location_detail_cubit.dart';
+import 'package:jolutrip_app/features/location-detail/view/bloc/location_detail_cubit.dart';
 import 'package:jolutrip_app/features/location-detail/data/datasources/location_detail_remote_datasource.dart';
 import 'package:jolutrip_app/features/location-detail/data/repositories/location_detail_repository_impl.dart';
 import 'package:jolutrip_app/features/location-detail/domain/repositories/location_detail_repository.dart';
-import 'package:jolutrip_app/features/reels/cubit/reels_cubit.dart';
+import 'package:jolutrip_app/features/reels/view/bloc/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/data/data.dart';
 import 'package:jolutrip_app/features/reels/data/datasources/reels_remote_datasource.dart';
 import 'package:jolutrip_app/features/reels/domain/repositories/reels_repository.dart';
-import 'package:jolutrip_app/features/safety/bloc/safety_cubit.dart';
+import 'package:jolutrip_app/features/safety/view/bloc/safety_cubit.dart';
 import 'package:jolutrip_app/features/safety/data/repositories/safety_repository_impl.dart';
 import 'package:jolutrip_app/features/safety/domain/repositories/safety_repository.dart';
 
 final sl = GetIt.instance;
 
 void setupDependencies() {
-  // ─── Core ──────────────────────────────────────
   sl.registerLazySingleton<Dio>(() => DioClient().dio);
 
-  // ─── Reels ─────────────────────────────────────
   sl.registerLazySingleton<ReelsRemoteDataSource>(
     () => ReelsRemoteDataSourceImpl(client: sl()),
   );
@@ -43,7 +45,6 @@ void setupDependencies() {
   );
   sl.registerFactory(() => ReelsCubit(sl<ReelsRepository>()));
 
-  // ─── Auth (Tourist) ──────────────────────────
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(client: sl()),
   );
@@ -72,12 +73,18 @@ void setupDependencies() {
     () => GuideOnboardingRepositoryImpl(sl<GuideOnboardingRemoteDataSource>()),
   );
 
-  // 🔥 ВАЖНО: Используем Factory, а не LazySingleton
-  // Потому что каждый экран онбординга должен иметь свой экземпляр
   sl.registerFactory<GuideOnboardingCubit>(
     () => GuideOnboardingCubit(sl<GuideOnboardingRepository>()),
   );
 
+    // ─── Guide Profile ─────────────────────────────
+  sl.registerLazySingleton<GuideProfileRemoteDataSource>(
+    () => GuideProfileRemoteDataSourceImpl(sl<Dio>()),
+  );
+  sl.registerLazySingleton<GuideProfileRepository>(
+    () => GuideProfileRepositoryImpl(sl<GuideProfileRemoteDataSource>()),
+  );
+  sl.registerFactory(() => GuideProfileCubit(sl<GuideProfileRepository>()));
   // ─── Location Detail ───────────────────────────
   sl.registerLazySingleton<LocationDetailRemoteDataSource>(
     () => LocationDetailRemoteDataSourceImpl(client: sl()),
