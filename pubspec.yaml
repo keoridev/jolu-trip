@@ -29,9 +29,11 @@ dependencies:
   path_provider: ^2.1.5
   share_plus: ^10.1.4
   image_picker: ^1.2.2
-  flutter_native_splash: ^2.4.8
+  flutter_native_splash: 2.4.7
   permission_handler: ^12.0.3
   mask_text_input_formatter: ^2.9.0
+  intl: ^0.20.3
+  
 
 dev_dependencies:
   flutter_test:

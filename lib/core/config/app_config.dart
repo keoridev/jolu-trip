@@ -24,7 +24,6 @@ class AppConfig {
   // Tours
   static String get tours => '$baseUrl/tours';
 
-
   static String get guides => '$baseUrl/guides';
   static String get guideLogin => '$guides/login';
   static String get guideLoginVerify => '$guides/login/verify';
@@ -34,10 +33,16 @@ class AppConfig {
 
   static String get guideProfileVerify => '$guides/profile/verify';
 
+  static String get guideTours => '$baseUrl/guides/tours';
+  static String get guideToursPromoVideo => '$baseUrl/guides/tours/promo-video';
+  static String locationTours(String locationId) =>
+      '$baseUrl/locations/$locationId/tours';
+  static String tourDetail(String tourId) => '$baseUrl/tours/$tourId';
+
   // PATCH профиля и аватар
   static String get guideProfile => '$guides/profile';
   static String get guideAvatar => '$guides/profile/avatar';
-   static String get guideMe => '$guides/me';
+  static String get guideMe => '$guides/me';
 
   static void logEndpoints() {
     if (kDebugMode) {

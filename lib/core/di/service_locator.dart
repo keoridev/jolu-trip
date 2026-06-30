@@ -19,6 +19,12 @@ import 'package:jolutrip_app/features/guide_onboarding/view/bloc/guide_onboardin
 import 'package:jolutrip_app/features/guide_onboarding/data/datasources/guide_onboarding_remote_datasource.dart';
 import 'package:jolutrip_app/features/guide_onboarding/data/repositories/guide_onboarding_repository_impl.dart';
 import 'package:jolutrip_app/features/guide_onboarding/domain/repositories/guide_onboarding_repository.dart';
+import 'package:jolutrip_app/features/guide_tours/data/datasource/guide_tours_remote_datasource.dart';
+import 'package:jolutrip_app/features/guide_tours/data/repositories/guide_tours_repository_impl.dart';
+import 'package:jolutrip_app/features/guide_tours/domain/repositories/guide_tours_repository.dart';
+import 'package:jolutrip_app/features/guide_tours/domain/usecases/create_tour_usecase.dart';
+import 'package:jolutrip_app/features/guide_tours/domain/usecases/upload_promo_video_usecase.dart';
+import 'package:jolutrip_app/features/guide_tours/view/bloc/guide_tours_cubit.dart';
 
 import 'package:jolutrip_app/features/location-detail/view/bloc/location_detail_cubit.dart';
 import 'package:jolutrip_app/features/location-detail/data/datasources/location_detail_remote_datasource.dart';
@@ -77,7 +83,7 @@ void setupDependencies() {
     () => GuideOnboardingCubit(sl<GuideOnboardingRepository>()),
   );
 
-    // ─── Guide Profile ─────────────────────────────
+  // ─── Guide Profile ─────────────────────────────
   sl.registerLazySingleton<GuideProfileRemoteDataSource>(
     () => GuideProfileRemoteDataSourceImpl(sl<Dio>()),
   );
@@ -93,6 +99,19 @@ void setupDependencies() {
     () => LocationDetailRepositoryImpl(remote: sl()),
   );
   sl.registerFactory(() => LocationDetailCubit(sl<LocationDetailRepository>()));
+
+  sl.registerLazySingleton<GuideToursRemoteDataSource>(
+    () => GuideToursRemoteDataSourceImpl(dio: sl<Dio>()),
+  );
+  sl.registerLazySingleton<GuideToursRepository>(
+    () => GuideToursRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => CreateTourUseCase(repository: sl()));
+  sl.registerLazySingleton(() => UploadPromoVideoUseCase(repository: sl()));
+  sl.registerFactory(
+    () =>
+        GuideToursCubit(createTourUseCase: sl(), uploadPromoVideoUseCase: sl()),
+  );
 
   // ─── Safety ────────────────────────────────────
   sl.registerLazySingleton<SafetyRepository>(() => SafetyRepositoryImpl());

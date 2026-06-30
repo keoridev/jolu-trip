@@ -41,7 +41,7 @@ class BottomBarWidget extends StatelessWidget {
           Expanded(
             flex: currentPage > 0 ? 1 : 2,
             child: JoluButton(
-              text: currentPage == 2 ? 'Отправить на проверку' : 'Далее',
+              text: currentPage == 2 ? 'Отправить' : 'Далее',
               variant: JoluButtonVariant.primary,
               isLoading: isLoading,
               onPressed: canProceed ? onNext : null,

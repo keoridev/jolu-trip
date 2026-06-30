@@ -11,10 +11,13 @@ import 'package:jolutrip_app/features/guide_auth/view/guide_auth_screen.dart';
 import 'package:jolutrip_app/features/guide_onboarding/view/bloc/guide_onboarding_cubit.dart';
 
 import 'package:jolutrip_app/features/guide_onboarding/view/guide_onboarding_screen.dart';
+import 'package:jolutrip_app/features/guide_tours/view/bloc/guide_tours_cubit.dart';
+import 'package:jolutrip_app/features/guide_tours/view/create_tour_screen.dart';
+import 'package:jolutrip_app/features/location-detail/view/bloc/location_detail_cubit.dart';
+import 'package:jolutrip_app/features/location-detail/view/location_detail_screen.dart';
 import 'package:jolutrip_app/features/navigation/view/widgets/jolu_bottom_bar.dart';
 import 'package:jolutrip_app/features/profile/view/bloc/profile_cubit.dart';
 import 'package:jolutrip_app/features/profile/view/profile_router_screen.dart';
-import 'package:jolutrip_app/features/profile/view/profile_screen.dart';
 import 'package:jolutrip_app/features/reels/view/bloc/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/view/reels_screen.dart';
 
@@ -86,9 +89,32 @@ class AppRouterWithShell {
         },
       ),
 
+      GoRoute(
+        path: '/guide/tours/create',
+        name: 'createTour',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => BlocProvider<GuideToursCubit>(
+          create: (_) => sl<GuideToursCubit>()..reset(),
+          child: const CreateTourScreen(),
+        ),
+      ),
+
       // ═══════════════════════════════════════════════════
       // PROFILE ГИДА (ТОЛЬКО ОДИН РАЗ!)
       // ═══════════════════════════════════════════════════
+      GoRoute(
+        path: '/location/:id',
+        name: 'locationDetail',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) {
+          final locationId = state.pathParameters['id']!;
+          return BlocProvider<LocationDetailCubit>(
+            create: (_) =>
+                sl<LocationDetailCubit>()..loadLocationDetail(locationId),
+            child: LocationDetailScreen(locationId: locationId),
+          );
+        },
+      ),
 
       // ═══════════════════════════════════════════════════
       // ОСНОВНАЯ НАВИГАЦИЯ (Shell)
@@ -127,6 +153,7 @@ class AppRouterWithShell {
               ),
             ],
           ),
+
           // Locations
           StatefulShellBranch(
             routes: [
@@ -166,7 +193,7 @@ class AppRouterWithShell {
           ),
         ],
       ),
-    ],      
+    ],
   );
 }
 
