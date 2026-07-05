@@ -6,9 +6,11 @@ import 'package:jolutrip_app/core/ui/jolu_ui.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_state.dart';
+import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_auth_tabs.dart';
 
 import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_mode_selection.dart';
 import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_register_form.dart';
+import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_welcome.dart';
 
 class GuideAuthScreen extends StatelessWidget {
   const GuideAuthScreen({super.key});
@@ -37,55 +39,24 @@ class GuideAuthScreen extends StatelessWidget {
     GuideAuthState state,
     bool isLoading,
   ) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      switchInCurve: Curves.easeInOut,
-      switchOutCurve: Curves.easeInOut,
-      transitionBuilder: (child, animation) {
-        return FadeTransition(
-          opacity: animation,
-          child: SlideTransition(
-            position: Tween<Offset>(
-              begin: const Offset(0.05, 0),
-              end: Offset.zero,
-            ).animate(animation),
-            child: child,
-          ),
-        );
-      },
-      child: _buildStateWidget(context, state, isLoading),
-    );
-  }
-
-  Widget _buildStateWidget(
-    BuildContext context,
-    GuideAuthState state,
-    bool isLoading,
-  ) {
     return switch (state) {
-      GuideAuthInitial() => _buildInitial(context),
+      GuideAuthInitial() => GuideWelcome(
+        onLogin: () => context.read<GuideAuthCubit>().selectMode(true),
+        onRegister: () => context.read<GuideAuthCubit>().selectMode(false),
+      ),
 
-      GuideAuthModeSelection(isLogin: final isLogin) =>
-        isLogin
-            ? PhoneView(
-                key: const ValueKey('guide_phone_login'),
-                title: 'Вход гида',
-                subtitle: 'Войдите в свой аккаунт гида',
-                isLoading: isLoading,
-                onBack: () => context.read<GuideAuthCubit>().reset(),
-                onSubmit: (phone) =>
-                    context.read<GuideAuthCubit>().sendLoginOtp(phone),
-              )
-            : PhoneView(
-                key: const ValueKey('guide_phone_register'),
-                title: 'Регистрация гида',
-                subtitle: 'Создайте аккаунт гида',
-                isLoading: isLoading,
-                onBack: () => context.read<GuideAuthCubit>().reset(),
-                onSubmit: (phone) =>
-                    context.read<GuideAuthCubit>().proceedToRegister(phone),
-              ),
-
+      // Режим с вкладками (вход или регистрация)
+      GuideAuthModeSelection(isLogin: final isLogin) => GuideAuthTabs(
+        isLogin: isLogin,
+        isLoading: isLoading,
+        onTabChanged: (isLogin) =>
+            context.read<GuideAuthCubit>().selectMode(isLogin),
+        onLoginSubmit: (phone) =>
+            context.read<GuideAuthCubit>().sendLoginOtp(phone),
+        onRegisterSubmit: (phone) =>
+            context.read<GuideAuthCubit>().proceedToRegister(phone),
+        onBack: () => context.read<GuideAuthCubit>().reset(),
+      ),
       GuideLoginOtpSent(phone: final phone) => OtpView(
         key: const ValueKey('guide_otp_login'),
         phone: phone,

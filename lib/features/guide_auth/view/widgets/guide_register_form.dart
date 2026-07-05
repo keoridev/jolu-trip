@@ -1,3 +1,5 @@
+// lib/features/guide_auth/presentation/widgets/guide_register_form.dart
+
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
@@ -7,13 +9,13 @@ import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.da
 
 class GuideRegisterForm extends StatefulWidget {
   final String phone;
-  final VoidCallback? onBack;
+  final VoidCallback onBack;
   final Function(String fullName, GuideGender gender) onSubmit;
 
   const GuideRegisterForm({
     super.key,
     required this.phone,
-    this.onBack,
+    required this.onBack,
     required this.onSubmit,
   });
 
@@ -25,6 +27,9 @@ class _GuideRegisterFormState extends State<GuideRegisterForm> {
   final _nameController = TextEditingController();
   GuideGender? _gender;
 
+  bool get _isValid =>
+      _nameController.text.trim().length >= 3 && _gender != null;
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -33,104 +38,141 @@ class _GuideRegisterFormState extends State<GuideRegisterForm> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: AppDimens.screenPadding,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 80),
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          onPressed: widget.onBack,
+          icon: const Icon(Icons.arrow_back_rounded),
+        ),
+        title: Text(
+          'Регистрация',
+          style: AppTextStyles.subtext.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppDimens.space24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppDimens.space16),
 
-          // Кнопка назад
-          if (widget.onBack != null) ...[
-            GestureDetector(
-              onTap: widget.onBack,
-              child: Container(
-                padding: const EdgeInsets.all(AppDimens.space8),
+              Text(
+                'Расскажите о себе',
+                style: AppTextStyles.headline.copyWith(fontSize: 28),
+              ),
+              const SizedBox(height: AppDimens.space8),
+              Text(
+                'Заполните данные для создания аккаунта гида',
+                style: AppTextStyles.subtext,
+              ),
+              const SizedBox(height: AppDimens.space32),
+
+              // ФИО
+              JoluTextField(
+                controller: _nameController,
+                label: 'Ваше полное имя',
+                hint: 'Иванов Иван Иванович',
+                prefixIcon: Icons.person_outline,
+                onChanged: (_) => setState(() {}),
+              ),
+              const SizedBox(height: AppDimens.space32),
+
+              // Пол
+              Text(
+                'Ваш пол',
+                style: AppTextStyles.subtitle.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppDimens.space16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _GenderCard(
+                      icon: Icons.male,
+                      label: 'Мужской',
+                      isSelected: _gender == GuideGender.male,
+                      onTap: () => setState(() => _gender = GuideGender.male),
+                    ),
+                  ),
+                  const SizedBox(width: AppDimens.space16),
+                  Expanded(
+                    child: _GenderCard(
+                      icon: Icons.female,
+                      label: 'Женский',
+                      isSelected: _gender == GuideGender.female,
+                      onTap: () => setState(() => _gender = GuideGender.female),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppDimens.space32),
+
+              // Номер телефона (нередактируемый)
+              Container(
+                padding: const EdgeInsets.all(AppDimens.space16),
                 decoration: BoxDecoration(
                   color: AppColors.cardDark,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusM),
+                  border: Border.all(color: AppColors.borderDark),
                 ),
-                child: const Icon(
-                  Icons.arrow_back_rounded,
-                  color: AppColors.textPrimary,
-                  size: 20,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppDimens.space32),
-          ],
-
-          Text('Регистрация гида', style: AppTextStyles.headline),
-          const SizedBox(height: AppDimens.space12),
-          Text(
-            'Заполните данные для создания аккаунта',
-            style: AppTextStyles.bodySmall,
-          ),
-          const SizedBox(height: AppDimens.space32 * 2),
-
-          // ФИО
-          JoluTextField(
-            controller: _nameController,
-            label: 'ФИО полностью',
-            prefixIcon: Icons.person_outline,
-          ),
-          const SizedBox(height: AppDimens.space32),
-
-          // Пол
-          Text('Пол', style: AppTextStyles.title),
-          const SizedBox(height: AppDimens.space16),
-          Row(
-            children: [
-              Expanded(
-                child: _GenderCard(
-                  icon: Icons.male,
-                  label: 'Мужской',
-                  isSelected: _gender == GuideGender.male,
-                  onTap: () => setState(() => _gender = GuideGender.male),
+                child: Row(
+                  children: [
+                    Icon(Icons.phone, color: AppColors.textMuted, size: 20),
+                    const SizedBox(width: AppDimens.space16),
+                    Text(
+                      widget.phone,
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                    const Spacer(),
+                    const Icon(
+                      Icons.lock_outline,
+                      color: AppColors.textMuted,
+                      size: 16,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: AppDimens.space16),
-              Expanded(
-                child: _GenderCard(
-                  icon: Icons.female,
-                  label: 'Женский',
-                  isSelected: _gender == GuideGender.female,
-                  onTap: () => setState(() => _gender = GuideGender.female),
-                ),
+
+              const Spacer(),
+
+              // Кнопка
+              JoluButton(
+                text: 'Получить код подтверждения',
+                variant: JoluButtonVariant.primary,
+                size: JoluButtonSize.large,
+                isFullWidth: true,
+                onPressed: _isValid
+                    ? () =>
+                          widget.onSubmit(_nameController.text.trim(), _gender!)
+                    : null,
               ),
+              const SizedBox(height: AppDimens.space16),
+
+              // Подсказка
+              if (!_isValid)
+                Center(
+                  child: Text(
+                    'Заполните имя и выберите пол',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textTertiary,
+                    ),
+                  ),
+                ),
+              const SizedBox(height: AppDimens.space24),
             ],
           ),
-          const SizedBox(height: AppDimens.space32 * 2),
-
-          // Номер телефона
-          Container(
-            padding: const EdgeInsets.all(AppDimens.space16),
-            decoration: BoxDecoration(
-              color: AppColors.cardDark,
-              borderRadius: BorderRadius.circular(AppDimens.radiusM),
-              border: Border.all(color: AppColors.borderDark),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.phone, color: AppColors.textMuted, size: 20),
-                const SizedBox(width: AppDimens.space16),
-                Text(widget.phone, style: AppTextStyles.body),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppDimens.space32),
-
-          JoluButton(
-            text: 'Получить код',
-            variant: JoluButtonVariant.primary,
-            size: JoluButtonSize.large,
-            isFullWidth: true,
-            onPressed:
-                _nameController.text.trim().length >= 5 && _gender != null
-                ? () => widget.onSubmit(_nameController.text.trim(), _gender!)
-                : null,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -153,11 +195,12 @@ class _GenderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: AppDimens.space16),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.primary.withValues(alpha: 0.15)
+              ? AppColors.primary.withOpacity(0.12)
               : AppColors.cardDark,
           borderRadius: BorderRadius.circular(AppDimens.radiusM),
           border: Border.all(
@@ -170,13 +213,13 @@ class _GenderCard extends StatelessWidget {
             Icon(
               icon,
               color: isSelected ? AppColors.primary : AppColors.textMuted,
-              size: 32,
+              size: 28,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppDimens.space8),
             Text(
               label,
               style: AppTextStyles.bodyMedium.copyWith(
-                color: isSelected ? AppColors.primary : AppColors.textPrimary,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
               ),
             ),

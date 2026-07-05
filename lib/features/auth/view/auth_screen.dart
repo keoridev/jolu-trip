@@ -6,6 +6,7 @@ import 'package:jolutrip_app/core/ui/jolu_ui.dart';
 
 import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/view/bloc/auth_state.dart';
+import 'package:jolutrip_app/features/auth/view/widgets/phone_view.dart';
 
 class AuthScreen extends StatelessWidget {
   const AuthScreen({super.key});
