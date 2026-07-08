@@ -1,7 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:jolutrip_app/core/storage/secure_storage.dart';
 import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_state.dart';
 import 'package:jolutrip_app/features/guide-profile/domain/entities/guide_profile_entity.dart';
 import 'package:jolutrip_app/features/guide-profile/domain/repositories/guide_profile_repository.dart';
@@ -15,26 +14,16 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     emit(GuideProfileLoading());
     debugPrint('🔍 GuideProfileCubit.loadProfile()');
 
-    try {
-      final token = await SecureStorage.getToken();
-      if (token == null) {
-        emit(const GuideProfileError('Не авторизован'));
-        return;
-      }
-
-      final result = await _repository.getProfile(token);
-      result.fold(
-        (failure) => emit(GuideProfileError(failure.message)),
-        (profile) => emit(GuideProfileLoaded(profile: profile)),
-      );
-    } catch (e) {
-      debugPrint('❌ Error: $e');
-      emit(GuideProfileError('Ошибка: $e'));
-    }
+    final result = await _repository.getMe();
+    result.fold(
+      (failure) => emit(GuideProfileError(failure.message)),
+      (profile) => emit(GuideProfileLoaded(profile: profile)),
+    );
   }
 
   Future<void> updateProfile({
     String? fullName,
+    String? gender,
     String? carModel,
     String? carNumber,
     int? experienceYears,
@@ -45,21 +34,20 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
 
     emit(GuideProfileLoading());
 
-    final token = await SecureStorage.getToken();
-    if (token == null) {
-      emit(const GuideProfileError('Токен не найден'));
+    final data = <String, dynamic>{};
+    if (fullName != null) data['full_name'] = fullName;
+    if (gender != null) data['gender'] = gender;
+    if (carModel != null) data['car_model'] = carModel;
+    if (carNumber != null) data['car_number'] = carNumber;
+    if (experienceYears != null) data['experience_years'] = experienceYears;
+    if (languages != null) data['languages'] = languages;
+
+    if (data.isEmpty) {
+      emit(GuideProfileLoaded(profile: current.profile));
       return;
     }
 
-    final result = await _repository.updateProfile(
-      token: token,
-      fullName: fullName,
-      carModel: carModel,
-      carNumber: carNumber,
-      experienceYears: experienceYears,
-      languages: languages,
-    );
-
+    final result = await _repository.updateProfile(data);
     result.fold(
       (failure) => emit(GuideProfileError(failure.message)),
       (profile) => emit(GuideProfileLoaded(profile: profile)),
@@ -72,29 +60,16 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
 
     emit(GuideProfileLoading());
 
-    final token = await SecureStorage.getToken();
-    if (token == null) {
-      emit(const GuideProfileError('Токен не найден'));
-      return;
-    }
-
-    final result = await _repository.updateAvatar(
-      token: token,
-      avatarBytes: bytes.toList(),
-    );
-
-    result.fold(
-      (failure) => emit(GuideProfileError(failure.message)),
-      (avatarUrl) {
-        final updatedGuide = current.profile.guide.copyWith(avatarUrl: avatarUrl);
-        final updatedProfile = current.profile.copyWith(guide: updatedGuide);
-        emit(GuideProfileLoaded(profile: updatedProfile));
-      },
-    );
+    final result = await _repository.uploadAvatar(bytes.toList());
+    result.fold((failure) => emit(GuideProfileError(failure.message)), (
+      avatarUrl,
+    ) {
+      final updatedProfile = current.profile.copyWith(avatarUrl: avatarUrl);
+      emit(GuideProfileLoaded(profile: updatedProfile));
+    });
   }
 
   void logout() {
-    SecureStorage.clearAll();
     emit(GuideProfileInitial());
   }
 }

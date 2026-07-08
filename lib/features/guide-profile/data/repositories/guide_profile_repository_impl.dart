@@ -11,55 +11,40 @@ class GuideProfileRepositoryImpl implements GuideProfileRepository {
   GuideProfileRepositoryImpl(this._remote);
 
   @override
-  Future<Either<Failure, GuideProfileEntity>> getProfile(String token) async {
+  Future<Either<Failure, GuideProfileEntity>> getMe() async {
     try {
-      final profile = await _remote.getProfile(token);
-      return Right(profile);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      final model = await _remote.getMe();
+      return Right(model.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     }
   }
 
   @override
-  Future<Either<Failure, GuideProfileEntity>> updateProfile({
-    required String token,
-    String? fullName,
-    String? carModel,
-    String? carNumber,
-    int? experienceYears,
-    List<String>? languages,
-  }) async {
+  Future<Either<Failure, GuideProfileEntity>> updateProfile(
+    Map<String, dynamic> data,
+  ) async {
     try {
-      final data = <String, dynamic>{};
-      if (fullName != null) data['full_name'] = fullName;
-      if (carModel != null) data['car_model'] = carModel;
-      if (carNumber != null) data['car_number'] = carNumber;
-      if (experienceYears != null) data['experience_years'] = experienceYears;
-      if (languages != null) data['languages'] = languages;
-
-      final profile = await _remote.updateProfile(token: token, data: data);
-      return Right(profile);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
+      final model = await _remote.updateProfile(data);
+      return Right(model.toEntity());
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     }
   }
 
   @override
-  Future<Either<Failure, String>> updateAvatar({
-    required String token,
-    required List<int> avatarBytes,
-  }) async {
+  Future<Either<Failure, String>> uploadAvatar(List<int> bytes) async {
     try {
-      final url = await _remote.updateAvatar(token: token, avatarBytes: avatarBytes);
+      final url = await _remote.uploadAvatar(bytes);
       return Right(url);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
     }
   }
 }

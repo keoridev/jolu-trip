@@ -9,10 +9,9 @@ import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 /// Универсальное поле для ввода номера телефона
 /// 
 /// Особенности:
-/// - Автоматическое форматирование (+996 (XXX) XX-XX-XX)
-/// - Валидация длины (12 цифр)
-/// - Кастомизация через параметры
-/// - Поддержка автофокуса
+/// - +996 всегда статичен (пользователь не может его удалить)
+/// - Плавное удаление цифр без зависаний
+/// - Автоматическое форматирование
 class PhoneInputField extends StatefulWidget {
   final TextEditingController? controller;
   final FocusNode? focusNode;
@@ -28,7 +27,7 @@ class PhoneInputField extends StatefulWidget {
     super.key,
     this.controller,
     this.focusNode,
-    this.hintText = '+996 700 000 000',
+    this.hintText = '700 000 000',
     this.labelText,
     this.autoFocus = false,
     this.showValidationIcon = true,
@@ -45,6 +44,10 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   bool _isValid = false;
+  
+  // Статичный префикс
+  static const String _prefix = '+996 ';
+  static const int _maxDigits = 9; // 9 цифр после +996
 
   @override
   void initState() {
@@ -52,17 +55,33 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     _controller = widget.controller ?? TextEditingController();
     _focusNode = widget.focusNode ?? FocusNode();
     
-    _controller.addListener(_validateInput);
+    // Устанавливаем начальное значение с префиксом
+    if (_controller.text.isEmpty) {
+      _controller.text = _prefix;
+      _controller.selection = TextSelection.collapsed(offset: _prefix.length);
+    }
+    
+    _controller.addListener(_onTextChanged);
     
     if (widget.autoFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _focusNode.requestFocus();
+        if (mounted) {
+          _focusNode.requestFocus();
+          _controller.selection = TextSelection.collapsed(
+            offset: _controller.text.length,
+          );
+        }
       });
     }
   }
 
-  void _validateInput() {
-    final isValid = _getCleanPhone().length == 12;
+  void _onTextChanged() {
+    // Защита от удаления префикса
+    _protectPrefix();
+    
+    // Валидация
+    final digits = _getDigitsOnly();
+    final isValid = digits.length == _maxDigits;
     if (isValid != _isValid) {
       setState(() => _isValid = isValid);
       widget.onValidityChanged?.call(isValid);
@@ -70,11 +89,43 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     widget.onChanged?.call(_controller.text);
   }
 
-  String _getCleanPhone() {
-    return _controller.text.replaceAll(RegExp(r'\D'), '');
+  void _protectPrefix() {
+    final text = _controller.text;
+    
+    // Если текст стал короче префикса - восстанавливаем
+    if (text.length < _prefix.length) {
+      _controller.text = _prefix;
+      _controller.selection = TextSelection.collapsed(offset: _prefix.length);
+      return;
+    }
+    
+    // Если префикс поврежден - восстанавливаем
+    if (!text.startsWith(_prefix)) {
+      // Сохраняем только цифры, которые ввел пользователь
+      final digits = text.replaceAll(RegExp(r'\D'), '');
+      final userDigits = digits.length > 3 ? digits.substring(3) : '';
+      _controller.text = _prefix + userDigits;
+      _controller.selection = TextSelection.collapsed(
+        offset: _controller.text.length,
+      );
+      return;
+    }
   }
 
-  String get rawPhone => _getCleanPhone();
+  String _getDigitsOnly() {
+    final text = _controller.text;
+    // Убираем префикс и все не-цифры
+    return text.replaceAll(_prefix, '').replaceAll(RegExp(r'\D'), '');
+  }
+
+  String get rawPhone {
+    final digits = _getDigitsOnly();
+    if (digits.length == _maxDigits) {
+      return '+996$digits';
+    }
+    return '';
+  }
+  
   bool get isValid => _isValid;
 
   @override
@@ -103,13 +154,13 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
           focusNode: _focusNode,
           keyboardType: TextInputType.phone,
           inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(10),
-            _PhoneNumberFormatter(),
+            // Только цифры, но с учетом что префикс уже есть
+            _PhoneNumberInputFormatter(_prefix, _maxDigits),
           ],
           style: AppTextStyles.headline.copyWith(
             fontSize: 24,
             fontWeight: FontWeight.w500,
+            letterSpacing: 0.5,
           ),
           decoration: InputDecoration(
             hintText: widget.hintText,
@@ -117,7 +168,6 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
               fontSize: 24,
               color: AppColors.textTertiary,
             ),
-            labelText: widget.labelText,
             prefixIcon: Padding(
               padding: const EdgeInsets.only(right: AppDimens.space8),
               child: Icon(
@@ -166,30 +216,99 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   }
 }
 
-/// Форматтер для номера телефона: +996 (XXX) XX-XX-XX
-class _PhoneNumberFormatter extends TextInputFormatter {
+/// Форматтер для номера телефона с защитой префикса
+class _PhoneNumberInputFormatter extends TextInputFormatter {
+  final String prefix;
+  final int maxDigits;
+  
+  _PhoneNumberInputFormatter(this.prefix, this.maxDigits);
+
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final text = newValue.text.replaceAll(RegExp(r'\D'), '');
-    if (text.isEmpty) {
-      return newValue.copyWith(text: '');
+    // Если текст пустой или короче префикса - возвращаем префикс
+    if (newValue.text.length < prefix.length) {
+      return TextEditingValue(
+        text: prefix,
+        selection: TextSelection.collapsed(offset: prefix.length),
+      );
     }
 
-    final buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      if (i == 0) buffer.write('(');
-      buffer.write(text[i]);
-      if (i == 2) buffer.write(') ');
-      if (i == 5) buffer.write(' ');
-      if (i == 7) buffer.write('-');
+    // Получаем только цифры после префикса
+    String digits = newValue.text
+        .replaceAll(prefix, '')
+        .replaceAll(RegExp(r'\D'), '');
+    
+    // Ограничиваем количество цифр
+    if (digits.length > maxDigits) {
+      digits = digits.substring(0, maxDigits);
     }
 
-    return newValue.copyWith(
-      text: buffer.toString(),
-      selection: TextSelection.collapsed(offset: buffer.length),
+    // Форматируем: 700000000 -> 700 000 000
+    final formatted = _formatDigits(digits);
+    
+    final result = prefix + formatted;
+    
+    // Вычисляем позицию курсора
+    int cursorPos = result.length;
+    if (newValue.selection.baseOffset > 0) {
+      // Сохраняем позицию курсора относительно ввода
+      final oldDigits = oldValue.text.replaceAll(prefix, '').replaceAll(RegExp(r'\D'), '');
+      final newDigits = digits;
+      
+      if (newDigits.length > oldDigits.length) {
+        // Добавление символа - курсор в конец
+        cursorPos = result.length;
+      } else {
+        // Удаление символа - курсор в конец
+        cursorPos = result.length;
+      }
+    }
+
+    return TextEditingValue(
+      text: result,
+      selection: TextSelection.collapsed(offset: cursorPos),
     );
+  }
+
+  String _formatDigits(String digits) {
+    if (digits.isEmpty) return '';
+    
+    final buffer = StringBuffer();
+    for (int i = 0; i < digits.length; i++) {
+      if (i == 3 && i < digits.length) buffer.write(' ');
+      if (i == 6 && i < digits.length) buffer.write(' ');
+      buffer.write(digits[i]);
+    }
+    return buffer.toString();
+  }
+}
+
+// lib/core/ui/widgets/phone_input_field.dart (добавить в конец файла)
+
+/// Контроллер для PhoneInputField (упрощает доступ к данным)
+class PhoneInputFieldController {
+  final TextEditingController controller = TextEditingController();
+  final FocusNode focusNode = FocusNode();
+  
+  String get rawPhone {
+    final text = controller.text;
+    final prefix = '+996 ';
+    if (text.startsWith(prefix)) {
+      final digits = text.replaceAll(prefix, '').replaceAll(RegExp(r'\D'), '');
+      if (digits.length == 9) {
+        return '+996$digits';
+      }
+    }
+    return '';
+  }
+  
+  bool get isValid => rawPhone.isNotEmpty && rawPhone.length == 12;
+  
+  void dispose() {
+    controller.dispose();
+    focusNode.dispose();
   }
 }

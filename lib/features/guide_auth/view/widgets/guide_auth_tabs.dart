@@ -1,11 +1,10 @@
-// lib/features/guide_auth/presentation/widgets/guide_auth_tabs.dart
 
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
+import 'package:jolutrip_app/core/ui/buttons/jolu_back_button.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
-import 'package:jolutrip_app/features/auth/view/widgets/phone_view.dart';
 
 class GuideAuthTabs extends StatefulWidget {
   final bool isLogin;
@@ -51,7 +50,6 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
     if (!_tabController.indexIsChanging) {
       final isLogin = _tabController.index == 0;
       widget.onTabChanged(isLogin);
-      // Сбрасываем валидацию при смене вкладки
       setState(() => _isValid = false);
     }
   }
@@ -65,150 +63,171 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppDimens.space24),
-        child: Column(
-          children: [
-            // Навигация
-            const SizedBox(height: AppDimens.space8),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: widget.onBack,
-                  icon: const Icon(
-                    Icons.arrow_back_rounded,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  widget.isLogin ? 'Вход гида' : 'Регистрация гида',
-                  style: AppTextStyles.subtext.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const Spacer(),
-                const SizedBox(width: 48),
-              ],
-            ),
-            const SizedBox(height: AppDimens.space24),
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: AppBackButton(
+          onPressed: widget.onBack,
+          style: BackButtonStyle.iconOnly,
+        ),
+        title: Text(
+          widget.isLogin ? 'Вход гида' : 'Регистрация гида',
+          style: AppTextStyles.subtext.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppDimens.space24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: AppDimens.space16),
 
-            // Вкладки
-            Container(
-              decoration: BoxDecoration(
-                color: AppColors.cardDark,
-                borderRadius: BorderRadius.circular(AppDimens.radiusL),
+              // Вкладки
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.cardDark,
+                  borderRadius: BorderRadius.circular(AppDimens.radiusL),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  indicator: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(AppDimens.radiusM),
+                  ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  labelColor: Colors.black,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  labelStyle: AppTextStyles.button.copyWith(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                  unselectedLabelStyle: AppTextStyles.button.copyWith(
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                  ),
+                  tabs: const [
+                    Tab(text: 'Войти'),
+                    Tab(text: 'Зарегистрироваться'),
+                  ],
+                ),
               ),
-              child: TabBar(
-                controller: _tabController,
-                indicator: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(AppDimens.radiusM),
-                ),
-                indicatorSize: TabBarIndicatorSize.tab,
-                dividerColor: Colors.transparent,
-                labelColor: Colors.black,
-                unselectedLabelColor: AppColors.textSecondary,
-                labelStyle: AppTextStyles.button.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                ),
-                unselectedLabelStyle: AppTextStyles.button.copyWith(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                ),
-                tabs: const [
-                  Tab(text: 'Войти'),
-                  Tab(text: 'Зарегистрироваться'),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppDimens.space32),
+              const SizedBox(height: AppDimens.space32),
 
-            // 🔥 Используем единый компонент
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.isLogin
-                        ? 'Введите номер телефона'
-                        : 'Начните с номера',
-                    style: AppTextStyles.headlineMedium.copyWith(fontSize: 24),
-                  ),
-                  const SizedBox(height: AppDimens.space8),
-                  Text(
-                    widget.isLogin
-                        ? 'Мы отправим код для входа'
-                        : 'Мы отправим код для создания аккаунта',
-                    style: AppTextStyles.subtext,
-                  ),
-                  const SizedBox(height: AppDimens.space32),
-
-                  PhoneInputField(
-                    controller: _phoneController.controller,
-                    focusNode: _phoneController.focusNode,
-                    autoFocus: true,
-                    onValidityChanged: (isValid) {
-                      setState(() => _isValid = isValid);
-                    },
-                    onSubmitted: () {
-                      if (_isValid && !widget.isLoading) {
-                        _submitPhone();
-                      }
-                    },
-                  ),
-
-                  const Spacer(),
-
-                  AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: _isValid ? 1.0 : 0.3,
-                    child: JoluButton(
-                      text: widget.isLogin ? 'Продолжить' : 'Создать аккаунт',
-                      variant: JoluButtonVariant.primary,
-                      size: JoluButtonSize.large,
-                      isFullWidth: true,
-                      isLoading: widget.isLoading,
-                      onPressed: _isValid && !widget.isLoading
-                          ? _submitPhone
-                          : null,
-                    ),
-                  ),
-                  const SizedBox(height: AppDimens.space24),
-
-                  // Переключатель режима
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        widget.isLogin
-                            ? 'Нет аккаунта? '
-                            : 'Уже есть аккаунт? ',
-                        style: AppTextStyles.bodySmall,
+              // Контент
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.isLogin
+                          ? 'Введите номер телефона'
+                          : 'Начните с номера',
+                      style: AppTextStyles.headlineMedium.copyWith(
+                        fontSize: 24,
                       ),
-                      GestureDetector(
-                        onTap: () {
-                          final newIndex = widget.isLogin ? 1 : 0;
-                          _tabController.animateTo(newIndex);
-                        },
-                        child: Text(
-                          widget.isLogin ? 'Зарегистрироваться' : 'Войти',
+                    ),
+                    const SizedBox(height: AppDimens.space8),
+                    Text(
+                      widget.isLogin
+                          ? 'Мы отправим код для входа'
+                          : 'Мы отправим код для создания аккаунта',
+                      style: AppTextStyles.subtext,
+                    ),
+                    const SizedBox(height: AppDimens.space32),
+
+                    // 🔥 Используем PhoneInputField
+                    PhoneInputField(
+                      controller: _phoneController.controller,
+                      focusNode: _phoneController.focusNode,
+                      autoFocus: true,
+                      hintText: '700 000 000',
+                      onValidityChanged: (isValid) {
+                        setState(() => _isValid = isValid);
+                      },
+                      onSubmitted: () {
+                        if (_isValid && !widget.isLoading) {
+                          _submitPhone();
+                        }
+                      },
+                    ),
+
+                    const SizedBox(height: AppDimens.space8),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: AppColors.textTertiary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Введите 9 цифр после +996',
                           style: AppTextStyles.bodySmall.copyWith(
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
+                            color: AppColors.textTertiary,
+                            fontSize: 12,
                           ),
                         ),
+                      ],
+                    ),
+
+                    const Spacer(),
+
+                    // Кнопка
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 200),
+                      opacity: _isValid ? 1.0 : 0.3,
+                      child: JoluButton(
+                        text: widget.isLogin ? 'Продолжить' : 'Создать аккаунт',
+                        variant: JoluButtonVariant.primary,
+                        size: JoluButtonSize.large,
+                        isFullWidth: true,
+                        isLoading: widget.isLoading,
+                        onPressed: _isValid && !widget.isLoading
+                            ? _submitPhone
+                            : null,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimens.space16),
-                ],
+                    ),
+                    const SizedBox(height: AppDimens.space24),
+
+                    // Переключатель режима
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          widget.isLogin
+                              ? 'Нет аккаунта? '
+                              : 'Уже есть аккаунт? ',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            final newIndex = widget.isLogin ? 1 : 0;
+                            _tabController.animateTo(newIndex);
+                          },
+                          child: Text(
+                            widget.isLogin ? 'Зарегистрироваться' : 'Войти',
+                            style: AppTextStyles.bodySmall.copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppDimens.space16),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

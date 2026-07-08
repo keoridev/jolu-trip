@@ -1,119 +1,172 @@
+
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
+import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
+import 'package:jolutrip_app/core/ui/buttons/jolu_back_button.dart';
+import 'package:jolutrip_app/core/ui/jolu_ui.dart';
 
-class PhoneInputField extends StatefulWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueChanged<String> onPhoneChanged;
+class PhoneView extends StatefulWidget {
+  final String title;
+  final String? subtitle;
+  final String? buttonText;
+  final VoidCallback? onBack;
+  final ValueChanged<String> onSubmit;
+  final bool isLoading;
+  final bool showBackButton;
+  final bool showHint;
 
-  const PhoneInputField({
+  const PhoneView({
     super.key,
-    required this.controller,
-    required this.focusNode,
-    required this.onPhoneChanged,
+    required this.title,
+    this.subtitle,
+    this.buttonText = 'Получить код',
+    this.onBack,
+    required this.onSubmit,
+    this.isLoading = false,
+    this.showBackButton = true,
+    this.showHint = true,
   });
 
   @override
-  State<PhoneInputField> createState() => _PhoneInputFieldState();
+  State<PhoneView> createState() => _PhoneViewState();
 }
 
-class _PhoneInputFieldState extends State<PhoneInputField> {
-  String _formatDigits(String digits) {
-    if (digits.isEmpty) return '+996 ';
-
-    final buffer = StringBuffer('+996 ');
-
-    // (XXX)
-    if (digits.isNotEmpty) buffer.write('(');
-    if (digits.isNotEmpty)
-      buffer.write(digits.substring(0, digits.length.clamp(1, 3)));
-    if (digits.length >= 3) buffer.write(') ');
-
-    // XX
-    if (digits.length > 3)
-      buffer.write(digits.substring(3, digits.length.clamp(3, 5)));
-
-    // -XX
-    if (digits.length > 5) {
-      buffer.write('-');
-      buffer.write(digits.substring(5, digits.length.clamp(5, 7)));
-    }
-
-    // -XX
-    if (digits.length > 7) {
-      buffer.write('-');
-      buffer.write(digits.substring(7, digits.length.clamp(7, 9)));
-    }
-
-    return buffer.toString();
-  }
-
-  String _extractDigits(String text) {
-    final allDigits = text.replaceAll(RegExp(r'\D'), '');
-    if (allDigits.startsWith('996')) {
-      return allDigits.substring(3);
-    }
-    return allDigits;
-  }
+class _PhoneViewState extends State<PhoneView> {
+  final PhoneInputFieldController _phoneController =
+      PhoneInputFieldController();
+  bool _isValid = false;
 
   @override
-  void initState() {
-    super.initState();
-    widget.controller.text = '+996 ';
-    widget.controller.selection = TextSelection.fromPosition(
-      const TextPosition(offset: 5),
-    );
+  void dispose() {
+    _phoneController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: widget.controller,
-      focusNode: widget.focusNode,
-      keyboardType: TextInputType.phone,
-      style: AppTextStyles.title.copyWith(
-        fontSize: 24,
-        letterSpacing: 1,
-        color: AppColors.textPrimary,
+    return Scaffold(
+      backgroundColor: AppColors.bgDark,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: widget.showBackButton && widget.onBack != null
+            ? AppBackButton(
+                onPressed: widget.onBack!,
+                style: BackButtonStyle.iconOnly,
+              )
+            : null,
       ),
-      inputFormatters: [
-        // Запрещаем ввод не-цифр и ограничиваем длину
-        FilteringTextInputFormatter.digitsOnly,
-        LengthLimitingTextInputFormatter(12), // 996 + 9 цифр
-      ],
-      decoration: InputDecoration(
-        hintText: '+996 (XXX) XX-XX-XX',
-        hintStyle: AppTextStyles.title.copyWith(
-          color: AppColors.textSecondary.withValues(alpha: 0.3),
-          fontSize: 24,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppDimens.space24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Заголовок
+              Text(
+                widget.title,
+                style: AppTextStyles.headline.copyWith(fontSize: 32),
+              ),
+              if (widget.subtitle != null) ...[
+                const SizedBox(height: AppDimens.space8),
+                Text(widget.subtitle!, style: AppTextStyles.subtext),
+              ],
+              const SizedBox(height: AppDimens.space48),
+
+              // Поле ввода телефона
+              PhoneInputField(
+                controller: _phoneController.controller,
+                focusNode: _phoneController.focusNode,
+                autoFocus: true,
+                hintText: '700 000 000',
+                onValidityChanged: (isValid) {
+                  setState(() => _isValid = isValid);
+                },
+                onSubmitted: () {
+                  if (_isValid && !widget.isLoading) {
+                    _submitPhone();
+                  }
+                },
+              ),
+
+              if (widget.showHint) ...[
+                const SizedBox(height: AppDimens.space8),
+                Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      size: 14,
+                      color: AppColors.textTertiary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Введите 9 цифр после +996',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.textTertiary,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+
+              const SizedBox(height: AppDimens.space24),
+
+              // Кнопка с анимацией
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                child: _isValid
+                    ? JoluButton(
+                        key: const ValueKey('submit_button'),
+                        text: widget.buttonText!,
+                        variant: JoluButtonVariant.primary,
+                        size: JoluButtonSize.large,
+                        isFullWidth: true,
+                        isLoading: widget.isLoading,
+                        onPressed: _submitPhone,
+                      )
+                    : Container(
+                        key: const ValueKey('disabled_button'),
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.borderDark,
+                          borderRadius: BorderRadius.circular(
+                            AppDimens.radiusM,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'Введите номер',
+                            style: AppTextStyles.button.copyWith(
+                              color: AppColors.textTertiary,
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+              const SizedBox(height: AppDimens.space16),
+              Center(
+                child: Text(
+                  'Мы отправим SMS с кодом подтверждения',
+                  style: AppTextStyles.subtext.copyWith(
+                    fontSize: 13,
+                    color: AppColors.textTertiary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
         ),
-        enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.borderDark, width: 1.5),
-        ),
-        focusedBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: AppColors.primary, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16),
       ),
-      onChanged: (value) {
-        // Получаем только цифры (без +996)
-        final digits = _extractDigits(value);
-
-        // Форматируем
-        final formatted = _formatDigits(digits);
-
-        // Обновляем контроллер
-        widget.controller.value = TextEditingValue(
-          text: formatted,
-          selection: TextSelection.collapsed(offset: formatted.length),
-        );
-
-        // Отправляем чистый номер (+996XXXXXXXXX) наружу
-        final cleanPhone = digits.length >= 9 ? '+996$digits' : '';
-        widget.onPhoneChanged(cleanPhone);
-      },
     );
+  }
+
+  void _submitPhone() {
+    if (_isValid && !widget.isLoading) {
+      widget.onSubmit(_phoneController.rawPhone);
+    }
   }
 }

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
-import 'package:jolutrip_app/core/ui/jolu_ui.dart';
+import 'package:jolutrip_app/core/ui/buttons/jolu_back_button.dart';
 
 class RoleSelectionScreen extends StatelessWidget {
   const RoleSelectionScreen({super.key});
@@ -90,8 +90,16 @@ class RoleSelectionScreen extends StatelessWidget {
               ),
 
               const Spacer(),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: AppBackButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: BackButtonStyle.text,
+                  label: 'Назад',
+                ),
+              ),
 
-              // Условия
+              const SizedBox(height: AppDimens.space24),
               Center(
                 child: Text(
                   'Продолжая, вы соглашаетесь с условиями использования',
@@ -143,7 +151,7 @@ class _RoleCard extends StatelessWidget {
               width: 48,
               height: 48,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
+                color: color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppDimens.radiusM),
               ),
               child: Icon(icon, color: color, size: 24),

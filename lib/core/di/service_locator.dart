@@ -43,6 +43,7 @@ final sl = GetIt.instance;
 void setupDependencies() {
   sl.registerLazySingleton<Dio>(() => DioClient().dio);
 
+  // ─── Reels ─────────────────────────────────────
   sl.registerLazySingleton<ReelsRemoteDataSource>(
     () => ReelsRemoteDataSourceImpl(client: sl()),
   );
@@ -51,6 +52,7 @@ void setupDependencies() {
   );
   sl.registerFactory(() => ReelsCubit(sl<ReelsRepository>()));
 
+  // ─── Auth Tourist ──────────────────────────────
   sl.registerLazySingleton<AuthRemoteDataSource>(
     () => AuthRemoteDataSourceImpl(client: sl()),
   );
@@ -59,7 +61,7 @@ void setupDependencies() {
   );
   sl.registerFactory(() => AuthCubit(authRepository: sl()));
 
-  // ─── Guide Auth ──────────────────────────────
+  // ─── Guide Auth ────────────────────────────────
   sl.registerLazySingleton<GuideAuthRemoteDataSource>(
     () => GuideAuthRemoteDataSourceImpl(client: sl()),
   );
@@ -68,17 +70,13 @@ void setupDependencies() {
   );
   sl.registerLazySingleton(() => GuideAuthCubit(sl<GuideAuthRepository>()));
 
-  // ═══════════════════════════════════════════════════
-  // 🔥 GUIDE ONBOARDING — РЕГИСТРИРУЕМ!
-  // ═══════════════════════════════════════════════════
+  // ─── Guide Onboarding ──────────────────────────
   sl.registerLazySingleton<GuideOnboardingRemoteDataSource>(
     () => GuideOnboardingRemoteDataSourceImpl(dio: sl<Dio>()),
   );
-
   sl.registerLazySingleton<GuideOnboardingRepository>(
     () => GuideOnboardingRepositoryImpl(sl<GuideOnboardingRemoteDataSource>()),
   );
-
   sl.registerFactory<GuideOnboardingCubit>(
     () => GuideOnboardingCubit(sl<GuideOnboardingRepository>()),
   );
@@ -91,6 +89,7 @@ void setupDependencies() {
     () => GuideProfileRepositoryImpl(sl<GuideProfileRemoteDataSource>()),
   );
   sl.registerFactory(() => GuideProfileCubit(sl<GuideProfileRepository>()));
+
   // ─── Location Detail ───────────────────────────
   sl.registerLazySingleton<LocationDetailRemoteDataSource>(
     () => LocationDetailRemoteDataSourceImpl(client: sl()),
@@ -100,6 +99,7 @@ void setupDependencies() {
   );
   sl.registerFactory(() => LocationDetailCubit(sl<LocationDetailRepository>()));
 
+  // ─── Guide Tours ───────────────────────────────
   sl.registerLazySingleton<GuideToursRemoteDataSource>(
     () => GuideToursRemoteDataSourceImpl(dio: sl<Dio>()),
   );
@@ -109,8 +109,10 @@ void setupDependencies() {
   sl.registerLazySingleton(() => CreateTourUseCase(repository: sl()));
   sl.registerLazySingleton(() => UploadPromoVideoUseCase(repository: sl()));
   sl.registerFactory(
-    () =>
-        GuideToursCubit(createTourUseCase: sl(), uploadPromoVideoUseCase: sl()),
+    () => GuideToursCubit(
+      createTourUseCase: sl(),
+      uploadPromoVideoUseCase: sl(),
+    ),
   );
 
   // ─── Safety ────────────────────────────────────
