@@ -47,10 +47,7 @@ class GuideProfileModel {
       carModel: json['car_model'] as String?,
       carNumber: json['car_number'] as String?,
       experienceYears: (json['experience_years'] as num?)?.toInt() ?? 0,
-      languages: (json['languages'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          const [],
+      languages: _parseLanguages(json['languages']),
       status: json['status'] as String,
       rejectionReason: json['rejection_reason'] as String?,
       createdAt: json['created_at'] != null
@@ -60,6 +57,39 @@ class GuideProfileModel {
           ? DateTime.tryParse(json['updated_at'] as String)
           : null,
     );
+  }
+
+  /// Парсит languages из разных форматов backend:
+  /// - ["en,ky"] → ["en", "ky"]
+  /// - ["en", "ky"] → ["en", "ky"]
+  /// - "en,ky" → ["en", "ky"]
+  static List<String> _parseLanguages(dynamic value) {
+    if (value == null) return const [];
+
+    if (value is List) {
+      final result = <String>[];
+      for (final item in value) {
+        final str = item.toString();
+        if (str.contains(',')) {
+          result.addAll(
+            str.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
+          );
+        } else {
+          result.add(str.trim());
+        }
+      }
+      return result;
+    }
+
+    if (value is String) {
+      return value
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    }
+
+    return const [];
   }
 
   Map<String, dynamic> toJson() {

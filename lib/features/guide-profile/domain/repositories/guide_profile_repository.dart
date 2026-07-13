@@ -4,10 +4,10 @@ import 'package:jolutrip_app/features/guide-profile/domain/entities/guide_profil
 
 abstract class GuideProfileRepository {
   Future<Either<Failure, GuideProfileEntity>> getMe();
-  
   Future<Either<Failure, GuideProfileEntity>> updateProfile(
     Map<String, dynamic> data,
   );
-
   Future<Either<Failure, String>> uploadAvatar(List<int> bytes);
+  Future<Either<Failure, String>> uploadPresentationVideo(List<int> bytes);
+  Future<Either<Failure, String>> getVerificationStatus();
 }

@@ -7,7 +7,7 @@ import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 
 /// Универсальное поле для ввода номера телефона
-/// 
+///
 /// Особенности:
 /// - +996 всегда статичен (пользователь не может его удалить)
 /// - Плавное удаление цифр без зависаний
@@ -44,7 +44,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   late TextEditingController _controller;
   late FocusNode _focusNode;
   bool _isValid = false;
-  
+
   // Статичный префикс
   static const String _prefix = '+996 ';
   static const int _maxDigits = 9; // 9 цифр после +996
@@ -54,15 +54,15 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     super.initState();
     _controller = widget.controller ?? TextEditingController();
     _focusNode = widget.focusNode ?? FocusNode();
-    
+
     // Устанавливаем начальное значение с префиксом
     if (_controller.text.isEmpty) {
       _controller.text = _prefix;
       _controller.selection = TextSelection.collapsed(offset: _prefix.length);
     }
-    
+
     _controller.addListener(_onTextChanged);
-    
+
     if (widget.autoFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) {
@@ -78,7 +78,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   void _onTextChanged() {
     // Защита от удаления префикса
     _protectPrefix();
-    
+
     // Валидация
     final digits = _getDigitsOnly();
     final isValid = digits.length == _maxDigits;
@@ -91,14 +91,14 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
 
   void _protectPrefix() {
     final text = _controller.text;
-    
+
     // Если текст стал короче префикса - восстанавливаем
     if (text.length < _prefix.length) {
       _controller.text = _prefix;
       _controller.selection = TextSelection.collapsed(offset: _prefix.length);
       return;
     }
-    
+
     // Если префикс поврежден - восстанавливаем
     if (!text.startsWith(_prefix)) {
       // Сохраняем только цифры, которые ввел пользователь
@@ -125,7 +125,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
     }
     return '';
   }
-  
+
   bool get isValid => _isValid;
 
   @override
@@ -143,9 +143,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
         if (widget.labelText != null) ...[
           Text(
             widget.labelText!,
-            style: AppTextStyles.subtext.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+            style: AppTextStyles.subtext.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: AppDimens.space12),
         ],
@@ -220,7 +218,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
 class _PhoneNumberInputFormatter extends TextInputFormatter {
   final String prefix;
   final int maxDigits;
-  
+
   _PhoneNumberInputFormatter(this.prefix, this.maxDigits);
 
   @override
@@ -240,7 +238,7 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
     String digits = newValue.text
         .replaceAll(prefix, '')
         .replaceAll(RegExp(r'\D'), '');
-    
+
     // Ограничиваем количество цифр
     if (digits.length > maxDigits) {
       digits = digits.substring(0, maxDigits);
@@ -248,16 +246,18 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
 
     // Форматируем: 700000000 -> 700 000 000
     final formatted = _formatDigits(digits);
-    
+
     final result = prefix + formatted;
-    
+
     // Вычисляем позицию курсора
     int cursorPos = result.length;
     if (newValue.selection.baseOffset > 0) {
       // Сохраняем позицию курсора относительно ввода
-      final oldDigits = oldValue.text.replaceAll(prefix, '').replaceAll(RegExp(r'\D'), '');
+      final oldDigits = oldValue.text
+          .replaceAll(prefix, '')
+          .replaceAll(RegExp(r'\D'), '');
       final newDigits = digits;
-      
+
       if (newDigits.length > oldDigits.length) {
         // Добавление символа - курсор в конец
         cursorPos = result.length;
@@ -275,7 +275,7 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
 
   String _formatDigits(String digits) {
     if (digits.isEmpty) return '';
-    
+
     final buffer = StringBuffer();
     for (int i = 0; i < digits.length; i++) {
       if (i == 3 && i < digits.length) buffer.write(' ');
@@ -292,7 +292,7 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
 class PhoneInputFieldController {
   final TextEditingController controller = TextEditingController();
   final FocusNode focusNode = FocusNode();
-  
+
   String get rawPhone {
     final text = controller.text;
     final prefix = '+996 ';
@@ -304,9 +304,9 @@ class PhoneInputFieldController {
     }
     return '';
   }
-  
+
   bool get isValid => rawPhone.isNotEmpty && rawPhone.length == 12;
-  
+
   void dispose() {
     controller.dispose();
     focusNode.dispose();

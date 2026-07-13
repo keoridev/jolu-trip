@@ -3,16 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
-import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
+import 'package:jolutrip_app/core/ui/jolu_ui.dart';
 import 'package:jolutrip_app/features/auth/view/auth_screen.dart';
+import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/view/role_selection_screen.dart';
+import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
+import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_state.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/view/guide_auth_screen.dart';
 import 'package:jolutrip_app/features/guide_onboarding/view/bloc/guide_onboarding_cubit.dart';
-
 import 'package:jolutrip_app/features/guide_onboarding/view/guide_onboarding_screen.dart';
 import 'package:jolutrip_app/features/guide_tours/view/bloc/guide_tours_cubit.dart';
-import 'package:jolutrip_app/features/guide_tours/view/create_tour_screen.dart';
+import 'package:jolutrip_app/features/guide_tours/view/screens/create_tour_screen.dart';
 import 'package:jolutrip_app/features/location-detail/view/bloc/location_detail_cubit.dart';
 import 'package:jolutrip_app/features/location-detail/view/location_detail_screen.dart';
 import 'package:jolutrip_app/features/navigation/view/widgets/jolu_bottom_bar.dart';
@@ -72,7 +74,7 @@ class AppRouterWithShell {
 
       // ═══════════════════════════════════════════════════
       // ONBOARDING ГИДА
-      // ═══════════════════════════════════════════════════
+      // ═══════════════════════════════════════════
       GoRoute(
         path: '/guide/onboarding',
         name: 'guideOnboarding',

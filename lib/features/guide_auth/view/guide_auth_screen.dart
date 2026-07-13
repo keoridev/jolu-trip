@@ -209,17 +209,30 @@ class GuideAuthScreen extends StatelessWidget {
     }
 
     if (state is GuideAuthSuccess) {
+      // После успешного входа — на dashboard
+      // Профиль загрузится там автоматически
       context.go('/guide/dashboard');
       return;
     }
 
+    if (state is GuideOnboardingPending) {
+      // Нужно пройти onboarding
+      context.go('/guide/onboarding', extra: {'guideId': state.guide.id});
+      return;
+    }
+
     if (state is GuideAuthError) {
-      // Специальная обработка для ошибки дубликата телефона
       String message = state.message;
+
+      // 404 = аккаунт удалён
+      if (message.contains('404') || message.contains('Not Found')) {
+        message = 'Аккаунт не найден. Возможно, он был удалён.';
+      }
+
+      // Дубликат телефона
       if (message.contains('duplicate key') ||
           message.contains('guides_phone_key')) {
-        message =
-            'Этот номер телефона уже зарегистрирован. Пожалуйста, войдите в систему.';
+        message = 'Этот номер уже зарегистрирован. Войдите в систему.';
       }
 
       JoluSnackbar.show(

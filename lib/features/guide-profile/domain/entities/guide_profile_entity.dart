@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:jolutrip_app/features/guide_onboarding/domain/entities/onboarding_entity.dart';
 
 class GuideProfileEntity extends Equatable {
   final String id;
@@ -35,10 +36,26 @@ class GuideProfileEntity extends Equatable {
     this.updatedAt,
   });
 
-  bool get isVerified => status == 'verified';
+  // Backend возвращает "approved", не "verified"
+  bool get isVerified => status == 'approved';
   bool get isPending => status == 'pending';
   bool get isRejected => status == 'rejected';
   bool get canEdit => isVerified || isRejected;
+
+  bool get isOnboardingComplete {
+    return fullName != null &&
+        fullName!.isNotEmpty &&
+        phone != null &&
+        phone!.isNotEmpty &&
+        gender != null &&
+        gender!.isNotEmpty &&
+        carModel != null &&
+        carModel!.isNotEmpty &&
+        carNumber != null &&
+        carNumber!.isNotEmpty &&
+        experienceYears > 0 &&
+        languages.isNotEmpty;
+  }
 
   GuideProfileEntity copyWith({
     String? id,
@@ -75,6 +92,22 @@ class GuideProfileEntity extends Equatable {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  OnboardingEntity toOnboarding() => OnboardingEntity(
+        experienceYears: experienceYears,
+        carModel: carModel ?? '',
+        carNumber: carNumber ?? '',
+        languages: languages,
+        passportMainPhotoUrl: null,
+        passportRegistrationPhotoUrl: null,
+        licensePhotoFrontUrl: null,
+        licensePhotoBackUrl: null,
+        carPhotosUrls: null,
+        presentationVideoUrl: presentationVideoUrl,
+        status: status,
+        fullName: fullName,
+        phone: phone,
+      );
 
   @override
   List<Object?> get props => [

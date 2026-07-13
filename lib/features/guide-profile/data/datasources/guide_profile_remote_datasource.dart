@@ -2,11 +2,13 @@ import 'package:dio/dio.dart';
 import 'package:jolutrip_app/core/config/app_config.dart';
 import 'package:jolutrip_app/core/errors/exceptions.dart';
 import 'package:jolutrip_app/features/guide-profile/data/models/guide_profile_model.dart';
+import 'package:jolutrip_app/features/guide-profile/data/models/verification_status_model.dart';
 
 abstract class GuideProfileRemoteDataSource {
   Future<GuideProfileModel> getMe();
   Future<GuideProfileModel> updateProfile(Map<String, dynamic> data);
   Future<String> uploadAvatar(List<int> bytes);
+  Future<VerificationStatusModel> getVerificationStatus();
 }
 
 class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {
@@ -27,10 +29,7 @@ class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {
   @override
   Future<GuideProfileModel> updateProfile(Map<String, dynamic> data) async {
     try {
-      final response = await _dio.patch(
-        AppConfig.guideProfile,
-        data: data,
-      );
+      final response = await _dio.patch(AppConfig.guideProfile, data: data);
       return GuideProfileModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw _mapDioError(e);
@@ -43,11 +42,35 @@ class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {
       final formData = FormData.fromMap({
         'avatar': MultipartFile.fromBytes(bytes, filename: 'avatar.jpg'),
       });
-      final response = await _dio.patch(
-        AppConfig.guideAvatar,
+      final response = await _dio.patch(AppConfig.guideAvatar, data: formData);
+      return response.data['avatar_url'] as String;
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
+  @override
+  Future<VerificationStatusModel> getVerificationStatus() async {
+    try {
+      final response = await _dio.get(AppConfig.guideVerificationStatus);
+      return VerificationStatusModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
+  Future<String> uploadPresentationVideo(List<int> bytes) async {
+    try {
+      final formData = FormData.fromMap({
+        'video': MultipartFile.fromBytes(bytes, filename: 'presentation.mp4'),
+      });
+      final response = await _dio.put(
+        AppConfig.guidePresentationVideo,
         data: formData,
       );
-      return response.data['avatar_url'] as String;
+      return response.data['presentation_video_url'] as String;
     } on DioException catch (e) {
       throw _mapDioError(e);
     }
@@ -60,7 +83,8 @@ class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {
 
     String message = 'Server error';
     if (data is Map<String, dynamic>) {
-      message = data['message'] as String? ??
+      message =
+          data['message'] as String? ??
           data['error'] as String? ??
           data['status'] as String? ??
           'Server error ($statusCode)';

@@ -28,32 +28,36 @@ class CreateTourEntity extends Equatable {
     this.itinerary = const [],
   });
 
-  CreateTourEntity copyWith({String? promoVideoUrl}) => CreateTourEntity(
-    title: title,
-    locationId: locationId,
-    departureAt: departureAt,
-    durationDays: durationDays,
-    totalSeats: totalSeats,
-    minSeats: minSeats,
-    pricePerSeat: pricePerSeat,
+  CreateTourEntity copyWith({
+    String? title,
+    String? locationId,
+    String? departureAt,
+    int? durationDays,
+    int? totalSeats,
+    int? minSeats,
+    double? pricePerSeat,
+    String? promoVideoUrl,
+    List<String>? includedServices,
+    List<String>? gearRequirements,
+    List<ItineraryDayEntity>? itinerary,
+  }) => CreateTourEntity(
+    title: title ?? this.title,
+    locationId: locationId ?? this.locationId,
+    departureAt: departureAt ?? this.departureAt,
+    durationDays: durationDays ?? this.durationDays,
+    totalSeats: totalSeats ?? this.totalSeats,
+    minSeats: minSeats ?? this.minSeats,
+    pricePerSeat: pricePerSeat ?? this.pricePerSeat,
     promoVideoUrl: promoVideoUrl ?? this.promoVideoUrl,
-    includedServices: includedServices,
-    gearRequirements: gearRequirements,
-    itinerary: itinerary,
+    includedServices: includedServices ?? this.includedServices,
+    gearRequirements: gearRequirements ?? this.gearRequirements,
+    itinerary: itinerary ?? this.itinerary,
   );
 
   @override
   List<Object?> get props => [
-    title,
-    locationId,
-    departureAt,
-    durationDays,
-    totalSeats,
-    minSeats,
-    pricePerSeat,
-    promoVideoUrl,
-    includedServices,
-    gearRequirements,
-    itinerary,
+    title, locationId, departureAt, durationDays, totalSeats,
+    minSeats, pricePerSeat, promoVideoUrl, includedServices,
+    gearRequirements, itinerary,
   ];
 }

@@ -47,4 +47,30 @@ class GuideProfileRepositoryImpl implements GuideProfileRepository {
       return Left(NetworkFailure(e.message));
     }
   }
+
+  @override
+  Future<Either<Failure, String>> getVerificationStatus() async {
+    try {
+      final model = await _remote.getVerificationStatus();
+      return Right(model.status);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override
+  Future<Either<Failure, String>> uploadPresentationVideo(
+    List<int> bytes,
+  ) async {
+    try {
+      final url = await (_remote as dynamic).uploadPresentationVideo(bytes);
+      return Right(url);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
 }

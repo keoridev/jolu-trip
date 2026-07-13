@@ -47,10 +47,29 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
   }
 
   void _onTabChanged() {
+    // ✅ Проверяем, что индекс изменился и это не программное изменение
     if (!_tabController.indexIsChanging) {
       final isLogin = _tabController.index == 0;
+      // ✅ Явно вызываем колбэк с новым значением
       widget.onTabChanged(isLogin);
+      // Сбрасываем валидацию
       setState(() => _isValid = false);
+      // Очищаем поле
+      _phoneController.controller.clear();
+      // Восстанавливаем префикс
+      _phoneController.controller.text = '+996 ';
+    }
+  }
+
+  @override
+  void didUpdateWidget(GuideAuthTabs oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // ✅ Если режим изменился извне - синхронизируем таб
+    if (widget.isLogin != oldWidget.isLogin) {
+      final newIndex = widget.isLogin ? 0 : 1;
+      if (_tabController.index != newIndex) {
+        _tabController.animateTo(newIndex);
+      }
     }
   }
 
@@ -89,11 +108,12 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
             children: [
               const SizedBox(height: AppDimens.space16),
 
-              // Вкладки
+              // ✅ Вкладки с улучшенным дизайном
               Container(
                 decoration: BoxDecoration(
                   color: AppColors.cardDark,
                   borderRadius: BorderRadius.circular(AppDimens.radiusL),
+                  border: Border.all(color: AppColors.borderDark),
                 ),
                 child: TabBar(
                   controller: _tabController,
@@ -126,24 +146,34 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.isLogin
-                          ? 'Введите номер телефона'
-                          : 'Начните с номера',
-                      style: AppTextStyles.headlineMedium.copyWith(
-                        fontSize: 24,
+                    // ✅ Анимированный заголовок
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Column(
+                        key: ValueKey(widget.isLogin),
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.isLogin
+                                ? 'Введите номер телефона'
+                                : 'Начните с номера',
+                            style: AppTextStyles.headlineMedium.copyWith(
+                              fontSize: 24,
+                            ),
+                          ),
+                          const SizedBox(height: AppDimens.space8),
+                          Text(
+                            widget.isLogin
+                                ? 'Мы отправим код для входа'
+                                : 'Мы отправим код для создания аккаунта',
+                            style: AppTextStyles.subtext,
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(height: AppDimens.space8),
-                    Text(
-                      widget.isLogin
-                          ? 'Мы отправим код для входа'
-                          : 'Мы отправим код для создания аккаунта',
-                      style: AppTextStyles.subtext,
                     ),
                     const SizedBox(height: AppDimens.space32),
 
-                    // 🔥 Используем PhoneInputField
+                    // 🔥 PhoneInputField
                     PhoneInputField(
                       controller: _phoneController.controller,
                       focusNode: _phoneController.focusNode,

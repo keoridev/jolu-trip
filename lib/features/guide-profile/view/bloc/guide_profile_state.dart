@@ -33,3 +33,11 @@ final class GuideProfileError extends GuideProfileState {
   @override
   List<Object?> get props => [message];
 }
+
+final class GuideProfileNotFound extends GuideProfileState {
+  const GuideProfileNotFound();
+}
+
+final class GuideProfileLoggedOut extends GuideProfileState {
+  const GuideProfileLoggedOut();
+}

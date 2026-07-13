@@ -7,6 +7,7 @@ import 'package:jolutrip_app/features/guide_auth/data/models/model.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/repositories/guide_auth_repository.dart';
 import 'guide_auth_state.dart';
+import 'dart:convert';
 
 class GuideAuthCubit extends Cubit<GuideAuthState> {
   final GuideAuthRepository _repository;
@@ -54,7 +55,6 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     _updateOtpState();
 
     _otpTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      // Проверяем, не закрыт ли Cubit
       if (isClosed) {
         timer.cancel();
         return;
@@ -312,7 +312,6 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
 
   void _handleAuthResponse(Map<String, dynamic> data) {
     try {
-      // API возвращает data с полями: id, phone, full_name, gender, status
       final token = data['token'] as String?;
       if (token == null) {
         emit(const GuideAuthError('Ошибка: токен не получен от сервера'));
@@ -320,12 +319,16 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
       }
 
       final userId = data['id']?.toString() ?? '';
-      final guide = GuideModel.fromJson(data);
+
+      // Парсим минимальные данные из ответа login/verify
+      // Полные данные (fullName, phone, avatar) загрузим через /guides/me
+      final guide = GuideModel.fromLoginResponse(data);
 
       _currentToken = token;
       _currentGuide = guide;
       _stopTimer();
 
+      // Сохраняем токен и базовые данные
       SecureStorage.saveAuthData(
         token: token,
         userId: userId,
@@ -336,22 +339,59 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
         debugPrint('⚠️ Failed to save auth data: $e');
       });
 
-      // Проверяем статус гида
-      final status = data['status']?.toString() ?? '';
+      // Статус из ответа или из токена
+      // JWT payload: {"user_id", "exp", "iat", "role", "status"}
+      final status =
+          _extractStatusFromToken(token) ??
+          data['status']?.toString() ??
+          'pending';
 
-      if (status == 'pending' || guide.needsOnboarding) {
-        emit(GuideNeedsOnboarding(token: token, guide: guide));
-      } else if (status == 'unverified') {
-        emit(GuideOnboardingPending(guide: guide));
-      } else if (status == 'verified' || status == 'active') {
-        emit(GuideAuthSuccess(token: token, guide: guide));
-      } else {
-        emit(GuideAuthAuthenticated(token: token, guide: guide));
+      debugPrint(
+        '🔑 Login success. Status: $status, Token: ${token.substring(0, 20)}...',
+      );
+
+      // Редирект на основе статуса
+      switch (status) {
+        case 'pending':
+          emit(GuideNeedsOnboarding(token: token, guide: guide));
+          break;
+        case 'unverified':
+          emit(GuideOnboardingPending(guide: guide));
+          break;
+        case 'verified':
+        case 'active':
+          emit(GuideAuthSuccess(token: token, guide: guide));
+          break;
+        default:
+          // Для "successfully login" или неизвестного — идём на dashboard
+          // Профиль загрузится там через GuideProfileCubit
+          emit(GuideAuthSuccess(token: token, guide: guide));
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error parsing auth response: $e');
       debugPrint(stackTrace.toString());
       emit(GuideAuthError('Ошибка обработки ответа: $e'));
+    }
+  }
+
+  String? _extractStatusFromToken(String token) {
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return null;
+
+      final payload = parts[1];
+      // Добавляем padding если нужно
+      final normalized = payload.padRight(
+        payload.length + (4 - payload.length % 4) % 4,
+        '=',
+      );
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final json = jsonDecode(decoded) as Map<String, dynamic>;
+
+      return json['status'] as String?;
+    } catch (e) {
+      debugPrint('⚠️ Failed to decode JWT: $e');
+      return null;
     }
   }
 

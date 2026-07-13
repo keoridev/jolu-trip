@@ -21,13 +21,13 @@ abstract class GuideOtpState extends GuideAuthState {
   final String phone;
   final int secondsLeft;
   final bool canResend;
-  
+
   const GuideOtpState({
     required this.phone,
     this.secondsLeft = 59,
     this.canResend = false,
   });
-  
+
   @override
   List<Object?> get props => [phone, secondsLeft, canResend];
 }
@@ -55,7 +55,7 @@ class GuideLoginOtpSent extends GuideOtpState {
 class GuideRegisterOtpSent extends GuideOtpState {
   final String fullName;
   final GuideGender gender;
-  
+
   const GuideRegisterOtpSent({
     required this.fullName,
     required this.gender,
@@ -63,7 +63,7 @@ class GuideRegisterOtpSent extends GuideOtpState {
     super.secondsLeft = 59,
     super.canResend = false,
   });
-  
+
   @override
   List<Object?> get props => [fullName, gender, phone, secondsLeft, canResend];
 
@@ -91,11 +91,7 @@ class GuideSmsResent extends GuideOtpState {
     super.canResend = false,
   });
 
-  GuideSmsResent copyWith({
-    String? phone,
-    int? secondsLeft,
-    bool? canResend,
-  }) {
+  GuideSmsResent copyWith({String? phone, int? secondsLeft, bool? canResend}) {
     return GuideSmsResent(
       phone: phone ?? this.phone,
       secondsLeft: secondsLeft ?? this.secondsLeft,
@@ -107,7 +103,7 @@ class GuideSmsResent extends GuideOtpState {
 class GuideOtpInvalid extends GuideOtpState {
   final String message;
   final int attempt;
-  
+
   const GuideOtpInvalid({
     required super.phone,
     required this.message,
@@ -115,7 +111,7 @@ class GuideOtpInvalid extends GuideOtpState {
     super.secondsLeft = 59,
     super.canResend = false,
   });
-  
+
   @override
   List<Object?> get props => [phone, message, attempt, secondsLeft, canResend];
 

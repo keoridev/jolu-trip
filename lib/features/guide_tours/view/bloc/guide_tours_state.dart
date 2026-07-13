@@ -1,40 +1,52 @@
 part of 'guide_tours_cubit.dart';
 
 sealed class GuideToursState extends Equatable {
-  const GuideToursState();
+  final String? promoVideoKey;
+
+  const GuideToursState({this.promoVideoKey});
+
+  bool get isLoading => this is GuideToursVideoUploading || this is GuideToursCreating;
 
   @override
-  List<Object?> get props => [];
+  List<Object?> get props => [promoVideoKey];
 }
 
 class GuideToursInitial extends GuideToursState {
-  const GuideToursInitial();
+  const GuideToursInitial() : super();
 }
 
 class GuideToursVideoUploading extends GuideToursState {
-  const GuideToursVideoUploading();
+  const GuideToursVideoUploading({super.promoVideoKey});
 }
 
 class GuideToursVideoUploaded extends GuideToursState {
-  const GuideToursVideoUploaded();
+  const GuideToursVideoUploaded({required super.promoVideoKey});
 }
 
 class GuideToursCreating extends GuideToursState {
-  const GuideToursCreating();
+  const GuideToursCreating({super.promoVideoKey});
 }
 
 class GuideToursCreated extends GuideToursState {
   final TourEntity tour;
-  const GuideToursCreated({required this.tour});
+  const GuideToursCreated({required this.tour, super.promoVideoKey});
 
   @override
-  List<Object?> get props => [tour];
+  List<Object?> get props => [tour, promoVideoKey];
 }
 
 class GuideToursError extends GuideToursState {
   final String message;
-  const GuideToursError({required this.message});
+  final bool isNetworkError;
+  final bool isValidationError;
+
+  const GuideToursError({
+    required this.message,
+    this.isNetworkError = false,
+    this.isValidationError = false,
+    super.promoVideoKey,
+  });
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, isNetworkError, isValidationError, promoVideoKey];
 }
