@@ -18,7 +18,6 @@ class GuideModel extends GuideEntity {
     final rawStatus = json['status'] as String? ?? 'unverified';
     final status = _parseStatus(rawStatus);
 
-    // Все поля с дефолтами — для минимального ответа после login/verify
     final fullName = json['full_name'] as String? ?? 'Гид JoLuTrip';
     final phone = json['phone'] as String? ?? '';
     final gender = _parseGender(json['gender'] as String?);
@@ -36,27 +35,12 @@ class GuideModel extends GuideEntity {
     );
   }
 
-  /// Создаёт минимальную модель из ответа login/verify (только id + token)
-  /// Потом нужно загрузить полный профиль через /guides/me
+  /// Парсит ответ login/verify — сервер возвращает те же поля + token
   factory GuideModel.fromLoginResponse(Map<String, dynamic> json) {
-    final id = json['id'] as String? ?? '';
-    if (id.isEmpty) throw FormatException('Missing id in login response: $json');
-
-    // Статус может быть "successfully login" — парсим реальный статус из токена или дефолт
-    final rawStatus = json['status'] as String? ?? 'pending';
-    final status = rawStatus == 'successfully login' 
-        ? GuideStatus.pending  // дефолт, потом обновим через /guides/me
-        : _parseStatus(rawStatus);
-
-    return GuideModel(
-      id: id,
-      fullName: 'Гид JoLuTrip', // placeholder, загрузим потом
-      phone: '',
-      gender: GuideGender.male,
-      avatarUrl: null,
-      status: status,
-      createdAt: DateTime.now(),
-    );
+    // login/verify возвращает {token, id, full_name, phone, gender, status, ...}
+    // или {token, user: {...}} — проверьте реальный ответ сервера
+    final userData = json['user'] as Map<String, dynamic>? ?? json;
+    return GuideModel.fromJson(userData);
   }
 
   static GuideGender _parseGender(String? value) => switch (value) {
@@ -69,7 +53,7 @@ class GuideModel extends GuideEntity {
     'verified' => GuideStatus.verified,
     'rejected' => GuideStatus.rejected,
     'created' || 'unverified' => GuideStatus.unverified,
-    'successfully login' => GuideStatus.pending, // fallback
+    'successfully login' => GuideStatus.pending,
     _ => GuideStatus.unverified,
   };
 

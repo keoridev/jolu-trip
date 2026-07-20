@@ -265,10 +265,9 @@ class _GuideProfileScreenState extends State<GuideProfileScreen> {
                 type: JoluSnackbarType.error,
               );
             }
-            if (state is GuideProfileNotFound) {
-              context.go('/login');
-            }
-            if (state is GuideProfileLoggedOut) {
+            // 🔥 Редирект при выходе или если аккаунт не найден
+            if (state is GuideProfileNotFound ||
+                state is GuideProfileLoggedOut) {
               context.go('/login');
             }
           },
@@ -286,8 +285,8 @@ class _GuideProfileScreenState extends State<GuideProfileScreen> {
                   key: const ValueKey('error'),
                   state: state,
                 ),
-                GuideProfileNotFound() => const SizedBox.shrink(),
-                GuideProfileState() => throw UnimplementedError(),
+                GuideProfileNotFound() || GuideProfileLoggedOut() =>
+                  const SizedBox.shrink(key: ValueKey('redirect')),
               },
             );
           },
@@ -296,10 +295,6 @@ class _GuideProfileScreenState extends State<GuideProfileScreen> {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════════════════
-// PROFILE CONTENT — с предупреждениями для критичных полей
-// ═══════════════════════════════════════════════════════════════
 
 class _ProfileContent extends StatelessWidget {
   final GuideProfileEntity profile;
@@ -310,8 +305,7 @@ class _ProfileContent extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        // === HEADER: Аватар, имя, статус ===
-        // КРИТИЧНОЕ ПОЛЕ: фото профиля → требует предупреждения
+        // === HEADER ===
         SliverToBoxAdapter(
           child: GuideProfileHeader(
             profile: profile,
@@ -325,7 +319,7 @@ class _ProfileContent extends StatelessWidget {
           ),
         ),
 
-        // === STATUS BANNER (интегрирован, если нужен) ===
+        // === STATUS BANNER ===
         if (!profile.isOnboardingComplete ||
             profile.isPending ||
             profile.isRejected)
@@ -344,6 +338,8 @@ class _ProfileContent extends StatelessWidget {
           ),
 
         const SliverToBoxAdapter(child: SizedBox(height: AppDimens.space24)),
+
+        // === MEDIA GRID ===
         SliverToBoxAdapter(
           child: GuideProfileMediaGrid(
             profile: profile,
@@ -357,14 +353,7 @@ class _ProfileContent extends StatelessWidget {
           ),
         ),
 
-        // === MY TOURS (горизонтальная карусель) ===
-        // const SliverToBoxAdapter(child: SizedBox(height: AppDimens.space24)),
-        // SliverToBoxAdapter(
-        //   child: _MyToursSection(...),
-        // ),
-
         // === CAR BLOCK ===
-        // КРИТИЧНОЕ ПОЛЕ: машина → требует предупреждения
         const SliverToBoxAdapter(child: SizedBox(height: AppDimens.space24)),
         SliverToBoxAdapter(
           child: GuideCarBlock(
@@ -379,7 +368,6 @@ class _ProfileContent extends StatelessWidget {
         ),
 
         // === EXPERIENCE & LANGUAGES ===
-        // НЕКРИТИЧНОЕ ПОЛЕ: языки и опыт → БЕЗ предупреждения
         const SliverToBoxAdapter(child: SizedBox(height: AppDimens.space16)),
         SliverToBoxAdapter(
           child: GuideExperienceBlock(
@@ -392,19 +380,19 @@ class _ProfileContent extends StatelessWidget {
         // === ACTION BUTTONS ===
         const SliverToBoxAdapter(child: SizedBox(height: AppDimens.space24)),
         SliverToBoxAdapter(
-          child: GuideActionButtons(profile: profile, isLoading: false),
+          child: GuideActionButtons(
+            profile: profile,
+            isLoading: false,
+            onLogout: () => context
+                .read<GuideProfileCubit>()
+                .logout(), // ← здесь получаем Cubit
+          ),
         ),
-
         const SliverToBoxAdapter(child: SizedBox(height: AppDimens.space32)),
       ],
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // НОВЫЙ МЕТОД: Предупреждение для критичных полей
-  // ═══════════════════════════════════════════════════════════════
-  /// Показывает bottom sheet с предупреждением перед редактированием
-  /// полей, которые отправляют профиль на повторную модерацию.
   void _onEditCriticalField(
     BuildContext context, {
     required String fieldName,
@@ -425,11 +413,6 @@ class _ProfileContent extends StatelessWidget {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════
-  // EXISTING METHODS
-  // ═══════════════════════════════════════════════════════════════
-
-  /// Редактирование аватара — критичное поле (требует модерации)
   void _onAvatarTap(BuildContext context) async {
     final bytes = await ImagePickerUtils().showImagePickerDialog(context);
     if (bytes != null && context.mounted) {
@@ -437,7 +420,6 @@ class _ProfileContent extends StatelessWidget {
     }
   }
 
-  /// Загрузка видео-визитки — критичное поле (требует модерации)
   Future<void> _pickVideo(BuildContext context) async {
     final picker = ImagePicker();
     final pickedFile = await picker.pickVideo(
@@ -451,7 +433,6 @@ class _ProfileContent extends StatelessWidget {
     }
   }
 
-  /// Редактирование машины — критичное поле (требует модерации)
   void _showEditCarSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -467,7 +448,6 @@ class _ProfileContent extends StatelessWidget {
     );
   }
 
-  /// Редактирование опыта и языков — НЕ критичное поле (без модерации)
   void _showEditExperienceSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -483,7 +463,6 @@ class _ProfileContent extends StatelessWidget {
     );
   }
 }
-
 // ═══════════════════════════════════════════════════════════════
 // HELPER WIDGETS (без изменений)
 // ═══════════════════════════════════════════════════════════════

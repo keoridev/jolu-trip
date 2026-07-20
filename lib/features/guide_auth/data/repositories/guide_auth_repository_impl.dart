@@ -11,20 +11,15 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
   GuideAuthRepositoryImpl({required GuideAuthRemoteDataSource remote})
     : _remote = remote;
 
-  String _genderToString(GuideGender gender) {
-    switch (gender) {
-      case GuideGender.male:
-        return 'male';
-      case GuideGender.female:
-        return 'female';
-    }
-  }
+  String _genderToString(GuideGender gender) => switch (gender) {
+    GuideGender.male => 'male',
+    GuideGender.female => 'female',
+  };
 
-  @override
-  Future<Either<Failure, void>> resendSms(String phone) async {
+  Future<Either<Failure, T>> _handleRequest<T>(Future<T> Function() request) async {
     try {
-      await _remote.resendSms(phone);
-      return const Right(null);
+      final result = await request();
+      return Right(result);
     } on NetworkException catch (e) {
       return Left(NetworkFailure(e.message));
     } on ServerException catch (e) {
@@ -33,51 +28,32 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
   }
 
   @override
-  Future<Either<Failure, void>> sendLoginOtp(String phone) async {
-    try {
-      await _remote.sendLoginOtp(phone);
-      return const Right(null);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, statusCode: e.statusCode));
-    }
-  }
+  Future<Either<Failure, void>> resendSms(String phone) =>
+      _handleRequest(() => _remote.resendSms(phone));
+
+  @override
+  Future<Either<Failure, void>> sendLoginOtp(String phone) =>
+      _handleRequest(() => _remote.sendLoginOtp(phone));
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> verifyLoginOtp(
     String phone,
     String code,
-  ) async {
-    try {
-      final response = await _remote.verifyLoginOtp(phone, code);
-      return Right(response.data as Map<String, dynamic>);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, statusCode: e.statusCode));
-    }
-  }
+  ) => _handleRequest(() async {
+    final response = await _remote.verifyLoginOtp(phone, code);
+    return response.data as Map<String, dynamic>;
+  });
 
   @override
   Future<Either<Failure, void>> sendRegisterOtp({
     required String fullName,
     required GuideGender gender,
     required String phone,
-  }) async {
-    try {
-      await _remote.sendRegisterOtp(
-        fullName: fullName,
-        gender: _genderToString(gender),
-        phone: phone,
-      );
-      return const Right(null);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, statusCode: e.statusCode));
-    }
-  }
+  }) => _handleRequest(() => _remote.sendRegisterOtp(
+    fullName: fullName,
+    gender: _genderToString(gender),
+    phone: phone,
+  ));
 
   @override
   Future<Either<Failure, Map<String, dynamic>>> verifyRegisterOtp({
@@ -85,19 +61,13 @@ class GuideAuthRepositoryImpl implements GuideAuthRepository {
     required GuideGender gender,
     required String phone,
     required String code,
-  }) async {
-    try {
-      final response = await _remote.verifyRegisterOtp(
-        fullName: fullName,
-        gender: _genderToString(gender),
-        phone: phone,
-        code: code,
-      );
-      return Right(response.data as Map<String, dynamic>);
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(e.message));
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message, statusCode: e.statusCode));
-    }
-  }
+  }) => _handleRequest(() async {
+    final response = await _remote.verifyRegisterOtp(
+      fullName: fullName,
+      gender: _genderToString(gender),
+      phone: phone,
+      code: code,
+    );
+    return response.data as Map<String, dynamic>;
+  });
 }

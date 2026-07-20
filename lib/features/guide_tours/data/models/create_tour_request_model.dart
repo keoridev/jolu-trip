@@ -13,10 +13,7 @@ class ItineraryDayModel extends Equatable {
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    'day': day,
-    'description': description,
-  };
+  Map<String, dynamic> toJson() => {'day': day, 'description': description};
 
   @override
   List<Object?> get props => [day, description];
@@ -29,7 +26,7 @@ class CreateTourRequestModel extends Equatable {
   final int durationDays;
   final int totalSeats;
   final int minSeats;
-  final double pricePerSeat;
+  final int pricePerSeat;
   final String? promoVideoUrl;
   final List<String> includedServices;
   final List<String> gearRequirements;
@@ -66,8 +63,16 @@ class CreateTourRequestModel extends Equatable {
 
   @override
   List<Object?> get props => [
-    title, locationId, departureAt, durationDays, totalSeats,
-    minSeats, pricePerSeat, promoVideoUrl, includedServices,
-    gearRequirements, itinerary,
+    title,
+    locationId,
+    departureAt,
+    durationDays,
+    totalSeats,
+    minSeats,
+    pricePerSeat,
+    promoVideoUrl,
+    includedServices,
+    gearRequirements,
+    itinerary,
   ];
 }

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
+import 'package:jolutrip_app/features/locations/domain/entities/location_entity.dart';
+import 'package:jolutrip_app/features/locations/view/bloc/locations_cubit.dart';
 
 class LocationSearchSheet extends StatefulWidget {
   final void Function(String id, String name) onSelect;
@@ -14,62 +18,75 @@ class LocationSearchSheet extends StatefulWidget {
 
 class _LocationSearchSheetState extends State<LocationSearchSheet> {
   final _searchController = TextEditingController();
+  late final LocationsCubit _cubit;
 
-  final List<Map<String, String>> _locations = [
-    {'id': '1', 'name': 'Озеро Сон-Куль'},
-    {'id': '2', 'name': 'Ала-Арча'},
-    {'id': '3', 'name': 'Бурана'},
-    {'id': '4', 'name': 'Джети-Огуз'},
-    {'id': '5', 'name': 'Сказка каньон'},
-    {'id': '6', 'name': 'Иссык-Куль'},
-    {'id': '7', 'name': 'Кол-Тор'},
-    {'id': '8', 'name': 'Конорчек'},
-  ];
-
-  List<Map<String, String>> get _filtered {
-    final query = _searchController.text.toLowerCase();
-    if (query.isEmpty) return _locations;
-    return _locations
-        .where((l) => l['name']!.toLowerCase().contains(query))
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    _cubit = sl<LocationsCubit>();
+    _cubit.loadLocations();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _cubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: AppDimens.screenPadding,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _DragHandle(),
-          const SizedBox(height: AppDimens.space20),
-          _SearchField(
-            controller: _searchController,
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: AppDimens.space16),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _filtered.length,
-              itemBuilder: (context, index) {
-                final loc = _filtered[index];
-                return _LocationItem(
-                  name: loc['name']!,
-                  onTap: () => widget.onSelect(loc['id']!, loc['name']!),
-                );
-              },
+    return BlocProvider.value(
+      value: _cubit,
+      child: BlocBuilder<LocationsCubit, LocationsState>(
+        builder: (context, state) {
+          return Container(
+            padding: AppDimens.screenPadding,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _DragHandle(),
+                const SizedBox(height: AppDimens.space20),
+                _SearchField(
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}),
+                ),
+                const SizedBox(height: AppDimens.space16),
+                if (state.isLoading)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                else if (state.error != null)
+                  _ErrorState(message: state.error!)
+                else
+                  Flexible(
+                    child: ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: _filtered(state.locations).length,
+                      itemBuilder: (context, index) {
+                        final loc = _filtered(state.locations)[index];
+                        return _LocationItem(
+                          name: loc.name,
+                          onTap: () => widget.onSelect(loc.id, loc.name),
+                        );
+                      },
+                    ),
+                  ),
+              ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  List<LocationEntity> _filtered(List<LocationEntity> locations) {
+    final query = _searchController.text.toLowerCase();
+    if (query.isEmpty) return locations;
+    return locations
+        .where((l) => l.name.toLowerCase().contains(query))
+        .toList();
   }
 }
 
@@ -129,6 +146,30 @@ class _LocationItem extends StatelessWidget {
         style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
       ),
       onTap: onTap,
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  final String message;
+
+  const _ErrorState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        children: [
+          Icon(Icons.error_outline, color: AppColors.error, size: 32),
+          const SizedBox(height: 12),
+          Text(
+            message,
+            style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }

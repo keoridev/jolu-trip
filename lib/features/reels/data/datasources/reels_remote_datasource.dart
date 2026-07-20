@@ -15,7 +15,7 @@ class ReelsRemoteDataSourceImpl implements ReelsRemoteDataSource {
   @override
   Future<List<ReelModel>> getReels() async {
     try {
-      final response = await _client.get(AppConfig.reels);
+      final response = await _client.get(AppConfig.locations);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = response.data;

@@ -103,6 +103,7 @@ class GuideSmsResent extends GuideOtpState {
 class GuideOtpInvalid extends GuideOtpState {
   final String message;
   final int attempt;
+  final bool isLoginMode; // ← добавлен флаг
 
   const GuideOtpInvalid({
     required super.phone,
@@ -110,10 +111,11 @@ class GuideOtpInvalid extends GuideOtpState {
     this.attempt = 1,
     super.secondsLeft = 59,
     super.canResend = false,
+    this.isLoginMode = true, // ← по умолчанию
   });
 
   @override
-  List<Object?> get props => [phone, message, attempt, secondsLeft, canResend];
+  List<Object?> get props => [phone, message, attempt, secondsLeft, canResend, isLoginMode];
 
   GuideOtpInvalid copyWith({
     String? phone,
@@ -121,6 +123,7 @@ class GuideOtpInvalid extends GuideOtpState {
     int? attempt,
     int? secondsLeft,
     bool? canResend,
+    bool? isLoginMode,
   }) {
     return GuideOtpInvalid(
       phone: phone ?? this.phone,
@@ -128,6 +131,7 @@ class GuideOtpInvalid extends GuideOtpState {
       attempt: attempt ?? this.attempt,
       secondsLeft: secondsLeft ?? this.secondsLeft,
       canResend: canResend ?? this.canResend,
+      isLoginMode: isLoginMode ?? this.isLoginMode,
     );
   }
 }

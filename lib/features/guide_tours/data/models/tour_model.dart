@@ -8,7 +8,7 @@ class TourModel extends Equatable {
   final int durationDays;
   final int totalSeats;
   final int minSeats;
-  final double pricePerSeat;
+  final int pricePerSeat;
   final String status;
   final List<int> bookedSeats;
 
@@ -27,25 +27,27 @@ class TourModel extends Equatable {
 
   factory TourModel.fromJson(Map<String, dynamic> json) {
     return TourModel(
-      id: json['id'] as String,           // ✅ Явный cast
+      id: json['id'] as String, // ✅ Явный cast
       title: json['title'] as String,
       promoVideoUrl: json['promo_video_url'] as String?,
       departureAt: json['departure_at'] as String,
       durationDays: json['duration_days'] as int,
       totalSeats: json['total_seats'] as int,
       minSeats: json['min_seats'] as int,
-      pricePerSeat: (json['price_per_seat'] as num).toDouble(),
+      pricePerSeat: json['price_per_seat'] as int,
       status: json['status'] as String,
-      bookedSeats: (json['booked_seats'] as List<dynamic>?)
-          ?.map((e) => e as int)
-          .toList() ?? [],
+      bookedSeats:
+          (json['booked_seats'] as List<dynamic>?) // ← nullable
+              ?.map((e) => e as int)
+              .toList() ??
+          [],
     );
   }
 
   Map<String, dynamic> toJson() {
-    final String tourId = id;             // ✅ Локальная переменная с явным типом
+    final String tourId = id; // ✅ Локальная переменная с явным типом
     return {
-      'id': tourId,                        // ✅ Используем локальную переменную
+      'id': tourId, // ✅ Используем локальную переменную
       'title': title,
       'promo_video_url': promoVideoUrl,
       'departure_at': departureAt,
@@ -60,7 +62,15 @@ class TourModel extends Equatable {
 
   @override
   List<Object?> get props => [
-    id, title, promoVideoUrl, departureAt, durationDays,
-    totalSeats, minSeats, pricePerSeat, status, bookedSeats,
+    id,
+    title,
+    promoVideoUrl,
+    departureAt,
+    durationDays,
+    totalSeats,
+    minSeats,
+    pricePerSeat,
+    status,
+    bookedSeats,
   ];
 }

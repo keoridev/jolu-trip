@@ -52,7 +52,11 @@ class GuideToursRemoteDataSourceImpl implements GuideToursRemoteDataSource {
         data: request.toJson(),
       );
 
-      return TourModel.fromJson(response.data as Map<String, dynamic>);
+      final data = response.data as Map<String, dynamic>;
+      final tourData =
+          data['tour'] as Map<String, dynamic>; // ← достаём из обёртки
+
+      return TourModel.fromJson(tourData);
     } on DioException catch (e) {
       throw ServerException(
         e.message ?? 'Failed to create tour',

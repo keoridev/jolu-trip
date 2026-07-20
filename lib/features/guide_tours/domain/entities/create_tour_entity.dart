@@ -8,7 +8,7 @@ class CreateTourEntity extends Equatable {
   final int durationDays;
   final int totalSeats;
   final int minSeats;
-  final double pricePerSeat;
+  final int pricePerSeat;
   final String? promoVideoUrl;
   final List<String> includedServices;
   final List<String> gearRequirements;
@@ -35,7 +35,7 @@ class CreateTourEntity extends Equatable {
     int? durationDays,
     int? totalSeats,
     int? minSeats,
-    double? pricePerSeat,
+    int? pricePerSeat,
     String? promoVideoUrl,
     List<String>? includedServices,
     List<String>? gearRequirements,
@@ -56,8 +56,16 @@ class CreateTourEntity extends Equatable {
 
   @override
   List<Object?> get props => [
-    title, locationId, departureAt, durationDays, totalSeats,
-    minSeats, pricePerSeat, promoVideoUrl, includedServices,
-    gearRequirements, itinerary,
+    title,
+    locationId,
+    departureAt,
+    durationDays,
+    totalSeats,
+    minSeats,
+    pricePerSeat,
+    promoVideoUrl,
+    includedServices,
+    gearRequirements,
+    itinerary,
   ];
 }

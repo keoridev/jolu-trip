@@ -8,7 +8,7 @@ class TourEntity extends Equatable {
   final int durationDays;
   final int totalSeats;
   final int minSeats;
-  final double pricePerSeat;
+  final int pricePerSeat;
   final String status;
   final List<int> bookedSeats;
 

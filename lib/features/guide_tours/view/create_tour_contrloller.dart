@@ -144,7 +144,7 @@ class CreateTourController extends ChangeNotifier {
       durationDays: durationDays,
       totalSeats: int.parse(totalSeatsController.text),
       minSeats: int.parse(minSeatsController.text),
-      pricePerSeat: double.parse(priceController.text),
+      pricePerSeat: int.parse(priceController.text),
       includedServices: List.from(includedServices),
       gearRequirements: List.from(gearRequirements),
       itinerary: List.from(itinerary),

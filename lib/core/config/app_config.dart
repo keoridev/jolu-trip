@@ -18,7 +18,7 @@ class AppConfig {
   static String get registerOtp => '$baseUrl/tourist/login/register';
 
   // Locations
-  static String get reels => '$baseUrl/locations/reels';
+  static String get locations => '$baseUrl/locations/reels';
   static String locationDetail(String id) => '$baseUrl/locations/$id';
 
   // Tours

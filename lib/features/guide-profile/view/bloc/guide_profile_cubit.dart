@@ -117,9 +117,27 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     });
   }
 
+  /// 🔥 ВЫХОД — полная очистка данных и навигация
   Future<void> logout() async {
-    await SecureStorage.clearAll();
-    emit(const GuideProfileLoggedOut());
+    emit(const GuideProfileLoading());
+    
+    try {
+      // Опционально: вызвать logout на сервере (инвалидировать токен)
+      // await _repository.logout();
+      
+      // Очищаем всё локальное хранилище
+      await SecureStorage.clearAll();
+      
+      debugPrint('🔑 GuideProfileCubit: User logged out');
+      
+      // Эмитим состояние выхода — экран перехватит и сделает редирект
+      emit(const GuideProfileLoggedOut());
+    } catch (e) {
+      debugPrint('❌ Error during logout: $e');
+      // Даже при ошибке очищаем локально и выходим
+      await SecureStorage.clearAll();
+      emit(const GuideProfileLoggedOut());
+    }
   }
 
   Future<void> updatePresentationVideo(Uint8List bytes) async {

@@ -30,11 +30,9 @@ class GuideAuthRemoteDataSourceImpl implements GuideAuthRemoteDataSource {
         AppConfig.guideLogin,
         data: {'phone': phone},
       );
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw ServerException('Ошибка: ${response.statusCode}', statusCode: response.statusCode);
-      }
+      _validateResponse(response);
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      _handleDioError(e);
     }
   }
 
@@ -45,12 +43,10 @@ class GuideAuthRemoteDataSourceImpl implements GuideAuthRemoteDataSource {
         AppConfig.guideLoginVerify,
         data: {'phone': phone, 'code': code},
       );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return response;
-      }
-      throw ServerException('Ошибка верификации', statusCode: response.statusCode);
+      _validateResponse(response);
+      return response;
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      _handleDioError(e);
     }
   }
 
@@ -65,11 +61,9 @@ class GuideAuthRemoteDataSourceImpl implements GuideAuthRemoteDataSource {
         AppConfig.guideRegister,
         data: {'full_name': fullName, 'gender': gender, 'phone': phone},
       );
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw ServerException('Ошибка: ${response.statusCode}', statusCode: response.statusCode);
-      }
+      _validateResponse(response);
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      _handleDioError(e);
     }
   }
 
@@ -90,12 +84,10 @@ class GuideAuthRemoteDataSourceImpl implements GuideAuthRemoteDataSource {
           'code_sms': code,
         },
       );
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return response;
-      }
-      throw ServerException('Ошибка регистрации', statusCode: response.statusCode);
+      _validateResponse(response);
+      return response;
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      _handleDioError(e);
     }
   }
 
@@ -106,48 +98,69 @@ class GuideAuthRemoteDataSourceImpl implements GuideAuthRemoteDataSource {
         AppConfig.guideResendSms,
         data: {'phone': phone},
       );
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw ServerException('Ошибка: ${response.statusCode}', statusCode: response.statusCode);
-      }
+      _validateResponse(response);
     } on DioException catch (e) {
-      throw _handleDioError(e);
+      _handleDioError(e);
     }
   }
 
-  Exception _handleDioError(DioException e) {
+  void _validateResponse(Response response) {
+    if (response.statusCode != 200 && response.statusCode != 201) {
+      throw ServerException(
+        'Ошибка: ${response.statusCode}',
+        statusCode: response.statusCode,
+      );
+    }
+  }
+
+  Never _handleDioError(DioException e) {
+    // ← Never вместо Exception
     final responseData = e.response?.data;
     String? errorMessage;
 
     if (responseData is Map<String, dynamic>) {
-      errorMessage = responseData['error'] as String?
-                  ?? responseData['message'] as String?;
+      errorMessage =
+          responseData['error'] as String? ??
+          responseData['message'] as String?;
     }
 
     if (errorMessage != null && errorMessage.isNotEmpty) {
-      return ServerException(errorMessage, statusCode: e.response?.statusCode);
+      throw ServerException(errorMessage, statusCode: e.response?.statusCode);
     }
 
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
       case DioExceptionType.receiveTimeout:
       case DioExceptionType.sendTimeout:
-        return NetworkException('Сервер не отвечает');
+        throw NetworkException('Сервер не отвечает');
       case DioExceptionType.connectionError:
-        return NetworkException('Нет подключения');
+        throw NetworkException('Нет подключения');
       case DioExceptionType.badResponse:
         final statusCode = e.response?.statusCode;
-        return switch (statusCode) {
-          400 => ServerException('Неверный запрос. Проверьте данные.', statusCode: statusCode),
-          401 => ServerException('Неавторизован. Войдите заново.', statusCode: statusCode),
-          404 => ServerException('Эндпоинт не найден. Проверьте URL.', statusCode: statusCode),
+        throw switch (statusCode) {
+          400 => ServerException(
+            'Неверный запрос. Проверьте данные.',
+            statusCode: statusCode,
+          ),
+          401 => ServerException(
+            'Неавторизован. Войдите заново.',
+            statusCode: statusCode,
+          ),
+          404 => ServerException('Гид не найден.', statusCode: statusCode),
           409 => ServerException('Конфликт данных', statusCode: statusCode),
-          429 => ServerException('Слишком много запросов', statusCode: statusCode),
-          413 => ServerException('Файлы слишком большие', statusCode: statusCode),
+          429 => ServerException(
+            'Слишком много запросов',
+            statusCode: statusCode,
+          ),
+          413 => ServerException(
+            'Файлы слишком большие',
+            statusCode: statusCode,
+          ),
           500 => ServerException('Ошибка сервера', statusCode: statusCode),
           _ => ServerException('Ошибка: $statusCode', statusCode: statusCode),
         };
       default:
-        return ServerException(e.message ?? 'Неизвестная ошибка');
+        throw ServerException(e.message ?? 'Неизвестная ошибка');
     }
   }
 }

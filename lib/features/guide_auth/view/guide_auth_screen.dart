@@ -7,7 +7,6 @@ import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.da
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_state.dart';
 import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_auth_tabs.dart';
-
 import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_mode_selection.dart';
 import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_register_form.dart';
 import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_welcome.dart';
@@ -45,7 +44,6 @@ class GuideAuthScreen extends StatelessWidget {
         onRegister: () => context.read<GuideAuthCubit>().selectMode(false),
       ),
 
-      // Режим с вкладками (вход или регистрация)
       GuideAuthModeSelection(isLogin: final isLogin) => GuideAuthTabs(
         isLogin: isLogin,
         isLoading: isLoading,
@@ -57,14 +55,14 @@ class GuideAuthScreen extends StatelessWidget {
             context.read<GuideAuthCubit>().proceedToRegister(phone),
         onBack: () => context.read<GuideAuthCubit>().reset(),
       ),
+
       GuideLoginOtpSent(phone: final phone) => OtpView(
         key: const ValueKey('guide_otp_login'),
         phone: phone,
         isLoading: isLoading,
         secondsLeft: state.secondsLeft,
         canResend: state.canResend,
-        invalidAttempt:
-            null, // ошибка не показывается, т.к. мы ушли из GuideOtpInvalid
+        invalidAttempt: null,
         onBack: () => context.read<GuideAuthCubit>().reset(),
         onVerify: (code) =>
             context.read<GuideAuthCubit>().verifyLoginOtp(phone, code),
@@ -103,18 +101,17 @@ class GuideAuthScreen extends StatelessWidget {
 
       GuideOtpInvalid(
         phone: final phone,
-        message: final message,
-        attempt: final attempt,
+        isLoginMode: final isLoginMode, // ← используем флаг из состояния
       ) =>
         OtpView(
-          key: ValueKey('guide_otp_invalid_$attempt'),
+          key: ValueKey('guide_otp_invalid_${state.attempt}'),
           phone: phone,
           isLoading: isLoading,
           secondsLeft: state.secondsLeft,
           canResend: state.canResend,
-          invalidAttempt: attempt,
+          invalidAttempt: state.attempt,
           onBack: () => context.read<GuideAuthCubit>().reset(),
-          onVerify: (code) => _isLoginMode(state)
+          onVerify: (code) => isLoginMode
               ? context.read<GuideAuthCubit>().verifyLoginOtp(phone, code)
               : context.read<GuideAuthCubit>().verifyRegisterOtp(
                   fullName: _getFullName(state),
@@ -133,8 +130,14 @@ class GuideAuthScreen extends StatelessWidget {
         canResend: state.canResend,
         invalidAttempt: null,
         onBack: () => context.read<GuideAuthCubit>().reset(),
-        onVerify: (code) =>
-            context.read<GuideAuthCubit>().verifyLoginOtp(phone, code),
+        onVerify: (code) => _isLoginModeFromCubit(context)
+            ? context.read<GuideAuthCubit>().verifyLoginOtp(phone, code)
+            : context.read<GuideAuthCubit>().verifyRegisterOtp(
+                fullName: _getFullName(state),
+                gender: _getGender(state),
+                phone: phone,
+                code: code,
+              ),
         onResend: () => context.read<GuideAuthCubit>().resendSms(phone),
       ),
 
@@ -150,17 +153,15 @@ class GuideAuthScreen extends StatelessWidget {
     };
   }
 
-  // Helper методы для получения данных из состояния
-  bool _isLoginMode(GuideAuthState state) {
-    // Определяем по типу состояния
-    return state is GuideLoginOtpSent ||
-        state is GuideOtpInvalid && state.phone.isNotEmpty; // упрощенно
+  // ← Убрали хак с определением по типу состояния
+  bool _isLoginModeFromCubit(BuildContext context) {
+    return context.read<GuideAuthCubit>().isLoginMode;
   }
 
   String _getFullName(GuideAuthState state) {
     if (state is GuideRegisterOtpSent) return state.fullName;
     if (state is GuideOtpInvalid) {
-      // В этом случае мы не знаем fullName, но он нам не нужен для логина
+      // Для GuideOtpInvalid нужно хранить fullName — добавьте в состояние если нужно
       return '';
     }
     return '';
@@ -168,14 +169,8 @@ class GuideAuthScreen extends StatelessWidget {
 
   GuideGender _getGender(GuideAuthState state) {
     if (state is GuideRegisterOtpSent) return state.gender;
+    if (state is GuideOtpInvalid) return GuideGender.male;
     return GuideGender.male;
-  }
-
-  Widget _buildInitial(BuildContext context) {
-    return GuideModeSelection(
-      onLogin: () => context.read<GuideAuthCubit>().selectMode(true),
-      onRegister: () => context.read<GuideAuthCubit>().selectMode(false),
-    );
   }
 
   Widget _buildErrorView(BuildContext context, String message) {
@@ -209,14 +204,11 @@ class GuideAuthScreen extends StatelessWidget {
     }
 
     if (state is GuideAuthSuccess) {
-      // После успешного входа — на dashboard
-      // Профиль загрузится там автоматически
       context.go('/guide/dashboard');
       return;
     }
 
     if (state is GuideOnboardingPending) {
-      // Нужно пройти onboarding
       context.go('/guide/onboarding', extra: {'guideId': state.guide.id});
       return;
     }
@@ -224,12 +216,10 @@ class GuideAuthScreen extends StatelessWidget {
     if (state is GuideAuthError) {
       String message = state.message;
 
-      // 404 = аккаунт удалён
       if (message.contains('404') || message.contains('Not Found')) {
         message = 'Аккаунт не найден. Возможно, он был удалён.';
       }
 
-      // Дубликат телефона
       if (message.contains('duplicate key') ||
           message.contains('guides_phone_key')) {
         message = 'Этот номер уже зарегистрирован. Войдите в систему.';

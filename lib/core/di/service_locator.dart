@@ -30,6 +30,11 @@ import 'package:jolutrip_app/features/location-detail/view/bloc/location_detail_
 import 'package:jolutrip_app/features/location-detail/data/datasources/location_detail_remote_datasource.dart';
 import 'package:jolutrip_app/features/location-detail/data/repositories/location_detail_repository_impl.dart';
 import 'package:jolutrip_app/features/location-detail/domain/repositories/location_detail_repository.dart';
+import 'package:jolutrip_app/features/locations/data/datasources/locations_remote_datasource.dart';
+import 'package:jolutrip_app/features/locations/data/repositories/locations_repository_impl.dart';
+import 'package:jolutrip_app/features/locations/domain/repositories/locations_repository.dart';
+import 'package:jolutrip_app/features/locations/domain/usecases/get_locations.dart';
+import 'package:jolutrip_app/features/locations/view/bloc/locations_cubit.dart';
 import 'package:jolutrip_app/features/reels/view/bloc/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/data/data.dart';
 import 'package:jolutrip_app/features/reels/data/datasources/reels_remote_datasource.dart';
@@ -109,13 +114,20 @@ void setupDependencies() {
   sl.registerLazySingleton(() => CreateTourUseCase(repository: sl()));
   sl.registerLazySingleton(() => UploadPromoVideoUseCase(repository: sl()));
   sl.registerFactory(
-    () => GuideToursCubit(
-      createTourUseCase: sl(),
-      uploadPromoVideoUseCase: sl(),
-    ),
+    () =>
+        GuideToursCubit(createTourUseCase: sl(), uploadPromoVideoUseCase: sl()),
   );
 
   // ─── Safety ────────────────────────────────────
   sl.registerLazySingleton<SafetyRepository>(() => SafetyRepositoryImpl());
   sl.registerFactory(() => SafetyCubit(repository: sl()));
+
+  sl.registerLazySingleton<LocationsRemoteDataSource>(
+    () => LocationsRemoteDataSourceImpl(dio: sl()),
+  );
+  sl.registerLazySingleton<LocationsRepository>(
+    () => LocationsRepositoryImpl(remoteDataSource: sl()),
+  );
+  sl.registerLazySingleton(() => GetLocationsUseCase(repository: sl()));
+  sl.registerFactory(() => LocationsCubit(getLocationsUseCase: sl()));
 }
