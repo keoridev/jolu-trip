@@ -33,9 +33,15 @@ dependencies:
   permission_handler: ^12.0.3
   mask_text_input_formatter: ^2.9.0
   intl: ^0.20.3
-  
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  lottie: ^3.1.2
+  uuid: ^4.5.1
+  shimmer: ^3.0.0
 
 dev_dependencies:
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.12
   flutter_test:
     sdk: flutter
 
@@ -62,3 +68,9 @@ flutter:
     - assets/icons/gorod.png
     - assets/icons/indrive.webp
     - assets/icons/whatsapp.png
+    - assets/stamps/first_step.png
+    - assets/stamps/canyon.png
+    - assets/stamps/issyk_kul.png
+    - assets/stamps/ala_archa.png
+    - assets/stamps/guided.png
+    - assets/stamps/son_kul.png

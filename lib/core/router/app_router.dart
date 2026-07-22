@@ -1,3 +1,5 @@
+// lib/core/router/app_router.dart (или где у тебя AppRouterWithShell)
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,10 @@ import 'package:jolutrip_app/core/ui/jolu_ui.dart';
 import 'package:jolutrip_app/features/auth/view/auth_screen.dart';
 import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/view/role_selection_screen.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/journal/journal_cubit.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/stamps/stamps_cubit.dart';
+import 'package:jolutrip_app/features/gamification/view/pages/journal_screen.dart';
+import 'package:jolutrip_app/features/gamification/view/pages/stamps_screen.dart';
 import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
 import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_state.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
@@ -102,7 +108,7 @@ class AppRouterWithShell {
       ),
 
       // ═══════════════════════════════════════════════════
-      // PROFILE ГИДА (ТОЛЬКО ОДИН РАЗ!)
+      // ДЕТАЛЬ ЛОКАЦИИ
       // ═══════════════════════════════════════════════════
       GoRoute(
         path: '/location/:id',
@@ -116,6 +122,28 @@ class AppRouterWithShell {
             child: LocationDetailScreen(locationId: locationId),
           );
         },
+      ),
+
+      // ═══════════════════════════════════════════════════
+      // ГЕЙМИФИКАЦИЯ (вне shell — полноэкранные)
+      // ═══════════════════════════════════════════════════
+      GoRoute(
+        path: '/stamps',
+        name: 'stamps',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => BlocProvider<StampsCubit>(
+          create: (_) => sl<StampsCubit>()..loadStamps(),
+          child: const StampsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/journal',
+        name: 'journal',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => BlocProvider<JournalCubit>(
+          create: (_) => sl<JournalCubit>()..loadJournal(),
+          child: const JournalScreen(),
+        ),
       ),
 
       // ═══════════════════════════════════════════════════
@@ -188,8 +216,7 @@ class AppRouterWithShell {
               GoRoute(
                 path: '/profile',
                 name: 'profile',
-                builder: (context, state) =>
-                    const ProfileRouterScreen(), // ← ЗДЕСЬ
+                builder: (context, state) => const ProfileRouterScreen(),
               ),
             ],
           ),

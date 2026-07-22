@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
-
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
+
+import 'package:jolutrip_app/features/gamification/view/blocs/stamps/stamps_cubit.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/stamps/stamps_state.dart';
 import 'package:jolutrip_app/features/profile/view/bloc/profile_cubit.dart';
 import 'package:jolutrip_app/features/profile/view/bloc/profile_state.dart';
 import 'package:jolutrip_app/features/safety/view/safety_screen.dart';
@@ -28,7 +30,6 @@ class ProfileScreen extends StatelessWidget {
                 name: state.name,
                 phone: state.phone,
                 avatarUrl: state.avatarUrl,
-                ecoPoints: state.ecoPoints,
               );
             }
             return const _GuestView();
@@ -63,8 +64,6 @@ class _GuestView extends StatelessWidget {
       child: Column(
         children: [
           const SizedBox(height: 80),
-
-          // Аватар-заглушка
           Container(
             width: 96,
             height: 96,
@@ -79,22 +78,15 @@ class _GuestView extends StatelessWidget {
               color: AppColors.textSecondary,
             ),
           ),
-
           const SizedBox(height: AppDimens.space24),
-
           Text('Гость', style: AppTextStyles.headline),
-
           const SizedBox(height: AppDimens.space12),
-
           Text(
             'Войди или зарегистрируйся, чтобы\nсохранять поездки и делиться контентом',
             style: AppTextStyles.subtext,
             textAlign: TextAlign.center,
           ),
-
           const SizedBox(height: AppDimens.space32),
-
-          // В _GuestView — изменить кнопку:
           SizedBox(
             width: double.infinity,
             height: 56,
@@ -105,14 +97,13 @@ class _GuestView extends StatelessWidget {
               isFullWidth: true,
               leadingIcon: Icons.login_rounded,
               onPressed: () async {
-                await context.push('/auth'); // ← Теперь открывает выбор роли!
+                await context.push('/auth');
                 if (context.mounted) {
                   context.read<ProfileCubit>().loadProfile();
                 }
               },
             ),
           ),
-
           const Spacer(),
         ],
       ),
@@ -124,19 +115,16 @@ class _AuthenticatedView extends StatelessWidget {
   final String name;
   final String phone;
   final String? avatarUrl;
-  final int ecoPoints;
 
   const _AuthenticatedView({
     required this.name,
     required this.phone,
     this.avatarUrl,
-    required this.ecoPoints,
   });
 
   @override
   Widget build(BuildContext context) {
     final profileCubit = context.read<ProfileCubit>();
-
     final hasAvatar = avatarUrl != null && avatarUrl!.isNotEmpty;
 
     return SingleChildScrollView(
@@ -146,6 +134,7 @@ class _AuthenticatedView extends StatelessWidget {
         children: [
           const SizedBox(height: 48),
 
+          // Аватар + имя
           Row(
             children: [
               Container(
@@ -173,9 +162,7 @@ class _AuthenticatedView extends StatelessWidget {
                       )
                     : null,
               ),
-
               const SizedBox(width: AppDimens.space24),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,55 +202,99 @@ class _AuthenticatedView extends StatelessWidget {
           ),
 
           const SizedBox(height: AppDimens.space32),
-          Container(
-            padding: const EdgeInsets.all(AppDimens.space16),
-            decoration: BoxDecoration(
-              color: AppColors.cardDark,
-              borderRadius: BorderRadius.circular(AppDimens.radiusM),
-              border: Border.all(color: AppColors.borderDark),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.eco_outlined,
-                    color: AppColors.primary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: AppDimens.space16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+
+          // ═══════════════════════════════════════════════════
+          // СТАТУС ПУТЕШЕСТВЕННИКА (геймификация)
+          // ═══════════════════════════════════════════════════
+          InkWell(
+            onTap: () => context.push('/stamps'),
+            borderRadius: BorderRadius.circular(AppDimens.radiusM),
+            child: Container(
+              padding: const EdgeInsets.all(AppDimens.space16),
+              decoration: BoxDecoration(
+                color: AppColors.cardDark,
+                borderRadius: BorderRadius.circular(AppDimens.radiusM),
+                border: Border.all(color: AppColors.borderDark),
+              ),
+              child: BlocBuilder<StampsCubit, StampsState>(
+                builder: (context, state) {
+                  String status = 'Турист';
+                  int stampCount = 0;
+
+                  if (state is StampsLoaded) {
+                    status = state.travelerStatus ?? 'Турист';
+                    stampCount = state.totalStamps;
+                  }
+
+                  return Row(
                     children: [
-                      Text(
-                        '$ecoPoints баллов',
-                        style: AppTextStyles.title.copyWith(fontSize: 16),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.map_outlined,
+                          color: AppColors.primary,
+                          size: 24,
+                        ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'Эко-активность в горах',
-                        style: AppTextStyles.subtext.copyWith(fontSize: 12),
+                      const SizedBox(width: AppDimens.space16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              status,
+                              style: AppTextStyles.title.copyWith(fontSize: 16),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '$stampCount печатей',
+                              style: AppTextStyles.subtext.copyWith(
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right_rounded,
+                        color: AppColors.textSecondary,
+                        size: 20,
                       ),
                     ],
-                  ),
-                ),
-                Text(
-                  'Lvl 1',
-                  style: AppTextStyles.accentBadge.copyWith(fontSize: 12),
-                ),
-              ],
+                  );
+                },
+              ),
             ),
           ),
 
           const SizedBox(height: AppDimens.space32),
 
-          // Меню профиля
+          // Меню: Геймификация
+          _MenuSection(
+            title: 'Мой атлас',
+            items: [
+              _MenuItem(
+                icon: Icons.stars_outlined,
+                title: 'Мои печати',
+                subtitle: 'Коллекции и достижения',
+                onTap: () => context.push('/stamps'),
+              ),
+              _MenuItem(
+                icon: Icons.book_outlined,
+                title: 'Журнал путешествий',
+                subtitle: 'История посещений',
+                onTap: () => context.push('/journal'),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: AppDimens.space24),
+
+          // Меню: Безопасность
           _MenuSection(
             title: 'Безопасность',
             items: [
@@ -287,6 +318,7 @@ class _AuthenticatedView extends StatelessWidget {
 
           const SizedBox(height: AppDimens.space24),
 
+          // Меню: Активность
           _MenuSection(
             title: 'Активность',
             items: [
@@ -341,9 +373,7 @@ void _showLogoutDialog(BuildContext context, ProfileCubit cubit) {
       cancelText: 'Отмена',
       onConfirm: () {
         Navigator.pop(dialogContext);
-
         cubit.logout();
-
         if (context.mounted) {
           JoluSnackbar.show(
             context: context,
@@ -359,6 +389,7 @@ void _showLogoutDialog(BuildContext context, ProfileCubit cubit) {
 // ═══════════════════════════════════════════════════
 // ВИДЖЕТЫ МЕНЮ
 // ═══════════════════════════════════════════════════
+
 class _MenuSection extends StatelessWidget {
   final String title;
   final List<Widget> items;

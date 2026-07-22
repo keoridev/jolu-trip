@@ -1,10 +1,17 @@
+// lib/features/location-detail/view/location_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
+
+import 'package:jolutrip_app/features/gamification/view/blocs/checkin/checkin_cubit.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/checkin/checkin_state.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/stamps/stamps_cubit.dart';
 import 'package:jolutrip_app/features/location-detail/view/bloc/location_detail_cubit.dart';
 import 'package:jolutrip_app/features/location-detail/view/bloc/location_detail_state.dart';
 import 'package:jolutrip_app/features/location-detail/domain/domain.dart';
@@ -81,7 +88,6 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                                 // TODO: Открыть полноэкранное видео
                               },
                             ),
-                            // Кнопка назад
                             Positioned(
                               top: MediaQuery.of(context).padding.top + 8,
                               left: AppDimens.space16,
@@ -104,17 +110,14 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                         ),
                       ),
 
-                      // Инфо-карточки
                       SliverToBoxAdapter(
                         child: LocationInfoCards(location: location),
                       ),
 
-                      // Описание
                       SliverToBoxAdapter(
                         child: LocationDescription(location: location),
                       ),
 
-                      // Карта
                       SliverToBoxAdapter(
                         child: LocationMapPreview(
                           location: location,
@@ -122,24 +125,30 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                         ),
                       ),
 
-                      // Места для остановки
                       SliverToBoxAdapter(
                         child: LocationRoadsidePlaces(
                           places: location.roadsidePlaces,
                         ),
                       ),
 
-                      // Гид (заглушка)
                       const SliverToBoxAdapter(child: LocationGuideCard()),
 
-                      // Отступ для нижней панели
+                      // ═══════════════════════════════════════════════════
+                      // КНОПКА ЧЕКИНА (новое)
+                      // ═══════════════════════════════════════════════════
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: _CheckinButton(location: location),
+                        ),
+                      ),
+
                       const SliverPadding(
-                        padding: EdgeInsets.only(bottom: 100),
+                        padding: EdgeInsets.only(bottom: 150),
                       ),
                     ],
                   ),
 
-                  // Нижняя панель действий
                   Positioned(
                     bottom: 0,
                     left: 0,
@@ -175,6 +184,105 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (_) => const LocationGuideCard(),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// КНОПКА ЧЕКИНА
+// ═══════════════════════════════════════════════════
+
+class _CheckinButton extends StatelessWidget {
+  final LocationDetailEntity location;
+
+  const _CheckinButton({required this.location});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => sl<CheckinCubit>(),
+      child: Builder(
+        builder: (context) {
+          return BlocConsumer<CheckinCubit, CheckinState>(
+            listener: (context, state) {
+              if (state is CheckinSuccess) {
+                // Обновляем печати
+                context.read<StampsCubit>().onCheckinCompleted(state.newStamps);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('✅ Чекин в ${state.locationName}!'),
+                    backgroundColor: Colors.green,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+
+                // Если есть новые печати — показываем анимацию
+                if (state.newStamps.isNotEmpty) {
+                  Future.delayed(const Duration(milliseconds: 500), () {
+                    context.push('/stamps');
+                  });
+                }
+              } else if (state is CheckinFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('❌ ${state.message}'),
+                    backgroundColor: Colors.red,
+                    duration: const Duration(seconds: 3),
+                  ),
+                );
+              }
+            },
+            builder: (context, state) {
+              final isLoading = state is CheckinValidating;
+
+              return SizedBox(
+                width: double.infinity,
+                height: 56,
+                child: ElevatedButton.icon(
+                  onPressed: isLoading
+                      ? null
+                      : () {
+                          context.read<CheckinCubit>().checkin(
+                            locationId: location.id,
+                            locationName: location.name,
+                            locationLat: location.latitude,
+                            locationLng: location.longitude,
+                            locationTags: location.roadFeatures,
+                          );
+                        },
+                  icon: isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.location_on),
+                  label: Text(
+                    isLoading ? 'Проверка...' : 'Я здесь',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: AppColors.primary.withOpacity(0.5),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppDimens.radiusM),
+                    ),
+                    elevation: 0,
+                  ),
+                ),
+              );
+            },
+          );
+        },
+      ),
     );
   }
 }

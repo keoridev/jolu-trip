@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/storage/secure_storage.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/stamps/stamps_cubit.dart';
 import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
 import 'package:jolutrip_app/features/guide-profile/view/guide_profile_screen.dart';
 import 'package:jolutrip_app/features/profile/view/bloc/profile_cubit.dart';
@@ -25,7 +26,7 @@ class _ProfileRouterScreenState extends State<ProfileRouterScreen> {
   void initState() {
     super.initState();
     _determineRole();
-    
+
     // Слушаем изменения auth — когда роль меняется, перезагружаем
     _authSubscription = SecureStorage.authChanges.listen((_) {
       debugPrint('🔍 Auth changed, reloading role');
@@ -41,9 +42,9 @@ class _ProfileRouterScreenState extends State<ProfileRouterScreen> {
 
   Future<void> _determineRole() async {
     if (!mounted) return;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       final token = await SecureStorage.getToken();
       debugPrint('🔍 Token: $token');
@@ -104,6 +105,9 @@ class _ProfileRouterScreenState extends State<ProfileRouterScreen> {
     }
 
     debugPrint('🔍 Showing TOURIST profile');
-    return const ProfileScreen();
+    return BlocProvider(
+      create: (_) => sl<StampsCubit>()..loadStamps(),
+      child: const ProfileScreen(),
+    );
   }
 }

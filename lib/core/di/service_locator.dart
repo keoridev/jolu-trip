@@ -5,8 +5,10 @@ import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:jolutrip_app/features/auth/data/repositories/auth_repository_impl.dart';
 import 'package:jolutrip_app/features/auth/domain/repositories/auth_repository.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/checkin/checkin_cubit.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/journal/journal_cubit.dart';
+import 'package:jolutrip_app/features/gamification/view/blocs/stamps/stamps_cubit.dart';
 import 'package:jolutrip_app/features/guide-profile/data/data.dart';
-import 'package:jolutrip_app/features/guide-profile/data/datasources/datasources.dart';
 import 'package:jolutrip_app/features/guide-profile/domain/repositories/guide_profile_repository.dart';
 import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
@@ -14,7 +16,6 @@ import 'package:jolutrip_app/features/guide_auth/data/datasources/guide_auth_rem
 import 'package:jolutrip_app/features/guide_auth/data/repositories/guide_auth_repository_impl.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/repositories/guide_auth_repository.dart';
 
-// 🔥 Импорты для онбординга
 import 'package:jolutrip_app/features/guide_onboarding/view/bloc/guide_onboarding_cubit.dart';
 import 'package:jolutrip_app/features/guide_onboarding/data/datasources/guide_onboarding_remote_datasource.dart';
 import 'package:jolutrip_app/features/guide_onboarding/data/repositories/guide_onboarding_repository_impl.dart';
@@ -42,6 +43,18 @@ import 'package:jolutrip_app/features/reels/domain/repositories/reels_repository
 import 'package:jolutrip_app/features/safety/view/bloc/safety_cubit.dart';
 import 'package:jolutrip_app/features/safety/data/repositories/safety_repository_impl.dart';
 import 'package:jolutrip_app/features/safety/domain/repositories/safety_repository.dart';
+
+// ═══════════════════════════════════════════════════
+// ГЕЙМИФИКАЦИЯ
+// ═══════════════════════════════════════════════════
+import 'package:jolutrip_app/features/gamification/data/datasources/journal_local_datasource.dart';
+import 'package:jolutrip_app/features/gamification/data/datasources/stamp_local_datasource.dart';
+import 'package:jolutrip_app/features/gamification/data/repositories/journal_repository_impl.dart';
+import 'package:jolutrip_app/features/gamification/data/repositories/stamp_repository_impl.dart';
+import 'package:jolutrip_app/features/gamification/domain/repositories/journal_repository.dart';
+import 'package:jolutrip_app/features/gamification/domain/repositories/stamp_repository.dart';
+import 'package:jolutrip_app/features/gamification/domain/usecases/perform_checkin.dart';
+import 'package:jolutrip_app/features/gamification/domain/usecases/get_traveler_status.dart';
 
 final sl = GetIt.instance;
 
@@ -122,6 +135,7 @@ void setupDependencies() {
   sl.registerLazySingleton<SafetyRepository>(() => SafetyRepositoryImpl());
   sl.registerFactory(() => SafetyCubit(repository: sl()));
 
+  // ─── Locations ─────────────────────────────────
   sl.registerLazySingleton<LocationsRemoteDataSource>(
     () => LocationsRemoteDataSourceImpl(dio: sl()),
   );
@@ -130,4 +144,40 @@ void setupDependencies() {
   );
   sl.registerLazySingleton(() => GetLocationsUseCase(repository: sl()));
   sl.registerFactory(() => LocationsCubit(getLocationsUseCase: sl()));
+
+  // ═══════════════════════════════════════════════════
+  // ГЕЙМИФИКАЦИЯ
+  // ═══════════════════════════════════════════════════
+
+  // Data sources (singleton с инициализацией)
+  sl.registerLazySingleton<JournalLocalDatasource>(() {
+    final ds = JournalLocalDatasource();
+    ds.init();
+    return ds;
+  });
+
+  sl.registerLazySingleton<StampLocalDatasource>(() {
+    final ds = StampLocalDatasource();
+    ds.init();
+    return ds;
+  });
+
+  // Repositories
+  sl.registerLazySingleton<JournalRepository>(
+    () => JournalRepositoryImpl(sl<JournalLocalDatasource>()),
+  );
+  sl.registerLazySingleton<StampRepository>(
+    () => StampRepositoryImpl(sl<StampLocalDatasource>()),
+  );
+
+  // Use cases
+  sl.registerLazySingleton(() => PerformCheckin(sl(), sl()));
+  sl.registerLazySingleton(() => GetTravelerStatus());
+
+  // BLoC
+  sl.registerFactory(() => JournalCubit(sl<JournalRepository>()));
+  sl.registerFactory(
+    () => StampsCubit(sl<StampRepository>(), sl<GetTravelerStatus>()),
+  );
+  sl.registerFactory(() => CheckinCubit(sl<PerformCheckin>()));
 }
