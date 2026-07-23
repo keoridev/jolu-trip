@@ -21,12 +21,11 @@ class CheckinCubit extends Cubit<CheckinState> {
     emit(const CheckinValidating());
 
     try {
-      // 1. Проверяем и запрашиваем разрешение
-      final permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
 
       if (permission == LocationPermission.denied) {
-        final requested = await Geolocator.requestPermission();
-        if (requested == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
           emit(const CheckinFailure('Разрешение на геолокацию отклонено'));
           return;
         }
@@ -41,32 +40,31 @@ class CheckinCubit extends Cubit<CheckinState> {
         return;
       }
 
-      // 2. Проверяем включён ли GPS
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
         emit(const CheckinFailure('Включите GPS на устройстве'));
         return;
       }
 
-      // 3. Получаем позицию
       final position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.best,
       );
 
-      // 4. Вызываем use case
       final result = await _performCheckin(
         usecase.PerformCheckinParams(
           locationId: locationId,
           locationName: locationName,
           locationLat: locationLat,
           locationLng: locationLng,
+          userLat: position.latitude,
+          userLng: position.longitude,
           accuracy: position.accuracy,
           locationTags: locationTags,
           hasGuideBooking: hasGuideBooking,
         ),
       );
 
-      if (result is usecase.CheckinSuccess) {
+      if (result is usecase.PerformCheckinSuccess) {
         emit(
           CheckinSuccess(
             visit: result.visit,
@@ -75,7 +73,7 @@ class CheckinCubit extends Cubit<CheckinState> {
             isFirstVisit: result.isFirstVisit,
           ),
         );
-      } else if (result is usecase.CheckinFailure) {
+      } else if (result is usecase.PerformCheckinFailure) {
         emit(CheckinFailure(result.message));
       }
     } catch (e) {

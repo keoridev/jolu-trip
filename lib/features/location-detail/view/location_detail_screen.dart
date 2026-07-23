@@ -78,7 +78,6 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
                 children: [
                   CustomScrollView(
                     slivers: [
-                      // Hero с кнопкой назад
                       SliverToBoxAdapter(
                         child: Stack(
                           children: [
@@ -133,9 +132,6 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
 
                       const SliverToBoxAdapter(child: LocationGuideCard()),
 
-                      // ═══════════════════════════════════════════════════
-                      // КНОПКА ЧЕКИНА (новое)
-                      // ═══════════════════════════════════════════════════
                       SliverToBoxAdapter(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
@@ -188,10 +184,6 @@ class _LocationDetailScreenState extends State<LocationDetailScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// КНОПКА ЧЕКИНА
-// ═══════════════════════════════════════════════════
-
 class _CheckinButton extends StatelessWidget {
   final LocationDetailEntity location;
 
@@ -206,8 +198,9 @@ class _CheckinButton extends StatelessWidget {
           return BlocConsumer<CheckinCubit, CheckinState>(
             listener: (context, state) {
               if (state is CheckinSuccess) {
-                // Обновляем печати
-                context.read<StampsCubit>().onCheckinCompleted(state.newStamps);
+                // Получаем StampsCubit из верхнего контекста
+                final stampsCubit = context.read<StampsCubit>();
+                stampsCubit.onCheckinCompleted(state.newStamps);
 
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
@@ -217,7 +210,6 @@ class _CheckinButton extends StatelessWidget {
                   ),
                 );
 
-                // Если есть новые печати — показываем анимацию
                 if (state.newStamps.isNotEmpty) {
                   Future.delayed(const Duration(milliseconds: 500), () {
                     context.push('/stamps');

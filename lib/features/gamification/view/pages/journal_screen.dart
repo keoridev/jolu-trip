@@ -1,5 +1,6 @@
-import 'dart:io';
+// lib/features/gamification/presentation/pages/journal_screen.dart
 
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -54,10 +55,6 @@ class JournalScreen extends StatelessWidget {
     );
   }
 }
-
-// ═══════════════════════════════════════════════════
-// СОСТОЯНИЯ
-// ═══════════════════════════════════════════════════
 
 class _LoadingView extends StatelessWidget {
   const _LoadingView();
@@ -152,10 +149,6 @@ class _EmptyView extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// СПИСОК ПОСЕЩЕНИЙ
-// ═══════════════════════════════════════════════════
-
 class _JournalList extends StatelessWidget {
   final List<VisitRecord> visits;
 
@@ -163,15 +156,11 @@ class _JournalList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Группируем по месяцам
     final grouped = _groupByMonth(visits);
 
     return CustomScrollView(
       slivers: [
-        // Статистика сверху
         SliverToBoxAdapter(child: _JournalStats(visits: visits)),
-
-        // Список по месяцам
         SliverList(
           delegate: SliverChildBuilderDelegate((context, index) {
             final month = grouped.keys.elementAt(index);
@@ -179,7 +168,6 @@ class _JournalList extends StatelessWidget {
             return _MonthSection(month: month, visits: monthVisits);
           }, childCount: grouped.length),
         ),
-
         const SliverPadding(padding: EdgeInsets.only(bottom: 32)),
       ],
     );
@@ -194,10 +182,6 @@ class _JournalList extends StatelessWidget {
     return result;
   }
 }
-
-// ═══════════════════════════════════════════════════
-// СТАТИСТИКА
-// ═══════════════════════════════════════════════════
 
 class _JournalStats extends StatelessWidget {
   final List<VisitRecord> visits;
@@ -285,10 +269,6 @@ class _StatItem extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════
-// СЕКЦИЯ МЕСЯЦА
-// ═══════════════════════════════════════════════════
-
 class _MonthSection extends StatelessWidget {
   final String month;
   final List<VisitRecord> visits;
@@ -300,7 +280,6 @@ class _MonthSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Заголовок месяца
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Row(
@@ -323,18 +302,12 @@ class _MonthSection extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                '${visits.length} ${visits.length == 1
-                    ? 'посещение'
-                    : visits.length < 5
-                    ? 'посещения'
-                    : 'посещений'}',
+                '${visits.length} ${_pluralize(visits.length)}',
                 style: AppTextStyles.subtext.copyWith(fontSize: 12),
               ),
             ],
           ),
         ),
-
-        // Карточки посещений
         ...visits.map((visit) => _VisitCard(visit: visit)),
       ],
     );
@@ -344,11 +317,13 @@ class _MonthSection extends StatelessWidget {
     if (s.isEmpty) return s;
     return s[0].toUpperCase() + s.substring(1);
   }
-}
 
-// ═══════════════════════════════════════════════════
-// КАРТОЧКА ПОСЕЩЕНИЯ
-// ═══════════════════════════════════════════════════
+  String _pluralize(int count) {
+    if (count == 1) return 'посещение';
+    if (count < 5) return 'посещения';
+    return 'посещений';
+  }
+}
 
 class _VisitCard extends StatelessWidget {
   final VisitRecord visit;
@@ -371,7 +346,6 @@ class _VisitCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Фото (если есть)
           if (hasPhotos)
             ClipRRect(
               borderRadius: const BorderRadius.vertical(
@@ -394,14 +368,11 @@ class _VisitCard extends StatelessWidget {
                 ),
               ),
             ),
-
-          // Контент
           Padding(
             padding: const EdgeInsets.all(16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Дата-круг
                 Container(
                   width: 48,
                   height: 48,
@@ -430,14 +401,12 @@ class _VisitCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 16),
-
-                // Инфо
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Локация #${visit.locationId}', // TODO: заменить на реальное имя
+                        'Локация #${visit.locationId}',
                         style: AppTextStyles.title.copyWith(fontSize: 15),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -472,8 +441,6 @@ class _VisitCard extends StatelessWidget {
                     ],
                   ),
                 ),
-
-                // Иконка стрелки
                 const Icon(
                   Icons.chevron_right_rounded,
                   color: AppColors.textSecondary,
@@ -489,19 +456,8 @@ class _VisitCard extends StatelessWidget {
 
   String _shortMonth(int month) {
     const months = [
-      '',
-      'янв',
-      'фев',
-      'мар',
-      'апр',
-      'май',
-      'июн',
-      'июл',
-      'авг',
-      'сен',
-      'окт',
-      'ноя',
-      'дек',
+      '', 'янв', 'фев', 'мар', 'апр', 'май', 'июн',
+      'июл', 'авг', 'сен', 'окт', 'ноя', 'дек',
     ];
     return months[month];
   }

@@ -1,3 +1,5 @@
+// lib/features/gamification/presentation/blocs/stamps/stamps_cubit.dart
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/features/gamification/domain/entities/entities.dart';
 import 'package:jolutrip_app/features/gamification/domain/repositories/repositories.dart';
@@ -37,35 +39,36 @@ class StampsCubit extends Cubit<StampsState> {
     final currentState = state;
     if (currentState is! StampsLoaded) return;
 
-    // Сохраняем новые печати
-    for (final stamp in newStamps) {
-      await _repository.saveStamp(stamp);
-    }
+    try {
+      for (final stamp in newStamps) {
+        await _repository.saveStamp(stamp);
+      }
 
-    // Обновляем коллекции
-    for (final stamp in newStamps) {
-      for (final collection in currentState.collections) {
-        if (collection.stampIds.contains(stamp.id)) {
-          await _repository.saveCollectionProgress(collection.id, stamp.id);
+      for (final stamp in newStamps) {
+        for (final collection in currentState.collections) {
+          if (collection.stampIds.contains(stamp.id)) {
+            await _repository.saveCollectionProgress(collection.id, stamp.id);
+          }
         }
       }
+
+      final stamps = await _repository.getEarnedStamps();
+      final collections = await _repository.getCollections();
+      final status = _getStatus(stamps.length);
+
+      emit(
+        currentState.copyWith(
+          stamps: stamps,
+          collections: collections,
+          lastEarnedStamps: newStamps,
+          showAnimation: true,
+          travelerStatus: status.title,
+          totalStamps: stamps.length,
+        ),
+      );
+    } catch (e) {
+      emit(StampsError('Ошибка обновления печатей: $e'));
     }
-
-    // Перезагружаем
-    final stamps = await _repository.getEarnedStamps();
-    final collections = await _repository.getCollections();
-    final status = _getStatus(stamps.length);
-
-    emit(
-      currentState.copyWith(
-        stamps: stamps,
-        collections: collections,
-        lastEarnedStamps: newStamps,
-        showAnimation: true,
-        travelerStatus: status.title,
-        totalStamps: stamps.length,
-      ),
-    );
   }
 
   void animationShown() {

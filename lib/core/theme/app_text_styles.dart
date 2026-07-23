@@ -120,7 +120,6 @@ class AppTextStyles {
     letterSpacing: 0.5,
   );
 
-
   static TextStyle? copyWith({
     required Color color,
     required FontWeight fontWeight,

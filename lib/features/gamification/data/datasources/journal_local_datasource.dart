@@ -1,3 +1,4 @@
+
 import 'package:hive/hive.dart';
 import '../models/visit_record_dto.dart';
 
@@ -11,7 +12,7 @@ class JournalLocalDatasource {
 
   Future<List<VisitRecordDto>> getAllVisits() async {
     if (_box == null) await init();
-    final values = _box!.values.toList();
+    final values = _box!.values.whereType<Map<dynamic, dynamic>>().toList();
     return values.map((data) {
       final map = Map<String, dynamic>.from(data);
       return VisitRecordDto.fromJson(map);

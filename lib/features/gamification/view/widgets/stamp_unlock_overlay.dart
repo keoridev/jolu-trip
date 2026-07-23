@@ -1,11 +1,9 @@
-// lib/features/gamification/presentation/widgets/stamp_unlock_overlay.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import '../../domain/entities/stamp.dart';
 import 'stamp_unlock_animation.dart';
 
-class StampUnlockOverlay extends StatelessWidget {
+class StampUnlockOverlay extends StatefulWidget {
   final List<Stamp> stamps;
   final VoidCallback onComplete;
 
@@ -16,14 +14,30 @@ class StampUnlockOverlay extends StatelessWidget {
   });
 
   @override
+  State<StampUnlockOverlay> createState() => _StampUnlockOverlayState();
+}
+
+class _StampUnlockOverlayState extends State<StampUnlockOverlay> {
+  int _currentIndex = 0;
+
+  void _onNext() {
+    if (_currentIndex < widget.stamps.length - 1) {
+      setState(() => _currentIndex++);
+    } else {
+      widget.onComplete();
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Если несколько печатей — показываем первую
-    // Остальные можно показать очередью
-    final stamp = stamps.first;
+    if (widget.stamps.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => widget.onComplete());
+      return const SizedBox.shrink();
+    }
 
     return StampUnlockAnimation(
-      stamp: stamp,
-      onComplete: onComplete,
+      stamp: widget.stamps[_currentIndex],
+      onComplete: _onNext,
     );
   }
 }

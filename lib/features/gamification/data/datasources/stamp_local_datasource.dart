@@ -1,3 +1,5 @@
+// lib/features/gamification/data/datasources/stamp_local_datasource.dart
+
 import 'package:hive/hive.dart';
 import 'package:jolutrip_app/features/gamification/domain/entities/entities.dart';
 
@@ -7,57 +9,62 @@ class StampLocalDatasource {
 
   Box<Map<dynamic, dynamic>>? _stampsBox;
   Box<Map<dynamic, dynamic>>? _collectionsBox;
+  bool _initialized = false;
 
   Future<void> init() async {
+    if (_initialized) return;
+    
     _stampsBox = await Hive.openBox(_stampsBoxName);
     _collectionsBox = await Hive.openBox(_collectionsBoxName);
     await _initDefaultCollections();
+    _initialized = true;
   }
 
   Future<void> _initDefaultCollections() async {
-    if (_collectionsBox!.isEmpty) {
-      final defaults = [
-        {
-          'id': 'kyrgyz_canyons',
-          'title': 'Каньоны Кыргызстана',
-          'description': 'Откройте все каньоны страны',
-          'stampIds': ['first_canyon', 'skazka', 'konorchek', 'fairytale'],
-          'earnedStampIds': [],
-          'isSeasonal': false,
-          'validUntil': null,
-          'isArchived': false,
-        },
-        {
-          'id': 'issyk_kul_region',
-          'title': 'Иссык-Кульская область',
-          'description': 'Исследуйте жемчужину Кыргызстана',
-          'stampIds': ['issyk_kul', 'ala_archa', 'son_kul'],
-          'earnedStampIds': [],
-          'isSeasonal': false,
-          'validUntil': null,
-          'isArchived': false,
-        },
-        {
-          'id': 'autumn_2026',
-          'title': 'Золотая осень 2026',
-          'description': 'Посетите 3 осенних маршрута',
-          'stampIds': ['autumn_1', 'autumn_2', 'autumn_3'],
-          'earnedStampIds': [],
-          'isSeasonal': true,
-          'validUntil': '2026-11-30T23:59:59Z',
-          'isArchived': false,
-        },
-      ];
+    if (_collectionsBox == null) return;
+    if (_collectionsBox!.isNotEmpty) return;
 
-      for (final c in defaults) {
-        await _collectionsBox!.put(c['id'], c);
-      }
+    final defaults = [
+      {
+        'id': 'kyrgyz_canyons',
+        'title': 'Каньоны Кыргызстана',
+        'description': 'Откройте все каньоны страны',
+        'stampIds': ['first_canyon', 'skazka', 'konorchek', 'fairytale'],
+        'earnedStampIds': <String>[],
+        'isSeasonal': false,
+        'validUntil': null,
+        'isArchived': false,
+      },
+      {
+        'id': 'issyk_kul_region',
+        'title': 'Иссык-Кульская область',
+        'description': 'Исследуйте жемчужину Кыргызстана',
+        'stampIds': ['issyk_kul', 'ala_archa', 'son_kul'],
+        'earnedStampIds': <String>[],
+        'isSeasonal': false,
+        'validUntil': null,
+        'isArchived': false,
+      },
+      {
+        'id': 'autumn_2026',
+        'title': 'Золотая осень 2026',
+        'description': 'Посетите 3 осенних маршрута',
+        'stampIds': ['autumn_1', 'autumn_2', 'autumn_3'],
+        'earnedStampIds': <String>[],
+        'isSeasonal': true,
+        'validUntil': '2026-11-30T23:59:59Z',
+        'isArchived': false,
+      },
+    ];
+
+    for (final c in defaults) {
+      await _collectionsBox!.put(c['id'], c);
     }
   }
 
   Future<List<Stamp>> getEarnedStamps() async {
-    if (_stampsBox == null) await init();
-    final values = _stampsBox!.values.toList();
+    await init();
+    final values = _stampsBox!.values.whereType<Map<dynamic, dynamic>>().toList();
     return values.map((data) {
       final map = Map<String, dynamic>.from(data);
       return Stamp(
@@ -74,7 +81,7 @@ class StampLocalDatasource {
   }
 
   Future<void> saveStamp(Stamp stamp) async {
-    if (_stampsBox == null) await init();
+    await init();
     await _stampsBox!.put(stamp.id, {
       'id': stamp.id,
       'title': stamp.title,
@@ -86,8 +93,8 @@ class StampLocalDatasource {
   }
 
   Future<List<Collection>> getCollections() async {
-    if (_collectionsBox == null) await init();
-    final values = _collectionsBox!.values.toList();
+    await init();
+    final values = _collectionsBox!.values.whereType<Map<dynamic, dynamic>>().toList();
     return values.map((data) {
       final map = Map<String, dynamic>.from(data);
       return Collection(
@@ -109,7 +116,7 @@ class StampLocalDatasource {
     String collectionId,
     String stampId,
   ) async {
-    if (_collectionsBox == null) await init();
+    await init();
     final data = _collectionsBox!.get(collectionId);
     if (data == null) return;
 

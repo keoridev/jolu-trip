@@ -1,11 +1,18 @@
-import 'package:jolutrip_app/features/gamification/domain/entities/entities.dart';
-import 'package:jolutrip_app/features/gamification/domain/repositories/repositories.dart';
+// lib/features/gamification/domain/usecases/perform_checkin.dart
+
+import 'dart:math';
+import '../entities/visit_record.dart';
+import '../entities/stamp.dart';
+import '../repositories/journal_repository.dart';
+import '../repositories/stamp_repository.dart';
 
 class PerformCheckinParams {
   final String locationId;
   final String locationName;
   final double locationLat;
   final double locationLng;
+  final double userLat;
+  final double userLng;
   final double accuracy;
   final List<String> locationTags;
   final bool hasGuideBooking;
@@ -15,31 +22,33 @@ class PerformCheckinParams {
     required this.locationName,
     required this.locationLat,
     required this.locationLng,
+    required this.userLat,
+    required this.userLng,
     required this.accuracy,
     required this.locationTags,
     this.hasGuideBooking = false,
   });
 }
 
-sealed class CheckinResult {
-  const CheckinResult();
+sealed class PerformCheckinResult {
+  const PerformCheckinResult();
 }
 
-class CheckinSuccess extends CheckinResult {
+class PerformCheckinSuccess extends PerformCheckinResult {
   final VisitRecord visit;
   final List<Stamp> newStamps;
   final bool isFirstVisit;
 
-  const CheckinSuccess({
+  const PerformCheckinSuccess({
     required this.visit,
     required this.newStamps,
     this.isFirstVisit = false,
   });
 }
 
-class CheckinFailure extends CheckinResult {
+class PerformCheckinFailure extends PerformCheckinResult {
   final String message;
-  const CheckinFailure(this.message);
+  const PerformCheckinFailure(this.message);
 }
 
 class PerformCheckin {
@@ -48,30 +57,40 @@ class PerformCheckin {
 
   const PerformCheckin(this.journalRepo, this.stampRepo);
 
-  Future<CheckinResult> call(PerformCheckinParams params) async {
+  Future<PerformCheckinResult> call(PerformCheckinParams params) async {
     // 1. Проверка accuracy
     if (params.accuracy > 100) {
-      return const CheckinFailure(
+      return const PerformCheckinFailure(
         'Точность GPS низкая. Подойдите ближе к локации.',
       );
     }
 
     // 2. Проверка расстояния
-    // NOTE: Реальная геолокация берется в Cubit, здесь только бизнес-логика
-    // Расстояние передается в params или вычисляется здесь
+    final distance = _calculateDistance(
+      params.userLat,
+      params.userLng,
+      params.locationLat,
+      params.locationLng,
+    );
+
+    if (distance > 300) {
+      return PerformCheckinFailure(
+        'Вы слишком далеко от локации. Расстояние: ${distance.toInt()} м. Подойдите ближе.',
+      );
+    }
 
     // 3. Проверка, не посещали ли уже сегодня
     final history = await journalRepo.getAllVisits();
-    final alreadyVisited = history.any(
-      (v) =>
-          v.locationId == params.locationId &&
-          v.visitedAt.day == DateTime.now().day &&
-          v.visitedAt.month == DateTime.now().month &&
-          v.visitedAt.year == DateTime.now().year,
-    );
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    final alreadyVisited = history.any((v) {
+      final visitDate = DateTime(v.visitedAt.year, v.visitedAt.month, v.visitedAt.day);
+      return v.locationId == params.locationId && visitDate == today;
+    });
 
     if (alreadyVisited) {
-      return const CheckinFailure('Вы уже отмечались здесь сегодня');
+      return const PerformCheckinFailure('Вы уже отмечались здесь сегодня');
     }
 
     // 4. Создаем запись
@@ -100,10 +119,29 @@ class PerformCheckin {
       await stampRepo.saveStamp(stamp);
     }
 
-    return CheckinSuccess(
+    return PerformCheckinSuccess(
       visit: visit,
       newStamps: newStamps,
       isFirstVisit: history.isEmpty,
     );
+  }
+
+  double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const R = 6371000;
+    final phi1 = lat1 * pi / 180;
+    final phi2 = lat2 * pi / 180;
+    final deltaPhi = (lat2 - lat1) * pi / 180;
+    final deltaLambda = (lon2 - lon1) * pi / 180;
+
+    final a = sin(deltaPhi / 2) * sin(deltaPhi / 2) +
+        cos(phi1) * cos(phi2) * sin(deltaLambda / 2) * sin(deltaLambda / 2);
+    final c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return R * c;
   }
 }

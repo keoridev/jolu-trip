@@ -1,3 +1,6 @@
+// lib/features/gamification/presentation/widgets/collection_complete_animation.dart
+
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,12 +25,12 @@ class _CollectionCompleteAnimationState
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late List<ConfettiParticle> _particles;
+  Timer? _autoCloseTimer;
 
   @override
   void initState() {
     super.initState();
 
-    // Сильная вибрация
     HapticFeedback.heavyImpact();
 
     _controller = AnimationController(
@@ -35,18 +38,18 @@ class _CollectionCompleteAnimationState
       duration: const Duration(milliseconds: 3000),
     );
 
-    // Генерируем частицы
     _particles = List.generate(50, (index) => ConfettiParticle.random());
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 3500), () {
+    _autoCloseTimer = Timer(const Duration(milliseconds: 3500), () {
       if (mounted) widget.onComplete();
     });
   }
 
   @override
   void dispose() {
+    _autoCloseTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }
@@ -60,27 +63,22 @@ class _CollectionCompleteAnimationState
         builder: (context, child) {
           return Stack(
             children: [
-              // Частицы конфетти
               ..._particles.map((p) => _buildParticle(p)),
 
-              // Центральный контент
               Center(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Звёздочки вокруг
                     _buildStar(0),
                     _buildStar(0.2),
                     _buildStar(0.4),
 
                     const SizedBox(height: 24),
 
-                    // Иконка трофея с пульсацией
                     _buildTrophy(),
 
                     const SizedBox(height: 32),
 
-                    // Текст
                     Text(
                       'Коллекция завершена!',
                       style: TextStyle(
@@ -109,7 +107,6 @@ class _CollectionCompleteAnimationState
 
                     const SizedBox(height: 24),
 
-                    // Прогресс бар (заполняется)
                     Container(
                       width: 200,
                       height: 6,
@@ -148,10 +145,9 @@ class _CollectionCompleteAnimationState
     if (animationProgress <= 0) return const SizedBox.shrink();
 
     final x = particle.startX + (particle.velocityX * animationProgress * 300);
-    final y =
-        particle.startY +
+    final y = particle.startY +
         (particle.velocityY * animationProgress * 400) +
-        (0.5 * 500 * animationProgress * animationProgress); // гравитация
+        (0.5 * 500 * animationProgress * animationProgress);
 
     final rotation = particle.rotationSpeed * animationProgress * 10;
     final opacity = (1 - animationProgress).clamp(0.0, 1.0);
@@ -179,10 +175,7 @@ class _CollectionCompleteAnimationState
   }
 
   Widget _buildStar(double delay) {
-    final progress = ((_controller.value - delay) / (1 - delay)).clamp(
-      0.0,
-      1.0,
-    );
+    final progress = ((_controller.value - delay) / (1 - delay)).clamp(0.0, 1.0);
     if (progress <= 0) return const SizedBox.shrink();
 
     final scale = sin(progress * pi) * 1.5;
@@ -228,10 +221,6 @@ class _CollectionCompleteAnimationState
   }
 }
 
-// ═══════════════════════════════════════════════════
-// ЧАСТИЦА КОНФЕТТИ
-// ═══════════════════════════════════════════════════
-
 class ConfettiParticle {
   final double startX;
   final double startY;
@@ -258,17 +247,17 @@ class ConfettiParticle {
   factory ConfettiParticle.random() {
     final random = Random();
     final colors = [
-      const Color(0xFFFFD700), // золото
-      const Color(0xFFFF6B6B), // красный
-      const Color(0xFF4ECDC4), // бирюза
-      const Color(0xFF95E1D3), // мятный
-      const Color(0xFFF38181), // розовый
-      const Color(0xFFAA96DA), // фиолетовый
-      const Color(0xFFFFD93D), // жёлтый
+      const Color(0xFFFFD700),
+      const Color(0xFFFF6B6B),
+      const Color(0xFF4ECDC4),
+      const Color(0xFF95E1D3),
+      const Color(0xFFF38181),
+      const Color(0xFFAA96DA),
+      const Color(0xFFFFD93D),
     ];
 
     return ConfettiParticle(
-      startX: random.nextDouble() * 400 - 50, // от -50 до 350
+      startX: random.nextDouble() * 400 - 50,
       startY: -20,
       velocityX: (random.nextDouble() - 0.5) * 4,
       velocityY: random.nextDouble() * 2 + 1,

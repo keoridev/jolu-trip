@@ -12,7 +12,7 @@ import '../blocs/stamps/stamps_cubit.dart';
 import '../blocs/stamps/stamps_state.dart';
 import '../widgets/stamp_card.dart';
 import '../widgets/collection_progress.dart';
-import '../widgets/stamp_unlock_animation.dart';
+import '../widgets/stamp_unlock_overlay.dart';
 
 class StampsScreen extends StatelessWidget {
   const StampsScreen({super.key});
@@ -36,8 +36,10 @@ class StampsScreen extends StatelessWidget {
       ),
       body: BlocConsumer<StampsCubit, StampsState>(
         listener: (context, state) {
-          if (state is StampsLoaded && state.showAnimation && state.lastEarnedStamps.isNotEmpty) {
-            _showUnlockAnimation(context, state.lastEarnedStamps.first);
+          if (state is StampsLoaded && 
+              state.showAnimation && 
+              state.lastEarnedStamps.isNotEmpty) {
+            _showUnlockAnimation(context, state.lastEarnedStamps);
           }
         },
         builder: (context, state) {
@@ -56,12 +58,12 @@ class StampsScreen extends StatelessWidget {
     );
   }
 
-  void _showUnlockAnimation(BuildContext context, Stamp stamp) {
+  void _showUnlockAnimation(BuildContext context, List<Stamp> stamps) {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => StampUnlockAnimation(
-        stamp: stamp,
+      builder: (_) => StampUnlockOverlay(
+        stamps: stamps,
         onComplete: () {
           Navigator.of(context).pop();
           context.read<StampsCubit>().animationShown();
@@ -109,7 +111,6 @@ class _StampsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomScrollView(
       slivers: [
-        // Статус путешественника
         SliverToBoxAdapter(
           child: _TravelerStatusCard(
             status: state.travelerStatus ?? 'Турист',
@@ -117,7 +118,6 @@ class _StampsView extends StatelessWidget {
           ),
         ),
 
-        // Коллекции
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -136,9 +136,6 @@ class _StampsView extends StatelessWidget {
           ),
         ),
 
-        // ═══════════════════════════════════════════════════
-        // МОИ ПЕЧАТИ — СЕТКА (БЫЛО ПРОПУЩЕНО)
-        // ═══════════════════════════════════════════════════
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 32, 16, 8),
@@ -158,7 +155,6 @@ class _StampsView extends StatelessWidget {
           ),
         ),
 
-        // Если печатей нет — показываем заглушку
         if (state.stamps.isEmpty)
           SliverToBoxAdapter(
             child: _EmptyStampsView(),
@@ -171,7 +167,7 @@ class _StampsView extends StatelessWidget {
                 crossAxisCount: 3,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.75, // Чуть выше, чем ширина
+                childAspectRatio: 0.75,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) => StampCard(stamp: state.stamps[index]),

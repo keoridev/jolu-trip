@@ -1,3 +1,6 @@
+// lib/features/gamification/presentation/widgets/stamp_unlock_animation.dart
+
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../domain/entities/stamp.dart';
@@ -22,21 +25,19 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
   late AnimationController _ringController;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
+  Timer? _autoCloseTimer;
 
   @override
   void initState() {
     super.initState();
 
-    // Вибрация при старте
     HapticFeedback.mediumImpact();
 
-    // Контроллер масштаба печати
     _scaleController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
     );
 
-    // Контроллер кольцевой волны
     _ringController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -54,18 +55,17 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
       ),
     );
 
-    // Запускаем
     _scaleController.forward();
     _ringController.forward();
 
-    // Закрываем через 2.5 секунды
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    _autoCloseTimer = Timer(const Duration(milliseconds: 2500), () {
       if (mounted) widget.onComplete();
     });
   }
 
   @override
   void dispose() {
+    _autoCloseTimer?.cancel();
     _scaleController.dispose();
     _ringController.dispose();
     super.dispose();
@@ -79,18 +79,14 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Кольцевая волна
             AnimatedBuilder(
               animation: _ringController,
               builder: (context, child) {
                 return Stack(
                   alignment: Alignment.center,
                   children: [
-                    // Волна 1
                     _buildRing(0),
-                    // Волна 2 (с задержкой)
                     _buildRing(0.3),
-                    // Волна 3 (с задержкой)
                     _buildRing(0.6),
                   ],
                 );
@@ -99,7 +95,6 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
 
             const SizedBox(height: 32),
 
-            // Текст
             Text(
               'Новая печать!',
               style: TextStyle(
@@ -108,9 +103,7 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
                 fontWeight: FontWeight.bold,
                 shadows: [
                   Shadow(
-                    color: _getRarityColor(
-                      widget.stamp.rarity,
-                    ).withOpacity(0.5),
+                    color: _getRarityColor(widget.stamp.rarity).withOpacity(0.5),
                     blurRadius: 20,
                   ),
                 ],
@@ -119,7 +112,6 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
 
             const SizedBox(height: 24),
 
-            // Печать с анимацией масштаба
             ScaleTransition(
               scale: _scaleAnimation,
               child: Container(
@@ -133,9 +125,7 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: _getRarityColor(
-                        widget.stamp.rarity,
-                      ).withOpacity(0.3),
+                      color: _getRarityColor(widget.stamp.rarity).withOpacity(0.3),
                       blurRadius: 30,
                       spreadRadius: 10,
                     ),
@@ -146,9 +136,7 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
                     widget.stamp.imageAsset,
                     fit: BoxFit.cover,
                     errorBuilder: (_, __, ___) => Container(
-                      color: _getRarityColor(
-                        widget.stamp.rarity,
-                      ).withOpacity(0.2),
+                      color: _getRarityColor(widget.stamp.rarity).withOpacity(0.2),
                       child: Icon(
                         Icons.stars,
                         size: 60,
@@ -162,7 +150,6 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
 
             const SizedBox(height: 20),
 
-            // Название печати
             Text(
               widget.stamp.title,
               style: const TextStyle(
@@ -174,7 +161,6 @@ class _StampUnlockAnimationState extends State<StampUnlockAnimation>
 
             const SizedBox(height: 8),
 
-            // Редкость
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
