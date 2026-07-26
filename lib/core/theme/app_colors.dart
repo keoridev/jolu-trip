@@ -5,6 +5,16 @@ class AppColors {
   static const Color primary = Color(0xFF1B5E3A); // Темно-зеленый
   static const Color accent = Color(0xFF2DD4BF); // Бирюзовый вспомогательный
 
+  // primary — это цвет ПОВЕРХНОСТИ, он слишком темный для текста и иконок:
+  // #1B5E3A на cardDark даёт ~1.9:1, а черный на #1B5E3A — ~1.6:1.
+  // WCAG AA требует 4.5:1, поэтому ниже два производных токена.
+
+  /// Светлый оттенок бренда — для ТЕКСТА и ИКОНОК на темном фоне (~7:1 на cardDark).
+  static const Color primaryBright = Color(0xFF4FBF83);
+
+  /// Цвет текста и иконок ПОВЕРХ поверхности primary (~7.9:1).
+  static const Color onPrimary = Color(0xFFFFFFFF);
+
   // === Сигнальные ===
   static const Color success = Color(0xFF34D399);
   static const Color warning = Color(0xFFFBBF24);

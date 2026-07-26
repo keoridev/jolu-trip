@@ -81,10 +81,12 @@ class AppTextStyles {
   );
 
   // ─── Accent / Badge ────────────────────────────
+  // primaryBright, а не primary: как ЦВЕТ ТЕКСТА темно-зеленый #1B5E3A
+  // даёт на темном фоне ~1.9:1 и практически не читается.
   static const TextStyle accentBadge = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w700,
-    color: AppColors.primary,
+    color: AppColors.primaryBright,
     letterSpacing: 0.5,
   );
 
