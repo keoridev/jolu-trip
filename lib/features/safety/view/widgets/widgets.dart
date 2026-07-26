@@ -1,3 +1,5 @@
+export 'shared/shared.dart';
+
 export 'digital_toolbox_block.dart';
 export 'phrases_block.dart';
 export 'sos_block.dart';

@@ -3,10 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+import 'package:jolutrip_app/core/cache/video_prefetch_queue.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
+import 'package:jolutrip_app/core/video/video_controller_pool.dart';
 import 'package:jolutrip_app/features/reels/view/bloc/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/view/bloc/reels_state.dart';
 import 'package:jolutrip_app/features/reels/data/data.dart';
@@ -21,6 +23,13 @@ class ReelsScreen extends StatefulWidget {
 
 class _ReelsScreenState extends State<ReelsScreen>
     with WidgetsBindingObserver, AutomaticKeepAliveClientMixin {
+  /// Сколько роликов вперёд качаем в кэш. 3 хватает, чтобы обогнать листание,
+  /// и не настолько много, чтобы жечь трафик впустую.
+  static const int _prefetchAhead = 3;
+
+  /// Один ролик назад — на случай возврата свайпом вверх.
+  static const int _prefetchBehind = 1;
+
   @override
   bool get wantKeepAlive => true;
 
@@ -47,61 +56,106 @@ class _ReelsScreenState extends State<ReelsScreen>
   void dispose() {
     _pageController.dispose();
     WidgetsBinding.instance.removeObserver(this);
-    _destroyAllVideos();
+    VideoPrefetchQueue.instance.clear();
+    _playerKeys.clear();
+    VideoControllerPool.instance.releaseAll();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     switch (state) {
-      case AppLifecycleState.paused:
-      case AppLifecycleState.detached:
+      case AppLifecycleState.inactive:
       case AppLifecycleState.hidden:
+        // Короткая пауза (шторка, звонок) — декодеры не трогаем, чтобы
+        // возврат был мгновенным.
         _pauseAllVideos();
+        break;
+      case AppLifecycleState.paused:
+        _pauseAllVideos();
+        VideoPrefetchQueue.instance.clear();
+        // В фоне держать чужие декодеры незачем — оставляем только текущий.
+        VideoControllerPool.instance.releaseAllExcept({_currentPoolKey});
+        break;
+      case AppLifecycleState.detached:
+        _releaseAllVideos();
         break;
       case AppLifecycleState.resumed:
         if (_isScreenVisible) _resumeCurrentVideo();
         break;
-      case AppLifecycleState.inactive:
-        break;
     }
   }
 
+  String get _currentPoolKey {
+    final state = context.read<ReelsCubit>().state;
+    if (state is ReelsLoaded && _currentIndex < state.reels.length) {
+      return 'reel_${state.reels[_currentIndex].id}';
+    }
+    return '';
+  }
+
   void _pauseAllVideos() {
-    for (final entry in _playerKeys.entries) {
-      entry.value.currentState?.destroyVideo();
+    for (final key in _playerKeys.values) {
+      key.currentState?.pauseVideo();
     }
   }
 
   void _resumeCurrentVideo() {
-    final key = _playerKeys[_currentIndex];
-    if (key != null && mounted) {
-      key.currentState?.rebuildVideo();
-    }
+    _playerKeys[_currentIndex]?.currentState?.resumeVideo();
   }
 
-  void _destroyAllVideos() {
+  void _releaseAllVideos() {
     for (final key in _playerKeys.values) {
-      key.currentState?.destroyVideo();
+      key.currentState?.releaseVideo();
     }
     _playerKeys.clear();
+    VideoControllerPool.instance.releaseAll();
   }
 
-  void _prefetchVideos(List<ReelModel> reels, int currentIndex) {
-    for (int i = currentIndex + 1; i <= currentIndex + 2; i++) {
-      if (i >= reels.length) break;
-      final key = _playerKeys[i];
-      if (key != null) {
-        key.currentState?.preloadVideo();
-      }
+  /// Держит в работе окно вокруг текущего ролика: что внутри — качается с
+  /// приоритетом по близости, что снаружи — отменяется, чтобы не отнимать
+  /// канал у видимого видео.
+  void _updatePrefetchWindow(List<ReelModel> reels, int index) {
+    if (reels.isEmpty) return;
+
+    final keep = <String>{};
+
+    void schedule(int i, int priority) {
+      if (i < 0 || i >= reels.length) return;
+      final reel = reels[i];
+      if (reel.videoUrl.isEmpty) return;
+      keep.add(reel.videoUrl);
+      VideoPrefetchQueue.instance.enqueue(reel.videoUrl, priority: priority);
+    }
+
+    schedule(index, VideoPrefetchQueue.priorityVisible);
+    for (int offset = 1; offset <= _prefetchAhead; offset++) {
+      schedule(index + offset, offset);
+    }
+    for (int offset = 1; offset <= _prefetchBehind; offset++) {
+      schedule(index - offset, _prefetchAhead + offset);
+    }
+
+    VideoPrefetchQueue.instance.retainOnly(keep);
+    _precacheThumbnails(reels, index);
+  }
+
+  /// Постеры соседей — чтобы при листании не было пустого кадра до видео.
+  void _precacheThumbnails(List<ReelModel> reels, int index) {
+    for (int offset = -1; offset <= _prefetchAhead; offset++) {
+      final i = index + offset;
+      if (i < 0 || i >= reels.length) continue;
+      final url = reels[i].thumbnailUrl;
+      if (url.isEmpty) continue;
+      precacheImage(NetworkImage(url), context, onError: (_, _) {});
     }
   }
 
   void _cleanupDistantVideos() {
     final keysToRemove = <int>[];
     for (final index in _playerKeys.keys) {
-      if ((index - _currentIndex).abs() > 2) {
-        _playerKeys[index]?.currentState?.destroyVideo();
+      if ((index - _currentIndex).abs() > 1) {
+        _playerKeys[index]?.currentState?.releaseVideo();
         keysToRemove.add(index);
       }
     }
@@ -111,12 +165,12 @@ class _ReelsScreenState extends State<ReelsScreen>
   }
 
   GlobalKey<ReelVideoItemState> _getKeyForIndex(int index) {
-    _playerKeys[index] ??= GlobalKey<ReelVideoItemState>();
-    return _playerKeys[index]!;
+    return _playerKeys[index] ??= GlobalKey<ReelVideoItemState>();
   }
 
   Future<void> _onRefresh() async {
-    _destroyAllVideos();
+    VideoPrefetchQueue.instance.clear();
+    _releaseAllVideos();
     await context.read<ReelsCubit>().refreshReels();
     if (_pageController.hasClients) {
       _pageController.jumpToPage(0);
@@ -137,6 +191,7 @@ class _ReelsScreenState extends State<ReelsScreen>
         _isScreenVisible = isVisible;
         if (!isVisible) {
           _pauseAllVideos();
+          VideoPrefetchQueue.instance.clear();
         } else {
           _resumeCurrentVideo();
         }
@@ -148,7 +203,13 @@ class _ReelsScreenState extends State<ReelsScreen>
         ),
         child: Scaffold(
           backgroundColor: AppColors.bgDark,
-          body: BlocBuilder<ReelsCubit, ReelsState>(
+          body: BlocConsumer<ReelsCubit, ReelsState>(
+            listenWhen: (previous, current) => current is ReelsLoaded,
+            listener: (context, state) {
+              if (state is ReelsLoaded) {
+                _updatePrefetchWindow(state.reels, _currentIndex);
+              }
+            },
             builder: (context, state) {
               return switch (state) {
                 ReelsLoading() => const Center(
@@ -170,7 +231,7 @@ class _ReelsScreenState extends State<ReelsScreen>
                           onPageChanged: (index) {
                             setState(() => _currentIndex = index);
                             context.read<ReelsCubit>().setCurrentIndex(index);
-                            _prefetchVideos(reels, index);
+                            _updatePrefetchWindow(reels, index);
                             _cleanupDistantVideos();
                           },
                           getKeyForIndex: _getKeyForIndex,
@@ -221,140 +282,135 @@ class _ReelsViewState extends State<_ReelsView> {
 
   @override
   Widget build(BuildContext context) {
-    return NotificationListener<ScrollNotification>(
-      onNotification: (notification) {
-        // Детектируем overscroll вверх для pull-to-refresh
-        if (notification is ScrollStartNotification) {
-          // Начало скролла
-        }
-        return false;
+    return RefreshIndicator(
+      color: AppColors.primary,
+      backgroundColor: AppColors.cardDark,
+      strokeWidth: 3,
+      displacement: 80,
+      edgeOffset: 0,
+      onRefresh: () async {
+        if (_isRefreshing) return;
+        setState(() => _isRefreshing = true);
+        await widget.onRefresh();
+        if (mounted) setState(() => _isRefreshing = false);
       },
-      child: RefreshIndicator(
-        color: AppColors.primary,
-        backgroundColor: AppColors.cardDark,
-        strokeWidth: 3,
-        displacement: 80,
-        edgeOffset: 0,
-        onRefresh: () async {
-          if (_isRefreshing) return;
-          setState(() => _isRefreshing = true);
-          await widget.onRefresh();
-          if (mounted) setState(() => _isRefreshing = false);
-        },
-        child: CustomScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          slivers: [
-            // 🔥 Sliver для pull-to-refresh — пустой, но занимает место
-            SliverToBoxAdapter(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                height: _isRefreshing ? 60 : 0,
-                child: _isRefreshing
-                    ? Center(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  AppColors.primary,
-                                ),
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          // 🔥 Sliver для pull-to-refresh — пустой, но занимает место
+          SliverToBoxAdapter(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              height: _isRefreshing ? 60 : 0,
+              child: _isRefreshing
+                  ? Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              'Обновление...',
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.textPrimary,
-                              ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            'Обновление...',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.textPrimary,
                             ),
-                          ],
-                        ),
-                      )
-                    : null,
-              ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : null,
             ),
-            // 🔥 PageView на весь экран
-            SliverFillRemaining(
-              hasScrollBody: true,
-              child: PageView.builder(
-                controller: widget.pageController,
-                scrollDirection: Axis.vertical,
-                itemCount: widget.reels.length,
-                onPageChanged: widget.onPageChanged,
-                itemBuilder: (context, index) {
-                  final reel = widget.reels[index];
-                  final isCurrent = index == widget.currentIndex;
-                  final isNeighbor = (index - widget.currentIndex).abs() <= 1;
+          ),
+          // 🔥 PageView на весь экран
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: PageView.builder(
+              controller: widget.pageController,
+              scrollDirection: Axis.vertical,
+              itemCount: widget.reels.length,
+              onPageChanged: widget.onPageChanged,
+              itemBuilder: (context, index) {
+                final reel = widget.reels[index];
+                final distance = index - widget.currentIndex;
+                final isCurrent = distance == 0;
 
-                  if (!isCurrent && !isNeighbor) {
-                    return _StaticReelPreview(reel: reel);
-                  }
+                // Плеер живёт только у текущего и его прямых соседей —
+                // остальным хватает постера.
+                if (distance.abs() > 1) {
+                  return _StaticReelPreview(reel: reel);
+                }
 
-                  final playerKey = widget.getKeyForIndex(index);
+                final playerKey = widget.getKeyForIndex(index);
 
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => playerKey.currentState?.handleTap(),
-                    onDoubleTap: () =>
-                        playerKey.currentState?.handleDoubleTap(),
-                    onLongPressStart: (_) =>
-                        playerKey.currentState?.handleLongPressStart(),
-                    onLongPressEnd: (_) =>
-                        playerKey.currentState?.handleLongPressEnd(),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        ReelVideoItem(
-                          key: playerKey,
-                          reel: reel,
-                          isCurrent: isCurrent,
-                          onLike: () {
-                            JoluSnackbar.show(
-                              context: context,
-                              message: 'Добавлено в избранное',
-                              type: JoluSnackbarType.success,
-                              duration: const Duration(seconds: 2),
-                            );
-                          },
-                        ),
-                        const Positioned.fill(
-                          child: IgnorePointer(
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.black26,
-                                    Colors.transparent,
-                                    Colors.black87,
-                                  ],
-                                  stops: [0.0, 0.5, 1.0],
-                                ),
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => playerKey.currentState?.handleTap(),
+                  onDoubleTap: () => playerKey.currentState?.handleDoubleTap(),
+                  onLongPressStart: (_) =>
+                      playerKey.currentState?.handleLongPressStart(),
+                  onLongPressEnd: (_) =>
+                      playerKey.currentState?.handleLongPressEnd(),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ReelVideoItem(
+                        key: playerKey,
+                        reel: reel,
+                        isCurrent: isCurrent,
+                        // Плеер следующего ролика поднимаем заранее —
+                        // свайп вниз происходит без чёрного кадра.
+                        shouldWarmUp: distance == 1,
+                        onLike: () {
+                          JoluSnackbar.show(
+                            context: context,
+                            message: 'Добавлено в избранное',
+                            type: JoluSnackbarType.success,
+                            duration: const Duration(seconds: 2),
+                          );
+                        },
+                      ),
+                      const Positioned.fill(
+                        child: IgnorePointer(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black26,
+                                  Colors.transparent,
+                                  Colors.black87,
+                                ],
+                                stops: [0.0, 0.5, 1.0],
                               ),
                             ),
                           ),
                         ),
-                        ReelInfoOverlay(
-                          reel: reel,
-                          onLikePressed: () =>
-                              playerKey.currentState?.handleDoubleTap(),
-                          onBookPressed: () {
-                            context.push('/location/${reel.id}');
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
+                      ),
+                      ReelInfoOverlay(
+                        reel: reel,
+                        onLikePressed: () =>
+                            playerKey.currentState?.handleDoubleTap(),
+                        onBookPressed: () {
+                          context.push('/location/${reel.id}');
+                        },
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -425,26 +481,13 @@ class _StaticReelPreview extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          reel.thumbnailUrl,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            color: AppColors.cardDark,
-            child: const Center(
-              child: Icon(
-                Icons.error_outline,
-                color: AppColors.textSecondary,
-                size: 48,
-              ),
-            ),
-          ),
-        ),
-        Container(color: Colors.black.withOpacity(0.4)),
+        ReelThumbnail(url: reel.thumbnailUrl),
+        ColoredBox(color: Colors.black.withValues(alpha: 0.4)),
         Center(
           child: Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.play_arrow, color: Colors.white, size: 32),

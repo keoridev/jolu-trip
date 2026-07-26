@@ -1,1 +1,1 @@
-export './location_detail_repository.dart';
+export 'repositories.dart';

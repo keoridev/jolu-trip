@@ -1,2 +1,2 @@
-export './get_traveler_status.dart';
-export './perform_checkin.dart';
+export 'get_traveler_status.dart';
+export 'perform_checkin.dart';

@@ -6,3 +6,4 @@ export 'location_info_cards.dart';
 export 'location_map_preview.dart';
 export 'location_roadside_places.dart';
 export 'location_self_drive_sheet.dart';
+export 'map_fullscreen_sheet.dart';

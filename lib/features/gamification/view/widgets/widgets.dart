@@ -1,5 +1,9 @@
-export './collection_progress.dart';
-export './stamp_card.dart';
-export './stamp_unlock_overlay.dart';
-export './stamp_unlock_animation.dart';
-export './collection_complete_animation.dart';
+export 'collection_complete_animation.dart';
+export 'collection_progress.dart';
+export 'stamp_card.dart';
+export 'stamp_detail_sheet.dart';
+export 'stamp_medallion.dart';
+export 'stamp_unlock_animation.dart';
+export 'stamp_unlock_overlay.dart';
+export 'stamp_visuals.dart';
+export 'stamps_carousel.dart';

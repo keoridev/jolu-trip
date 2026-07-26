@@ -1,1 +1,1 @@
-export './safety_models.dart';
+export 'models.dart';

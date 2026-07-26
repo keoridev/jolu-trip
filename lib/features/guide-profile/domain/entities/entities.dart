@@ -1,1 +1,1 @@
-export './guide_profile_entity.dart';
+export 'guide_profile_entity.dart';

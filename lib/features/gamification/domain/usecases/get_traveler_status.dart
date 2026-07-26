@@ -54,4 +54,14 @@ class GetTravelerStatus {
     }
     return _statuses.first;
   }
+
+  /// Следующий статус, или null — если достигнут максимальный.
+  TravelerStatus? next(int stampCount) {
+    for (final status in _statuses) {
+      if (stampCount < status.minStamps) return status;
+    }
+    return null;
+  }
+
+  static List<TravelerStatus> get all => _statuses;
 }
