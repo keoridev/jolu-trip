@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:jolutrip_app/core/errors/exceptions.dart';
 import 'package:jolutrip_app/core/errors/failures.dart';
 import 'package:jolutrip_app/features/guide-profile/data/datasources/guide_profile_remote_datasource.dart';
@@ -65,7 +65,8 @@ class GuideProfileRepositoryImpl implements GuideProfileRepository {
     List<int> bytes,
   ) async {
     try {
-      final url = await (_remote as dynamic).uploadPresentationVideo(bytes);
+
+      final url = await _remote.uploadPresentationVideo(bytes);
       return Right(url);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));

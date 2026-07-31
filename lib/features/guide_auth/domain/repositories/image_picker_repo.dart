@@ -1,6 +1,6 @@
 
 import 'dart:typed_data';
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:jolutrip_app/core/errors/failures.dart';
 
 enum ImageSource { gallery, camera }

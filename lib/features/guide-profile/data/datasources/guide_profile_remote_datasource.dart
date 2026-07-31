@@ -9,6 +9,7 @@ abstract class GuideProfileRemoteDataSource {
   Future<GuideProfileModel> updateProfile(Map<String, dynamic> data);
   Future<String> uploadAvatar(List<int> bytes);
   Future<VerificationStatusModel> getVerificationStatus();
+  Future<String> uploadPresentationVideo(List<int> bytes);
 }
 
 class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {

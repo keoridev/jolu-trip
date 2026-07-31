@@ -1,6 +1,6 @@
-import 'package:dartz/dartz.dart';
 import 'package:jolutrip_app/core/errors/failures.dart';
 import 'package:jolutrip_app/features/guide-profile/domain/entities/guide_profile_entity.dart';
+import 'package:fpdart/fpdart.dart';
 
 abstract class GuideProfileRepository {
   Future<Either<Failure, GuideProfileEntity>> getMe();

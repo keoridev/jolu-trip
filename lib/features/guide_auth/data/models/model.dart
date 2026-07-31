@@ -1,1 +1,1 @@
-export 'models.dart';
+export './guide_model.dart';

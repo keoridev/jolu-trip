@@ -1,6 +1,4 @@
-// lib/features/guide_auth/domain/repositories/guide_auth_repository.dart
-
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:jolutrip_app/core/errors/failures.dart';
 import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
 

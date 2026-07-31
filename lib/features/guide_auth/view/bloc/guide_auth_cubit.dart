@@ -85,13 +85,21 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     final currentState = state;
 
     if (currentState is GuideLoginOtpSent) {
-      emit(currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend));
+      emit(
+        currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
+      );
     } else if (currentState is GuideRegisterOtpSent) {
-      emit(currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend));
+      emit(
+        currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
+      );
     } else if (currentState is GuideOtpInvalid) {
-      emit(currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend));
+      emit(
+        currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
+      );
     } else if (currentState is GuideSmsResent) {
-      emit(currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend));
+      emit(
+        currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
+      );
     }
   }
 
@@ -104,17 +112,16 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
 
     emit(GuideAuthLoading());
     final result = await _repository.sendLoginOtp(phone);
-    result.fold(
-      (failure) => emit(GuideAuthError(failure.message)),
-      (_) {
-        _startTimer();
-        emit(GuideLoginOtpSent(
+    result.fold((failure) => emit(GuideAuthError(failure.message)), (_) {
+      _startTimer();
+      emit(
+        GuideLoginOtpSent(
           phone: phone,
           secondsLeft: _secondsLeft,
           canResend: _canResend,
-        ));
-      },
-    );
+        ),
+      );
+    });
   }
 
   Future<void> verifyLoginOtp(String phone, String code) async {
@@ -151,19 +158,18 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
       gender: gender,
       phone: phone,
     );
-    result.fold(
-      (failure) => emit(GuideAuthError(failure.message)),
-      (_) {
-        _startTimer();
-        emit(GuideRegisterOtpSent(
+    result.fold((failure) => emit(GuideAuthError(failure.message)), (_) {
+      _startTimer();
+      emit(
+        GuideRegisterOtpSent(
           fullName: fullName,
           gender: gender,
           phone: phone,
           secondsLeft: _secondsLeft,
           canResend: _canResend,
-        ));
-      },
-    );
+        ),
+      );
+    });
   }
 
   Future<void> verifyRegisterOtp({
@@ -189,71 +195,78 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
 
   Future<void> resendSms(String phone) async {
     final result = await _repository.resendSms(phone);
-    result.fold(
-      (failure) => emit(GuideAuthError(failure.message)),
-      (_) {
-        _otpAttempt = 0;
-        _startTimer();
+    result.fold((failure) => emit(GuideAuthError(failure.message)), (_) {
+      _otpAttempt = 0;
+      _startTimer();
 
-        final resentState = GuideSmsResent(
-          phone: phone,
-          secondsLeft: _secondsLeft,
-          canResend: _canResend,
-        );
-        emit(resentState);
+      final resentState = GuideSmsResent(
+        phone: phone,
+        secondsLeft: _secondsLeft,
+        canResend: _canResend,
+      );
+      emit(resentState);
 
-        // Переходим в соответствующее OTP-состояние
-        Future.delayed(const Duration(milliseconds: 100), () {
-          if (isClosed) return;
-          if (_isLoginMode) {
-            emit(GuideLoginOtpSent(
+      // Переходим в соответствующее OTP-состояние
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (isClosed) return;
+        if (_isLoginMode) {
+          emit(
+            GuideLoginOtpSent(
               phone: phone,
               secondsLeft: _secondsLeft,
               canResend: _canResend,
-            ));
-          } else {
-            emit(GuideRegisterOtpSent(
+            ),
+          );
+        } else {
+          emit(
+            GuideRegisterOtpSent(
               fullName: _currentFullName!,
               gender: _currentGender!,
               phone: phone,
               secondsLeft: _secondsLeft,
               canResend: _canResend,
-            ));
-          }
-        });
-      },
-    );
+            ),
+          );
+        }
+      });
+    });
   }
 
   // ============= HELPERS =============
 
   void _handleOtpFailure(Failure failure, String phone) {
     if (_isOtpFailure(failure)) {
-      emit(GuideOtpInvalid(
-        phone: phone,
-        message: failure.message,
-        attempt: ++_otpAttempt,
-        secondsLeft: _secondsLeft,
-        canResend: _canResend,
-        isLoginMode: _isLoginMode, // ← передаём флаг
-      ));
+      emit(
+        GuideOtpInvalid(
+          phone: phone,
+          message: failure.message,
+          attempt: ++_otpAttempt,
+          secondsLeft: _secondsLeft,
+          canResend: _canResend,
+          isLoginMode: _isLoginMode, // ← передаём флаг
+        ),
+      );
       // Возвращаемся в OTP-состояние
       Future.delayed(Duration.zero, () {
         if (isClosed) return;
         if (_isLoginMode) {
-          emit(GuideLoginOtpSent(
-            phone: phone,
-            secondsLeft: _secondsLeft,
-            canResend: _canResend,
-          ));
+          emit(
+            GuideLoginOtpSent(
+              phone: phone,
+              secondsLeft: _secondsLeft,
+              canResend: _canResend,
+            ),
+          );
         } else {
-          emit(GuideRegisterOtpSent(
-            fullName: _currentFullName!,
-            gender: _currentGender!,
-            phone: phone,
-            secondsLeft: _secondsLeft,
-            canResend: _canResend,
-          ));
+          emit(
+            GuideRegisterOtpSent(
+              fullName: _currentFullName!,
+              gender: _currentGender!,
+              phone: phone,
+              secondsLeft: _secondsLeft,
+              canResend: _canResend,
+            ),
+          );
         }
       });
     } else {

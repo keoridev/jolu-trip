@@ -14,6 +14,8 @@ class GuideAuthLoading extends GuideAuthState {}
 class GuideAuthModeSelection extends GuideAuthState {
   final bool isLogin;
   const GuideAuthModeSelection({this.isLogin = true});
+  @override
+  List<Object?> get props => [isLogin];
 }
 
 // Базовое состояние для OTP с таймером
@@ -115,7 +117,14 @@ class GuideOtpInvalid extends GuideOtpState {
   });
 
   @override
-  List<Object?> get props => [phone, message, attempt, secondsLeft, canResend, isLoginMode];
+  List<Object?> get props => [
+    phone,
+    message,
+    attempt,
+    secondsLeft,
+    canResend,
+    isLoginMode,
+  ];
 
   GuideOtpInvalid copyWith({
     String? phone,

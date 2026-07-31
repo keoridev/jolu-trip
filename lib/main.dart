@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:hive_flutter/hive_flutter.dart';
+import 'package:hive_ce_flutter/hive_ce_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:jolutrip_app/core/cache/video_cache_manager.dart';
 import 'package:jolutrip_app/core/di/service_locator.dart';
@@ -15,8 +15,6 @@ void main() async {
 
   setupDependencies();
 
-  // Индекс видеокэша и вытеснение по лимиту. Не блокируем запуск —
-  // работа с кэшем сама дожидается готовности.
   unawaited(VideoCacheManager.warmUp());
 
   await initializeDateFormatting('ru_RU', null);

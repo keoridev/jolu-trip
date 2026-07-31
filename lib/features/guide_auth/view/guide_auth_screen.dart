@@ -43,8 +43,8 @@ class GuideAuthScreen extends StatelessWidget {
         onLogin: () => context.read<GuideAuthCubit>().selectMode(true),
         onRegister: () => context.read<GuideAuthCubit>().selectMode(false),
       ),
-
       GuideAuthModeSelection(isLogin: final isLogin) => GuideAuthTabs(
+        // ❌ УБРАТЬ key: ValueKey(isLogin), если он там есть
         isLogin: isLogin,
         isLoading: isLoading,
         onTabChanged: (isLogin) =>

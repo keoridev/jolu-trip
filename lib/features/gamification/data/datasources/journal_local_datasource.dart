@@ -1,29 +1,37 @@
-
-import 'package:hive/hive.dart';
+import 'dart:async';
+import 'package:hive_ce/hive.dart'; // <-- Только hive_ce, flutter-импорт не нужен здесь
 import '../models/visit_record_dto.dart';
 
 class JournalLocalDatasource {
   static const String _boxName = 'journal_box';
-  Box<Map<dynamic, dynamic>>? _box;
+
+  // ✅ ИСПРАВЛЕНО: Box<dynamic> вместо Box<Map<String, dynamic>>
+  Box<dynamic>? _box;
 
   Future<void> init() async {
+    // ✅ ИСПРАВЛЕНО: Открываем нетипизированный Box
     _box = await Hive.openBox(_boxName);
   }
 
   Future<List<VisitRecordDto>> getAllVisits() async {
     if (_box == null) await init();
-    final values = _box!.values.whereType<Map<dynamic, dynamic>>().toList();
-    return values.map((data) {
-      final map = Map<String, dynamic>.from(data);
-      return VisitRecordDto.fromJson(map);
-    }).toList();
+    
+    // ✅ БЕЗОПАСНОЕ ЧТЕНИЕ: Сначала фильтруем Map, затем кастим к String keys
+    final values = _box!.values
+        .whereType<Map>()
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+        
+    return values.map((data) => VisitRecordDto.fromJson(data)).toList();
   }
 
   Future<VisitRecordDto?> getVisitById(String id) async {
     if (_box == null) await init();
     final data = _box!.get(id);
-    if (data == null) return null;
-    return VisitRecordDto.fromJson(Map<String, dynamic>.from(data));
+    if (data is Map) {
+      return VisitRecordDto.fromJson(Map<String, dynamic>.from(data));
+    }
+    return null;
   }
 
   Future<void> saveVisit(VisitRecordDto dto) async {

@@ -1,4 +1,4 @@
-import 'package:dartz/dartz.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:jolutrip_app/core/errors/failures.dart';
 import 'package:jolutrip_app/core/usecases/usecase.dart';
 import 'package:jolutrip_app/features/guide_tours/domain/repositories/guide_tours_repository.dart';
