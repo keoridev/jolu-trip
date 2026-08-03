@@ -4,8 +4,6 @@ import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
-import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
-import 'package:jolutrip_app/features/guide-profile/view/guide_profile_screen.dart';
 import 'package:jolutrip_app/features/navigation/view/widgets/jolu_bottom_bar.dart';
 import 'package:jolutrip_app/features/profile/view/bloc/profile_cubit.dart';
 import 'package:jolutrip_app/features/profile/view/profile_router_screen.dart';
@@ -22,36 +20,38 @@ class MainLayoutScreen extends StatefulWidget {
 class _MainLayoutScreenState extends State<MainLayoutScreen> {
   int _currentIndex = 0;
   late final PageController _pageController;
-  late final ProfileCubit _profileCubit;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
-    _profileCubit = ProfileCubit()..loadProfile();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _profileCubit.loadProfile();
-    });
+    // ✅ УДАЛЕНО: Ручное создание _profileCubit и двойной вызов loadProfile()
   }
 
   @override
   void dispose() {
     _pageController.dispose();
-    _profileCubit.close();
+    // ✅ УДАЛЕНО: _profileCubit.close(). Этим теперь управляет BlocProvider.
     super.dispose();
   }
 
   void _onTabChanged(int index) {
-    if (index == 3) {
-      _profileCubit.loadProfile();
-    }
-
+    // ✅ УДАЛЕНО: Принудительный _profileCubit.loadProfile() при каждом тапе.
+    // Это вызывало бы лишние сетевые запросы. Cubit сам должен кэшировать состояние 
+    // или обновляться по Pull-to-Refresh внутри ProfileRouterScreen.
+    
     setState(() => _currentIndex = index);
-    _pageController.animateToPage(
-      index,
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeOutCubic,
-    );
+    
+    // Используем jumpToPage вместо animateToPage для мгновенного отклика UI 
+    // (стандартное поведение Bottom Navigation), либо оставляем animateToPage, 
+    // но с защитой от частых кликов.
+    if (_pageController.hasClients) {
+      _pageController.animateToPage(
+        index,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
+      );
+    }
   }
 
   @override
@@ -63,28 +63,33 @@ class _MainLayoutScreenState extends State<MainLayoutScreen> {
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(),
+              physics: const NeverScrollableScrollPhysics(), // ✅ Правильно
               children: [
                 // 1. Reels
                 BlocProvider<ReelsCubit>(
                   create: (_) => sl<ReelsCubit>()..loadReels(),
                   child: const ReelsScreen(),
                 ),
+                
                 // 2. Локации
                 const _PlaceholderScreen(
                   title: 'Локации',
                   icon: Icons.explore_outlined,
                   description: 'Карта треков и мест',
                 ),
+                
                 // 3. Поездки
                 const _PlaceholderScreen(
                   title: 'Поездки',
                   icon: Icons.directions_car_outlined,
                   description: 'Бронирования и маршруты',
                 ),
-                BlocProvider<ProfileCubit>.value(
-                  value: _profileCubit,
-                  child: const ProfileRouterScreen(), // ← ЗДЕСЬ ИЗМЕНЕНИЕ!
+                
+                // 4. Профиль
+                // ✅ ИСПРАВЛЕНО: Единый подход через DI, как у ReelsCubit
+                BlocProvider<ProfileCubit>(
+                  create: (_) => sl<ProfileCubit>()..loadProfile(),
+                  child: const ProfileRouterScreen(),
                 ),
               ],
             ),
@@ -116,7 +121,7 @@ class _PlaceholderScreen extends StatelessWidget {
           Container(
             width: 80,
             height: 80,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.cardDark,
               shape: BoxShape.circle,
             ),

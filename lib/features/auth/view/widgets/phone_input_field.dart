@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
@@ -39,7 +38,7 @@ class _PhoneViewState extends State<PhoneView> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _phoneController.controller.dispose();
     super.dispose();
   }
 

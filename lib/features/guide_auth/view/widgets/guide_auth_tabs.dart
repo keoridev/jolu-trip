@@ -30,7 +30,8 @@ class GuideAuthTabs extends StatefulWidget {
 class _GuideAuthTabsState extends State<GuideAuthTabs>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
-  final PhoneInputFieldController _phoneController = PhoneInputFieldController();
+  final PhoneInputFieldController _phoneController =
+      PhoneInputFieldController();
   bool _isValid = false;
 
   @override
@@ -66,19 +67,19 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
   @override
   void didUpdateWidget(GuideAuthTabs oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
-    // Этот блок срабатывает ТОЛЬКО при внешнем изменении (например, 
+
+    // Этот блок срабатывает ТОЛЬКО при внешнем изменении (например,
     // при переходе с экрана GuideWelcome), но НЕ при кликах по табам,
     // потому что при кликах мы уже синхронизировали isLogin в _onTabChanged.
     if (widget.isLogin != oldWidget.isLogin) {
       final newIndex = widget.isLogin ? 0 : 1;
-      
+
       // Если TabController уже на нужном индексе, просто чистим форму
       if (_tabController.index == newIndex) {
         _clearForm();
         return;
       }
-      
+
       // Иначе анимируем переход и чистим форму
       _tabController.animateTo(newIndex);
       _clearForm();
@@ -95,7 +96,7 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
   void dispose() {
     _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
-    _phoneController.dispose();
+    _phoneController.controller.dispose();
     super.dispose();
   }
 
@@ -168,8 +169,12 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            widget.isLogin ? 'Введите номер телефона' : 'Начните с номера',
-                            style: AppTextStyles.headlineMedium.copyWith(fontSize: 24),
+                            widget.isLogin
+                                ? 'Введите номер телефона'
+                                : 'Начните с номера',
+                            style: AppTextStyles.headlineMedium.copyWith(
+                              fontSize: 24,
+                            ),
                           ),
                           const SizedBox(height: AppDimens.space8),
                           Text(
@@ -182,7 +187,7 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
                       ),
                     ),
                     const SizedBox(height: AppDimens.space32),
-                    
+
                     PhoneInputField(
                       controller: _phoneController.controller,
                       focusNode: _phoneController.focusNode,
@@ -200,7 +205,11 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
                     const SizedBox(height: AppDimens.space8),
                     Row(
                       children: [
-                        Icon(Icons.info_outline, size: 14, color: AppColors.textTertiary),
+                        Icon(
+                          Icons.info_outline,
+                          size: 14,
+                          color: AppColors.textTertiary,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Введите 9 цифр после +996',
@@ -212,7 +221,7 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
                       ],
                     ),
                     const Spacer(),
-                    
+
                     AnimatedOpacity(
                       duration: const Duration(milliseconds: 200),
                       opacity: _isValid ? 1.0 : 0.3,
@@ -222,7 +231,9 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
                         size: JoluButtonSize.large,
                         isFullWidth: true,
                         isLoading: widget.isLoading,
-                        onPressed: _isValid && !widget.isLoading ? _submitPhone : null,
+                        onPressed: _isValid && !widget.isLoading
+                            ? _submitPhone
+                            : null,
                       ),
                     ),
                     const SizedBox(height: AppDimens.space24),
@@ -230,7 +241,9 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          widget.isLogin ? 'Нет аккаунта? ' : 'Уже есть аккаунт? ',
+                          widget.isLogin
+                              ? 'Нет аккаунта? '
+                              : 'Уже есть аккаунт? ',
                           style: AppTextStyles.bodySmall,
                         ),
                         GestureDetector(
@@ -264,7 +277,7 @@ class _GuideAuthTabsState extends State<GuideAuthTabs>
   void _submitPhone() {
     final phone = _phoneController.rawPhone;
     debugPrint('🔥 ОТПРАВКА: isLogin = ${widget.isLogin}, phone = $phone');
-    
+
     if (widget.isLogin) {
       widget.onLoginSubmit(phone);
     } else {

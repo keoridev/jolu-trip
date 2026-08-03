@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
-import 'package:jolutrip_app/core/ui/jolu_ui.dart';
+import 'package:jolutrip_app/core/ui/jolu_ui.dart'; // ✅ Убедись, что JoluSnackbar здесь доступен
 
 class OtpView extends StatefulWidget {
   final String phone;
@@ -16,6 +16,7 @@ class OtpView extends StatefulWidget {
   final bool isLoading;
   final int secondsLeft;
   final bool canResend;
+  final String submitButtonText;
 
   const OtpView({
     super.key,
@@ -27,6 +28,7 @@ class OtpView extends StatefulWidget {
     this.isLoading = false,
     this.secondsLeft = 59,
     this.canResend = false,
+    this.submitButtonText = 'Подтвердить',
   });
 
   @override
@@ -39,34 +41,36 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
     (_) => TextEditingController(),
   );
   final List<FocusNode> _focusNodes = List.generate(4, (_) => FocusNode());
-  
+
   late final AnimationController _errorShakeController;
 
   @override
   void initState() {
     super.initState();
-    
+
     _errorShakeController = AnimationController(
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
 
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _focusNodes[0].requestFocus(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _focusNodes[0].requestFocus();
+    });
   }
 
   @override
   void didUpdateWidget(OtpView oldWidget) {
     super.didUpdateWidget(oldWidget);
-    
+
+    // Только визуальная реакция: очистка и тряска
     if (widget.invalidAttempt != null &&
         widget.invalidAttempt != oldWidget.invalidAttempt) {
       _clearInputs();
       _triggerErrorShake();
+      // ❌ УДАЛИ вызов JoluSnackbar отсюда!
     }
-    
-    if (widget.canResend != oldWidget.canResend && 
+
+    if (widget.canResend != oldWidget.canResend &&
         widget.canResend == false &&
         oldWidget.canResend == true) {
       _clearInputs();
@@ -74,7 +78,9 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
   }
 
   void _triggerErrorShake() {
-    _errorShakeController.forward().then((_) => _errorShakeController.reverse());
+    _errorShakeController.forward().then(
+      (_) => _errorShakeController.reverse(),
+    );
   }
 
   void _clearInputs() {
@@ -86,10 +92,11 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
     });
   }
 
+  // ✅ ИСПРАВЛЕНО 2: Правильное форматирование номера +996 (700) 000-00-00
   String get _formattedPhone {
-    final p = widget.phone;
-    if (p.length == 12) {
-      return '+${p.substring(0, 3)} (${p.substring(3, 6)}) ${p.substring(6, 8)}-${p.substring(8, 10)}-${p.substring(10)}';
+    final digits = widget.phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.length == 12) {
+      return '+${digits.substring(0, 3)} (${digits.substring(3, 6)}) ${digits.substring(6, 8)}-${digits.substring(8, 10)}-${digits.substring(10, 12)}';
     }
     return widget.phone;
   }
@@ -104,14 +111,27 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
   }
 
   void _onDigitEntered(int index, String value) {
-    if (value.isNotEmpty) {
-      HapticFeedback.lightImpact();
-      if (index < 3) {
-        _focusNodes[index + 1].requestFocus();
-      } else {
-        _focusNodes[index].unfocus();
-        Future.delayed(const Duration(milliseconds: 150), _verifyCode);
+    if (value.isEmpty) return;
+
+    // Поддержка вставки (Paste) нескольких цифр сразу
+    if (value.length > 1) {
+      final digits = value.replaceAll(RegExp(r'\D'), '').split('');
+      for (int i = 0; i < 4 && i < digits.length; i++) {
+        _controllers[i].text = digits[i];
       }
+      _focusNodes[3].requestFocus();
+      HapticFeedback.mediumImpact();
+      Future.delayed(const Duration(milliseconds: 200), _verifyCode);
+      return;
+    }
+
+    // Обычный ввод одной цифры
+    HapticFeedback.lightImpact();
+    if (index < 3) {
+      _focusNodes[index + 1].requestFocus();
+    } else {
+      _focusNodes[index].unfocus();
+      Future.delayed(const Duration(milliseconds: 150), _verifyCode);
     }
   }
 
@@ -172,10 +192,7 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
       children: [
         Text(
           'Подтверждение',
-          style: AppTextStyles.headline.copyWith(
-            fontSize: 28,
-            height: 1.15,
-          ),
+          style: AppTextStyles.headline.copyWith(fontSize: 28, height: 1.15),
         ),
         const SizedBox(height: 12),
         RichText(
@@ -184,7 +201,7 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
             style: AppTextStyles.subtext.copyWith(fontSize: 15),
             children: [
               TextSpan(
-                text: _formattedPhone,
+                text: _formattedPhone, // ✅ Теперь здесь будет красивый номер
                 style: AppTextStyles.subtext.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
@@ -194,6 +211,7 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
             ],
           ),
         ),
+        // Встроенная плашка ошибки остается как дополнительный визуальный якорь
         if (widget.invalidAttempt != null) ...[
           const SizedBox(height: 16),
           _buildErrorBanner(),
@@ -207,10 +225,7 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
       animation: _errorShakeController,
       builder: (context, child) {
         final offset = sin(_errorShakeController.value * pi * 4) * 6;
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: child,
-        );
+        return Transform.translate(offset: Offset(offset, 0), child: child);
       },
       child: Container(
         padding: const EdgeInsets.all(12),
@@ -228,7 +243,7 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Неверный код. Осталось попыток: ${4 - (widget.invalidAttempt ?? 0)}',
+                'Неверный код',
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.error,
                   fontWeight: FontWeight.w500,
@@ -246,10 +261,7 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
       animation: _errorShakeController,
       builder: (context, child) {
         final offset = sin(_errorShakeController.value * pi * 4) * 4;
-        return Transform.translate(
-          offset: Offset(offset, 0),
-          child: child,
-        );
+        return Transform.translate(offset: Offset(offset, 0), child: child);
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -307,7 +319,7 @@ class _OtpViewState extends State<OtpView> with TickerProviderStateMixin {
 
   Widget _buildSubmitButton() {
     return JoluButton(
-      text: 'Войти',
+      text: widget.submitButtonText,
       variant: JoluButtonVariant.primary,
       size: JoluButtonSize.large,
       isFullWidth: true,
@@ -338,7 +350,8 @@ class _OtpInputField extends StatefulWidget {
   State<_OtpInputField> createState() => _OtpInputFieldState();
 }
 
-class _OtpInputFieldState extends State<_OtpInputField> with SingleTickerProviderStateMixin {
+class _OtpInputFieldState extends State<_OtpInputField>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _focusAnimationController;
   late final Animation<double> _scaleAnimation;
 
@@ -350,10 +363,7 @@ class _OtpInputFieldState extends State<_OtpInputField> with SingleTickerProvide
       vsync: this,
     );
     _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(
-        parent: _focusAnimationController,
-        curve: Curves.easeOut,
-      ),
+      CurvedAnimation(parent: _focusAnimationController, curve: Curves.easeOut),
     );
     widget.focusNode.addListener(_onFocusChange);
   }
@@ -378,10 +388,7 @@ class _OtpInputFieldState extends State<_OtpInputField> with SingleTickerProvide
     return AnimatedBuilder(
       animation: _scaleAnimation,
       builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: child,
-        );
+        return Transform.scale(scale: _scaleAnimation.value, child: child);
       },
       child: SizedBox(
         width: 52,
@@ -392,6 +399,9 @@ class _OtpInputFieldState extends State<_OtpInputField> with SingleTickerProvide
           textAlign: TextAlign.center,
           keyboardType: TextInputType.number,
           maxLength: 1,
+          // ✅ ИСПРАВЛЕНО 3: Строгий фильтр, разрешающий ТОЛЬКО цифры.
+          // Это предотвращает "странные" символы при быстрой печати или на специфичных клавиатурах.
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           style: AppTextStyles.headline.copyWith(
             fontSize: 24,
             fontWeight: FontWeight.w700,
@@ -399,8 +409,8 @@ class _OtpInputFieldState extends State<_OtpInputField> with SingleTickerProvide
           decoration: InputDecoration(
             counterText: '',
             filled: true,
-            fillColor: widget.focusNode.hasFocus 
-                ? AppColors.cardElevated 
+            fillColor: widget.focusNode.hasFocus
+                ? AppColors.cardElevated
                 : AppColors.cardDark,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppDimens.radiusM),
@@ -409,7 +419,7 @@ class _OtpInputFieldState extends State<_OtpInputField> with SingleTickerProvide
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppDimens.radiusM),
               borderSide: BorderSide(
-                color: widget.hasError 
+                color: widget.hasError
                     ? AppColors.error.withValues(alpha: 0.5)
                     : AppColors.borderDark,
                 width: widget.hasError ? 1.5 : 1,

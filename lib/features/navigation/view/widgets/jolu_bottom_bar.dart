@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
+import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 
 class JoluTabItem {
   final IconData iconOutline;
@@ -49,21 +50,19 @@ class JoluBottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-
     return Container(
-      decoration: BoxDecoration(
+      decoration: const BoxDecoration(
         color: AppColors.bgDark,
-        border: const Border(
+        border: Border(
           top: BorderSide(color: AppColors.borderDark, width: 0.3),
         ),
       ),
+      // ✅ SafeArea сам обработает нижний отступ (Home indicator).
+      // Нам нужно добавить только верхний и внутренний нижний отступ.
       child: SafeArea(
+        top: false, // Верхний SafeArea не нужен, он уже есть в Scaffold
         child: Padding(
-          padding: EdgeInsets.only(
-            top: AppDimens.space12,
-            bottom: bottomPadding > 0 ? bottomPadding : AppDimens.space12,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: AppDimens.space12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(_tabs.length, (index) {
@@ -72,7 +71,7 @@ class JoluBottomBar extends StatelessWidget {
 
               return Expanded(
                 child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                  behavior: HitTestBehavior.opaque, // ✅ Отлично, оставляем
                   onTap: () => onTap(index),
                   child: _JoluTabCell(tab: tab, isSelected: isSelected),
                 ),
@@ -96,20 +95,19 @@ class _JoluTabCell extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Индикатор сверху (только для активного)
+        // ✅ Индикатор сверху (используем AppDimens и AppColors)
         if (isSelected)
           Container(
             width: 24,
             height: 3,
-            margin: const EdgeInsets.only(bottom: 8),
+            margin: const EdgeInsets.only(bottom: AppDimens.space8),
             decoration: BoxDecoration(
               color: AppColors.primary,
               borderRadius: BorderRadius.circular(1.5),
             ),
           )
         else
-          const SizedBox(height: 11),
-
+          const SizedBox(height: 11), // Компенсируем высоту индикатора + margin
         // Иконка
         Icon(
           isSelected ? tab.iconFilled : tab.iconOutline,
@@ -119,15 +117,18 @@ class _JoluTabCell extends StatelessWidget {
 
         const SizedBox(height: 4),
 
-        // Текст
+        // ✅ Текст через AppTextStyles вместо инлайнового TextStyle
         Text(
           tab.label,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            letterSpacing: -0.2,
-            color: isSelected ? AppColors.primary : AppColors.textSecondary,
-          ),
+          style:
+              (isSelected ? AppTextStyles.bodySmall : AppTextStyles.bodySmall)
+                  .copyWith(
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                    color: isSelected
+                        ? AppColors.primary
+                        : AppColors.textSecondary,
+                    letterSpacing: -0.2,
+                  ),
         ),
       ],
     );

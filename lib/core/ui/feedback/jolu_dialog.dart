@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
@@ -78,7 +77,8 @@ class JoluDialog extends StatelessWidget {
                       onPressed: onCancel ?? () => Navigator.pop(context),
                     ),
                   ),
-                if (cancelText != null) const SizedBox(width: AppDimens.space16),
+                if (cancelText != null)
+                  const SizedBox(width: AppDimens.space16),
                 Expanded(
                   child: JoluButton(
                     text: confirmText,

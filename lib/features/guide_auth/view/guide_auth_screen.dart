@@ -25,6 +25,10 @@ class GuideAuthScreen extends StatelessWidget {
             final isLoading = state is GuideAuthLoading;
             return AnimatedSwitcher(
               duration: const Duration(milliseconds: 300),
+              // ✅ ДОБАВЛЕНО: transitionBuilder для более плавной анимации
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(opacity: animation, child: child);
+              },
               child: _buildContent(context, state, isLoading),
             );
           },
@@ -40,11 +44,13 @@ class GuideAuthScreen extends StatelessWidget {
   ) {
     return switch (state) {
       GuideAuthInitial() => GuideWelcome(
+        key: const ValueKey('guide_welcome'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
         onLogin: () => context.read<GuideAuthCubit>().selectMode(true),
         onRegister: () => context.read<GuideAuthCubit>().selectMode(false),
       ),
+
       GuideAuthModeSelection(isLogin: final isLogin) => GuideAuthTabs(
-        // ❌ УБРАТЬ key: ValueKey(isLogin), если он там есть
+        key: const ValueKey('guide_auth_tabs'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
         isLogin: isLogin,
         isLoading: isLoading,
         onTabChanged: (isLogin) =>
@@ -57,7 +63,7 @@ class GuideAuthScreen extends StatelessWidget {
       ),
 
       GuideLoginOtpSent(phone: final phone) => OtpView(
-        key: const ValueKey('guide_otp_login'),
+        key: const ValueKey('guide_otp_login'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
         phone: phone,
         isLoading: isLoading,
         secondsLeft: state.secondsLeft,
@@ -70,6 +76,7 @@ class GuideAuthScreen extends StatelessWidget {
       ),
 
       GuideRegisterStep1(phone: final phone) => GuideRegisterForm(
+        key: const ValueKey('guide_register_step1'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
         phone: phone,
         onBack: () => context.read<GuideAuthCubit>().reset(),
         onSubmit: (name, gender) => context
@@ -83,7 +90,7 @@ class GuideAuthScreen extends StatelessWidget {
         phone: final phone,
       ) =>
         OtpView(
-          key: const ValueKey('guide_otp_register'),
+          key: const ValueKey('guide_otp_register'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
           phone: phone,
           isLoading: isLoading,
           secondsLeft: state.secondsLeft,
@@ -99,12 +106,11 @@ class GuideAuthScreen extends StatelessWidget {
           onResend: () => context.read<GuideAuthCubit>().resendSms(phone),
         ),
 
-      GuideOtpInvalid(
-        phone: final phone,
-        isLoginMode: final isLoginMode, // ← используем флаг из состояния
-      ) =>
+      GuideOtpInvalid(phone: final phone, isLoginMode: final isLoginMode) =>
         OtpView(
-          key: ValueKey('guide_otp_invalid_${state.attempt}'),
+          key: ValueKey(
+            'guide_otp_invalid_${state.attempt}',
+          ), // ✅ ДИНАМИЧЕСКИЙ КЛЮЧ
           phone: phone,
           isLoading: isLoading,
           secondsLeft: state.secondsLeft,
@@ -123,7 +129,7 @@ class GuideAuthScreen extends StatelessWidget {
         ),
 
       GuideSmsResent(phone: final phone) => OtpView(
-        key: const ValueKey('guide_otp_resent'),
+        key: const ValueKey('guide_otp_resent'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
         phone: phone,
         isLoading: isLoading,
         secondsLeft: state.secondsLeft,
@@ -142,18 +148,24 @@ class GuideAuthScreen extends StatelessWidget {
       ),
 
       GuideAuthLoading() => const Center(
+        key: ValueKey('guide_auth_loading'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
         child: CircularProgressIndicator(
           valueColor: AlwaysStoppedAnimation(AppColors.primary),
         ),
       ),
 
-      GuideAuthError(message: final msg) => _buildErrorView(context, msg),
+      GuideAuthError(message: final msg) => _buildErrorView(
+        context,
+        msg,
+        key: const ValueKey('guide_auth_error'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
+      ),
 
-      _ => const SizedBox.shrink(),
+      _ => const SizedBox.shrink(
+        key: ValueKey('guide_auth_empty'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
+      ),
     };
   }
 
-  // ← Убрали хак с определением по типу состояния
   bool _isLoginModeFromCubit(BuildContext context) {
     return context.read<GuideAuthCubit>().isLoginMode;
   }
@@ -161,7 +173,6 @@ class GuideAuthScreen extends StatelessWidget {
   String _getFullName(GuideAuthState state) {
     if (state is GuideRegisterOtpSent) return state.fullName;
     if (state is GuideOtpInvalid) {
-      // Для GuideOtpInvalid нужно хранить fullName — добавьте в состояние если нужно
       return '';
     }
     return '';
@@ -173,8 +184,9 @@ class GuideAuthScreen extends StatelessWidget {
     return GuideGender.male;
   }
 
-  Widget _buildErrorView(BuildContext context, String message) {
+  Widget _buildErrorView(BuildContext context, String message, {Key? key}) {
     return Center(
+      key: key, // ✅ ПЕРЕДАЕМ KEY
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
@@ -195,6 +207,17 @@ class GuideAuthScreen extends StatelessWidget {
   }
 
   void _handleStateChange(BuildContext context, GuideAuthState state) {
+    // ✅ 1. ПОКАЗЫВАЕМ SNACKBAR ПРИ НЕВЕРНОМ КОДЕ
+    // Это сработает гарантированно, так как context принадлежит главному Scaffold экрана
+    if (state is GuideOtpInvalid) {
+      JoluSnackbar.show(
+        context: context,
+        message: 'Неверный код. Осталось попыток: ${4 - state.attempt}',
+        type: JoluSnackbarType.error,
+      );
+    }
+
+    // 2. Навигация при успехе
     if (state is GuideNeedsOnboarding) {
       context.go(
         '/guide/onboarding',
@@ -213,6 +236,7 @@ class GuideAuthScreen extends StatelessWidget {
       return;
     }
 
+    // 3. Обработка других ошибок (сеть, сервер)
     if (state is GuideAuthError) {
       String message = state.message;
 
@@ -222,7 +246,7 @@ class GuideAuthScreen extends StatelessWidget {
 
       if (message.contains('duplicate key') ||
           message.contains('guides_phone_key')) {
-        message = 'Этот номер уже зарегистрирован. Войдите в систему.';
+        message = 'Этот номер уже зарегистрирован. Попробуйте войти.';
       }
 
       JoluSnackbar.show(
