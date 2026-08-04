@@ -60,7 +60,7 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   void _onTextChanged() {
     final digits = _getDigitsOnly();
     final isValid = digits.length == _maxDigits;
-    
+
     if (isValid != _isValid) {
       setState(() => _isValid = isValid);
       widget.onValidityChanged?.call(isValid);
@@ -68,7 +68,9 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   }
 
   String _getDigitsOnly() {
-    return _controller.text.replaceAll(_prefix, '').replaceAll(RegExp(r'\D'), '');
+    return _controller.text
+        .replaceAll(_prefix, '')
+        .replaceAll(RegExp(r'\D'), '');
   }
 
   String get rawPhone {
@@ -77,7 +79,9 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
   }
 
   void _moveCursorToEnd() {
-    _controller.selection = TextSelection.collapsed(offset: _controller.text.length);
+    _controller.selection = TextSelection.collapsed(
+      offset: _controller.text.length,
+    );
   }
 
   @override
@@ -102,15 +106,26 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
       ),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: AppTextStyles.subtext.copyWith(fontSize: 24, color: AppColors.textTertiary),
+        hintStyle: AppTextStyles.subtext.copyWith(
+          fontSize: 24,
+          color: AppColors.textTertiary,
+        ),
         prefixIcon: Padding(
           padding: const EdgeInsets.only(right: AppDimens.space8),
-          child: Icon(Icons.phone_android_rounded, color: AppColors.textSecondary, size: AppDimens.icon24),
+          child: Icon(
+            Icons.phone_android_rounded,
+            color: AppColors.textSecondary,
+            size: AppDimens.icon24,
+          ),
         ),
         suffixIcon: _isValid
             ? const Padding(
                 padding: EdgeInsets.only(right: AppDimens.space16),
-                child: Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
+                child: Icon(
+                  Icons.check_circle_rounded,
+                  color: AppColors.success,
+                  size: 20,
+                ),
               )
             : null,
         border: InputBorder.none,
@@ -122,9 +137,15 @@ class _PhoneInputFieldState extends State<PhoneInputField> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppDimens.radiusM),
-          borderSide: BorderSide(color: _isValid ? AppColors.success : AppColors.primary, width: 2),
+          borderSide: BorderSide(
+            color: _isValid ? AppColors.success : AppColors.primary,
+            width: 2,
+          ),
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: AppDimens.space16, horizontal: AppDimens.space16),
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: AppDimens.space16,
+          horizontal: AppDimens.space16,
+        ),
       ),
       onEditingComplete: () {
         if (_isValid) widget.onSubmitted?.call();
@@ -140,7 +161,10 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
   _PhoneNumberInputFormatter(this.prefix, this.maxDigits);
 
   @override
-  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
     // 1. Защита от полного удаления префикса
     if (newValue.text.length < prefix.length) {
       return TextEditingValue(
@@ -150,7 +174,9 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
     }
 
     // 2. Извлекаем только цифры, введенные пользователем
-    String digits = newValue.text.replaceAll(prefix, '').replaceAll(RegExp(r'\D'), '');
+    String digits = newValue.text
+        .replaceAll(prefix, '')
+        .replaceAll(RegExp(r'\D'), '');
 
     // 3. Ограничиваем длину
     if (digits.length > maxDigits) {
@@ -163,11 +189,16 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
 
     // 5. ✅ УМНЫЙ КУРСОР: Сохраняем позицию относительно ввода/удаления
     int cursorPos = result.length;
-    final oldDigits = oldValue.text.replaceAll(prefix, '').replaceAll(RegExp(r'\D'), '');
-    
+    final oldDigits = oldValue.text
+        .replaceAll(prefix, '')
+        .replaceAll(RegExp(r'\D'), '');
+
     if (newValue.text.length < oldValue.text.length) {
       // Удаление: сдвигаем курсор назад на 1, но не дальше префикса
-      cursorPos = (oldValue.selection.baseOffset - 1).clamp(prefix.length, result.length);
+      cursorPos = (oldValue.selection.baseOffset - 1).clamp(
+        prefix.length,
+        result.length,
+      );
     } else {
       // Ввод: курсор в конец нового результата
       cursorPos = result.length;
@@ -190,7 +221,6 @@ class _PhoneNumberInputFormatter extends TextInputFormatter {
   }
 }
 
-// ✅ УПРОЩЕННЫЙ КОНТРОЛЛЕР (без ручного dispose, виджет сам разберется)
 class PhoneInputFieldController {
   final TextEditingController controller = TextEditingController();
   final FocusNode focusNode = FocusNode();
@@ -206,4 +236,9 @@ class PhoneInputFieldController {
   }
 
   bool get isValid => rawPhone.length == 12;
+
+  void dispose() {
+    controller.dispose();
+    focusNode.dispose();
+  }
 }

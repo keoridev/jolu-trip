@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
+import 'package:jolutrip_app/core/ui/feedback/jolu_snackbar.dart';
 import 'package:jolutrip_app/features/location-detail/domain/domain.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class MapFullscreenSheet extends StatelessWidget {
   final LocationDetailEntity location;
@@ -22,7 +24,6 @@ class MapFullscreenSheet extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Handle
           Center(
             child: Container(
               margin: const EdgeInsets.only(top: 12),
@@ -36,7 +37,6 @@ class MapFullscreenSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppDimens.space16),
 
-          // Header
           Padding(
             padding: AppDimens.screenPadding,
             child: Row(
@@ -71,7 +71,6 @@ class MapFullscreenSheet extends StatelessWidget {
 
           const SizedBox(height: AppDimens.space16),
 
-          // Карта (заглушка)
           Expanded(
             child: Container(
               margin: AppDimens.screenPadding,
@@ -96,11 +95,10 @@ class MapFullscreenSheet extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Скоро: 2GIS, Yandex Maps, Google Maps',
+                      'Выберите приложение для построения маршрута',
                       style: AppTextStyles.bodySmall,
                     ),
                     const SizedBox(height: 24),
-                    // Кнопки быстрого открытия
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -109,17 +107,17 @@ class MapFullscreenSheet extends StatelessWidget {
                         _MapButton(
                           label: '2GIS',
                           icon: Icons.map,
-                          onTap: () => _open2Gis(context),
+                          onTap: () => _openNavigator(context, '2gis'),
                         ),
                         _MapButton(
                           label: 'Yandex',
                           icon: Icons.location_city,
-                          onTap: () => _openYandex(context),
+                          onTap: () => _openNavigator(context, 'yandex'),
                         ),
                         _MapButton(
                           label: 'Google',
                           icon: Icons.public,
-                          onTap: () => _openGoogle(context),
+                          onTap: () => _openNavigator(context, 'google'),
                         ),
                       ],
                     ),
@@ -129,7 +127,6 @@ class MapFullscreenSheet extends StatelessWidget {
             ),
           ),
 
-          // Нижняя панель
           Container(
             padding: EdgeInsets.only(
               left: AppDimens.space16,
@@ -166,7 +163,7 @@ class MapFullscreenSheet extends StatelessWidget {
                 const SizedBox(width: AppDimens.space16),
                 Expanded(
                   child: GestureDetector(
-                    onTap: () => _openNavigator(context),
+                    onTap: () => _openNavigator(context, '2gis'), // По умолчанию 2GIS
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       decoration: BoxDecoration(
@@ -205,28 +202,67 @@ class MapFullscreenSheet extends StatelessWidget {
     Clipboard.setData(
       ClipboardData(text: '${location.latitude}, ${location.longitude}'),
     );
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Координаты скопированы')));
+    HapticFeedback.selectionClick();
+    if (context.mounted) {
+      JoluSnackbar.show(
+        context: context,
+        message: 'Координаты скопированы',
+        type: JoluSnackbarType.success,
+      );
+    }
   }
 
-  void _openNavigator(BuildContext context) {
-    // Показываем выбор навигатора
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _NavigatorPickerSheet(location: location),
-    );
-  }
+  // ✅ ЕДИНАЯ ЛОГИКА ОТКРЫТИЯ НАВИГАТОРА (дублируем для автономности виджета)
+  Future<void> _openNavigator(BuildContext context, String type) async {
+    final lat = location.latitude;
+    final lon = location.longitude;
+    Uri uri;
 
-  void _open2Gis(BuildContext context) {
-    /* TODO */
-  }
-  void _openYandex(BuildContext context) {
-    /* TODO */
-  }
-  void _openGoogle(BuildContext context) {
-    /* TODO */
+    switch (type) {
+      case '2gis':
+        uri = Uri.parse('geo:$lat,$lon');
+        break;
+      case 'yandex':
+        uri = Uri.parse('yandexmaps://maps.yandex.ru/?pt=$lon,$lat&z=15&l=map');
+        break;
+      case 'google':
+        uri = Uri.parse('https://www.google.com/maps/dir/?api=1&destination=$lat,$lon');
+        break;
+      default:
+        uri = Uri.parse('geo:$lat,$lon');
+    }
+
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      // Fallback на веб
+      Uri webUri;
+      switch (type) {
+        case '2gis':
+          webUri = Uri.parse('https://2gis.kg/geo/$lon,$lat');
+          break;
+        case 'yandex':
+          webUri = Uri.parse('https://yandex.ru/maps/?pt=$lon,$lat&z=15');
+          break;
+        case 'google':
+          webUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+          break;
+        default:
+          webUri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lon');
+      }
+
+      if (await canLaunchUrl(webUri)) {
+        await launchUrl(webUri, mode: LaunchMode.externalApplication);
+      } else {
+        if (context.mounted) {
+          JoluSnackbar.show(
+            context: context,
+            message: 'Не удалось открыть карту',
+            type: JoluSnackbarType.error,
+          );
+        }
+      }
+    }
   }
 }
 
@@ -254,152 +290,6 @@ class _MapButton extends StatelessWidget {
             Icon(icon, size: 18, color: AppColors.primary),
             const SizedBox(width: 6),
             Text(label, style: AppTextStyles.bodyMedium),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Выбор навигатора
-class _NavigatorPickerSheet extends StatelessWidget {
-  final LocationDetailEntity location;
-
-  const _NavigatorPickerSheet({required this.location});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.only(
-        top: AppDimens.space24,
-        left: AppDimens.space24,
-        right: AppDimens.space24,
-        bottom: MediaQuery.of(context).padding.bottom + AppDimens.space24,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.cardDark,
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(AppDimens.radiusL),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Center(
-            child: Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.borderDark,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-          const SizedBox(height: AppDimens.space24),
-          Text('Построить маршрут', style: AppTextStyles.headlineMedium),
-          const SizedBox(height: AppDimens.space12),
-          Text(
-            'Выберите приложение для навигации',
-            style: AppTextStyles.bodySmall,
-          ),
-          const SizedBox(height: AppDimens.space32),
-
-          // 2GIS — приоритет для КР
-          _NavigatorOption(
-            icon: Icons.map,
-            label: '2GIS',
-            subtitle: 'Лучшие карты Кыргызстана',
-            color: const Color(0xFF00AAFF),
-            onTap: () => _launch2Gis(),
-          ),
-          const SizedBox(height: AppDimens.space16),
-
-          // Yandex Maps
-          _NavigatorOption(
-            icon: Icons.location_city,
-            label: 'Yandex Maps',
-            subtitle: 'Популярный в СНГ',
-            color: const Color(0xFFFF3333),
-            onTap: () => _launchYandex(),
-          ),
-          const SizedBox(height: AppDimens.space16),
-
-          // Google Maps
-          _NavigatorOption(
-            icon: Icons.public,
-            label: 'Google Maps',
-            subtitle: 'Для международных туристов',
-            color: const Color(0xFF34A853),
-            onTap: () => _launchGoogle(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _launch2Gis() {
-    // 2gis://geo?lat=...&lon=...
-    // https://2gis.kg/
-  }
-
-  void _launchYandex() {
-    // yandexmaps://maps.yandex.ru/?pt=lng,lat&z=15&l=map
-  }
-
-  void _launchGoogle() {
-    // https://www.google.com/maps/dir/?api=1&destination=lat,lng
-  }
-}
-
-class _NavigatorOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String subtitle;
-  final Color color;
-  final VoidCallback? onTap;
-
-  const _NavigatorOption({
-    required this.icon,
-    required this.label,
-    required this.subtitle,
-    required this.color,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(AppDimens.space16),
-        decoration: BoxDecoration(
-          color: AppColors.bgElevated,
-          borderRadius: BorderRadius.circular(AppDimens.radiusM),
-          border: Border.all(color: AppColors.borderDark),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.15),
-                borderRadius: BorderRadius.circular(AppDimens.radiusS),
-              ),
-              child: Icon(icon, color: color, size: 24),
-            ),
-            const SizedBox(width: AppDimens.space16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: AppTextStyles.subtitle),
-                  const SizedBox(height: 2),
-                  Text(subtitle, style: AppTextStyles.bodySmall),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.textMuted),
           ],
         ),
       ),

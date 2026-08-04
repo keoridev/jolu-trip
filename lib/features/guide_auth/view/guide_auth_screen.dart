@@ -3,13 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
-import 'package:jolutrip_app/features/guide_auth/domain/entities/guide_entity.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_state.dart';
 import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_auth_tabs.dart';
-import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_mode_selection.dart';
-import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_register_form.dart';
-import 'package:jolutrip_app/features/guide_auth/view/widgets/guide_welcome.dart';
 
 class GuideAuthScreen extends StatelessWidget {
   const GuideAuthScreen({super.key});
@@ -20,16 +16,31 @@ class GuideAuthScreen extends StatelessWidget {
       backgroundColor: AppColors.bgDark,
       body: SafeArea(
         child: BlocConsumer<GuideAuthCubit, GuideAuthState>(
-          listener: (context, state) => _handleStateChange(context, state),
+          listener: _handleStateChange,
           builder: (context, state) {
             final isLoading = state is GuideAuthLoading;
-            return AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              // ✅ ДОБАВЛЕНО: transitionBuilder для более плавной анимации
-              transitionBuilder: (Widget child, Animation<double> animation) {
-                return FadeTransition(opacity: animation, child: child);
-              },
-              child: _buildContent(context, state, isLoading),
+
+            // Показываем OTP, если код отправлен или есть ошибка
+            if (state is GuideLoginOtpSent ||
+                state is GuideRegisterOtpSent ||
+                state is GuideOtpInvalid ||
+                state is GuideSmsResent) {
+              return _buildOtpView(context, state, isLoading);
+            }
+
+            // Иначе показываем форму ввода телефона (и имени/пола для регистрации)
+            return GuideAuthTabs(
+              key: const ValueKey('guide_auth_tabs'),
+              isLoading: isLoading,
+              onBack: () => context.pop(),
+              onLoginSubmit: (phone) =>
+                  context.read<GuideAuthCubit>().sendLoginOtp(phone),
+              onRegisterSubmit: (phone, name, gender) =>
+                  context.read<GuideAuthCubit>().sendRegisterOtp(
+                    fullName: name,
+                    gender: gender,
+                    phone: phone,
+                  ),
             );
           },
         ),
@@ -37,197 +48,78 @@ class GuideAuthScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(
+  Widget _buildOtpView(
     BuildContext context,
     GuideAuthState state,
     bool isLoading,
   ) {
-    return switch (state) {
-      GuideAuthInitial() => GuideWelcome(
-        key: const ValueKey('guide_welcome'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-        onLogin: () => context.read<GuideAuthCubit>().selectMode(true),
-        onRegister: () => context.read<GuideAuthCubit>().selectMode(false),
-      ),
+    final phone = switch (state) {
+      GuideLoginOtpSent p => p.phone,
+      GuideRegisterOtpSent p => p.phone,
+      GuideOtpInvalid p => p.phone,
+      GuideSmsResent p => p.phone,
+      _ => '',
+    };
 
-      GuideAuthModeSelection(isLogin: final isLogin) => GuideAuthTabs(
-        key: const ValueKey('guide_auth_tabs'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-        isLogin: isLogin,
-        isLoading: isLoading,
-        onTabChanged: (isLogin) =>
-            context.read<GuideAuthCubit>().selectMode(isLogin),
-        onLoginSubmit: (phone) =>
-            context.read<GuideAuthCubit>().sendLoginOtp(phone),
-        onRegisterSubmit: (phone) =>
-            context.read<GuideAuthCubit>().proceedToRegister(phone),
-        onBack: () => context.read<GuideAuthCubit>().reset(),
-      ),
+    final isLoginMode = switch (state) {
+      GuideLoginOtpSent _ => true,
+      GuideRegisterOtpSent _ => false,
+      GuideOtpInvalid p => p.isLoginMode,
+      GuideSmsResent _ => context.read<GuideAuthCubit>().isLoginMode,
+      _ => true,
+    };
 
-      GuideLoginOtpSent(phone: final phone) => OtpView(
-        key: const ValueKey('guide_otp_login'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-        phone: phone,
-        isLoading: isLoading,
-        secondsLeft: state.secondsLeft,
-        canResend: state.canResend,
-        invalidAttempt: null,
-        onBack: () => context.read<GuideAuthCubit>().reset(),
-        onVerify: (code) =>
-            context.read<GuideAuthCubit>().verifyLoginOtp(phone, code),
-        onResend: () => context.read<GuideAuthCubit>().resendSms(phone),
-      ),
-
-      GuideRegisterStep1(phone: final phone) => GuideRegisterForm(
-        key: const ValueKey('guide_register_step1'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-        phone: phone,
-        onBack: () => context.read<GuideAuthCubit>().reset(),
-        onSubmit: (name, gender) => context
-            .read<GuideAuthCubit>()
-            .sendRegisterOtp(fullName: name, gender: gender, phone: phone),
-      ),
-
-      GuideRegisterOtpSent(
-        fullName: final name,
-        gender: final gender,
-        phone: final phone,
-      ) =>
-        OtpView(
-          key: const ValueKey('guide_otp_register'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-          phone: phone,
-          isLoading: isLoading,
-          secondsLeft: state.secondsLeft,
-          canResend: state.canResend,
-          invalidAttempt: null,
-          onBack: () => context.read<GuideAuthCubit>().reset(),
-          onVerify: (code) => context.read<GuideAuthCubit>().verifyRegisterOtp(
-            fullName: name,
-            gender: gender,
+    return OtpView(
+      key: ValueKey('otp_$phone'), // Ключ для сброса состояния при смене номера
+      phone: phone,
+      isLoading: isLoading,
+      secondsLeft: (state as dynamic).secondsLeft ?? 59,
+      canResend: (state as dynamic).canResend ?? false,
+      invalidAttempt: state is GuideOtpInvalid ? state.attempt : null,
+      submitButtonText: isLoginMode ? 'Войти' : 'Зарегистрироваться',
+      onBack: () => context.read<GuideAuthCubit>().reset(),
+      onVerify: (code) {
+        if (isLoginMode) {
+          context.read<GuideAuthCubit>().verifyLoginOtp(phone, code);
+        } else if (state is GuideRegisterOtpSent) {
+          context.read<GuideAuthCubit>().verifyRegisterOtp(
+            fullName: state.fullName,
+            gender: state.gender,
             phone: phone,
             code: code,
-          ),
-          onResend: () => context.read<GuideAuthCubit>().resendSms(phone),
-        ),
-
-      GuideOtpInvalid(phone: final phone, isLoginMode: final isLoginMode) =>
-        OtpView(
-          key: ValueKey(
-            'guide_otp_invalid_${state.attempt}',
-          ), // ✅ ДИНАМИЧЕСКИЙ КЛЮЧ
-          phone: phone,
-          isLoading: isLoading,
-          secondsLeft: state.secondsLeft,
-          canResend: state.canResend,
-          invalidAttempt: state.attempt,
-          onBack: () => context.read<GuideAuthCubit>().reset(),
-          onVerify: (code) => isLoginMode
-              ? context.read<GuideAuthCubit>().verifyLoginOtp(phone, code)
-              : context.read<GuideAuthCubit>().verifyRegisterOtp(
-                  fullName: _getFullName(state),
-                  gender: _getGender(state),
-                  phone: phone,
-                  code: code,
-                ),
-          onResend: () => context.read<GuideAuthCubit>().resendSms(phone),
-        ),
-
-      GuideSmsResent(phone: final phone) => OtpView(
-        key: const ValueKey('guide_otp_resent'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-        phone: phone,
-        isLoading: isLoading,
-        secondsLeft: state.secondsLeft,
-        canResend: state.canResend,
-        invalidAttempt: null,
-        onBack: () => context.read<GuideAuthCubit>().reset(),
-        onVerify: (code) => _isLoginModeFromCubit(context)
-            ? context.read<GuideAuthCubit>().verifyLoginOtp(phone, code)
-            : context.read<GuideAuthCubit>().verifyRegisterOtp(
-                fullName: _getFullName(state),
-                gender: _getGender(state),
-                phone: phone,
-                code: code,
-              ),
-        onResend: () => context.read<GuideAuthCubit>().resendSms(phone),
-      ),
-
-      GuideAuthLoading() => const Center(
-        key: ValueKey('guide_auth_loading'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation(AppColors.primary),
-        ),
-      ),
-
-      GuideAuthError(message: final msg) => _buildErrorView(
-        context,
-        msg,
-        key: const ValueKey('guide_auth_error'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-      ),
-
-      _ => const SizedBox.shrink(
-        key: ValueKey('guide_auth_empty'), // ✅ УНИКАЛЬНЫЙ КЛЮЧ
-      ),
-    };
-  }
-
-  bool _isLoginModeFromCubit(BuildContext context) {
-    return context.read<GuideAuthCubit>().isLoginMode;
-  }
-
-  String _getFullName(GuideAuthState state) {
-    if (state is GuideRegisterOtpSent) return state.fullName;
-    if (state is GuideOtpInvalid) {
-      return '';
-    }
-    return '';
-  }
-
-  GuideGender _getGender(GuideAuthState state) {
-    if (state is GuideRegisterOtpSent) return state.gender;
-    if (state is GuideOtpInvalid) return GuideGender.male;
-    return GuideGender.male;
-  }
-
-  Widget _buildErrorView(BuildContext context, String message, {Key? key}) {
-    return Center(
-      key: key, // ✅ ПЕРЕДАЕМ KEY
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.red, size: 48),
-            const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            JoluButton(
-              text: 'Назад',
-              onPressed: () => context.read<GuideAuthCubit>().reset(),
-            ),
-          ],
-        ),
-      ),
+          );
+        }
+      },
+      onResend: () => context.read<GuideAuthCubit>().resendSms(phone),
     );
   }
 
   void _handleStateChange(BuildContext context, GuideAuthState state) {
-    // ✅ 1. ПОКАЗЫВАЕМ SNACKBAR ПРИ НЕВЕРНОМ КОДЕ
-    // Это сработает гарантированно, так как context принадлежит главному Scaffold экрана
+    // 1. Ошибка ввода OTP
     if (state is GuideOtpInvalid) {
       JoluSnackbar.show(
         context: context,
-        message: 'Неверный код. Осталось попыток: ${4 - state.attempt}',
+        message: 'Неверный код.',
         type: JoluSnackbarType.error,
-      );
-    }
-
-    // 2. Навигация при успехе
-    if (state is GuideNeedsOnboarding) {
-      context.go(
-        '/guide/onboarding',
-        extra: {'token': state.token, 'guideId': state.guide.id},
       );
       return;
     }
 
-    if (state is GuideAuthSuccess) {
-      context.go('/guide/dashboard');
+    // 2. Общие ошибки API
+    if (state is GuideAuthError) {
+      JoluSnackbar.show(
+        context: context,
+        message: state.message,
+        type: JoluSnackbarType.error,
+      );
+      return;
+    }
+
+    if (state is GuideNeedsOnboarding) {
+      context.go(
+        '/guide/onboarding',
+        extra: {'guideId': state.guide.id, 'token': state.token},
+      );
       return;
     }
 
@@ -236,24 +128,8 @@ class GuideAuthScreen extends StatelessWidget {
       return;
     }
 
-    // 3. Обработка других ошибок (сеть, сервер)
-    if (state is GuideAuthError) {
-      String message = state.message;
-
-      if (message.contains('404') || message.contains('Not Found')) {
-        message = 'Аккаунт не найден. Возможно, он был удалён.';
-      }
-
-      if (message.contains('duplicate key') ||
-          message.contains('guides_phone_key')) {
-        message = 'Этот номер уже зарегистрирован. Попробуйте войти.';
-      }
-
-      JoluSnackbar.show(
-        context: context,
-        message: message,
-        type: JoluSnackbarType.error,
-      );
+    if (state is GuideAuthSuccess) {
+      context.go('/guide/dashboard');
       return;
     }
   }

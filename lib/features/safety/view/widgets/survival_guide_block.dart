@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
-import 'package:jolutrip_app/features/safety/data/datasources/datasources.dart';
+import 'package:jolutrip_app/features/safety/data/datasources/safety_local_datasource.dart';
 import 'package:jolutrip_app/features/safety/data/models/safety_models.dart';
 import 'package:jolutrip_app/features/safety/view/widgets/shared/block_title.dart';
 import 'package:jolutrip_app/features/safety/view/widgets/shared/expandable_card.dart';
@@ -21,7 +21,6 @@ class SurvivalGuideBlock extends StatelessWidget {
           color: Colors.teal,
         ),
         const SizedBox(height: AppDimens.space24),
-
         ...SafetyLocalDataSource.faqCategories.map(
           (faq) => ExpandableCard(
             icon: faq.icon,
@@ -35,10 +34,7 @@ class SurvivalGuideBlock extends StatelessWidget {
             ),
           ),
         ),
-
         const SizedBox(height: AppDimens.space24),
-
-        // Дополнительные советы
         ...SafetyLocalDataSource.safetyTips.map((tip) => _TipCard(tip: tip)),
       ],
     );
@@ -61,10 +57,7 @@ class _QuestionTile extends StatelessWidget {
         children: [
           Text(
             question.question,
-            style: AppTextStyles.body.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-            ),
+            style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w600, fontSize: 14),
           ),
           const SizedBox(height: AppDimens.space12),
           Container(
@@ -107,9 +100,7 @@ class _TipCard extends StatelessWidget {
         color: AppColors.cardDark,
         borderRadius: BorderRadius.circular(AppDimens.radiusM),
         border: Border.all(
-          color: (colors[tip.category] ?? AppColors.primary).withValues(
-            alpha: 0.3,
-          ),
+          color: (colors[tip.category] ?? AppColors.primary).withValues(alpha: 0.3),
         ),
       ),
       child: Row(
@@ -119,9 +110,7 @@ class _TipCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: (colors[tip.category] ?? AppColors.primary).withValues(
-                alpha: 0.15,
-              ),
+              color: (colors[tip.category] ?? AppColors.primary).withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -137,18 +126,12 @@ class _TipCard extends StatelessWidget {
               children: [
                 Text(
                   tip.title,
-                  style: AppTextStyles.body.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
+                  style: AppTextStyles.body.copyWith(fontWeight: FontWeight.w700, fontSize: 14),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   tip.content,
-                  style: AppTextStyles.subtext.copyWith(
-                    height: 1.5,
-                    fontSize: 12,
-                  ),
+                  style: AppTextStyles.subtext.copyWith(height: 1.5, fontSize: 12),
                 ),
               ],
             ),

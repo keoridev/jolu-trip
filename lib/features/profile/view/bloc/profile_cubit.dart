@@ -1,7 +1,6 @@
 import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/storage/secure_storage.dart';
+import 'package:jolutrip_app/core/storage/secure_storage.dart';
 import 'profile_state.dart';
 
 class ProfileCubit extends Cubit<ProfileState> {
@@ -10,6 +9,7 @@ class ProfileCubit extends Cubit<ProfileState> {
       loadProfile();
     });
   }
+  
   StreamSubscription<void>? _authSubscription;
 
   Future<void> loadProfile() async {
@@ -41,6 +41,7 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> logout() async {
     await SecureStorage.clearAll();
+    emit(const ProfileGuest()); // Сразу обновляем UI
   }
 
   @override

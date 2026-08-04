@@ -2,11 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:jolutrip_app/features/safety/data/models/safety_models.dart';
 
 class SafetyLocalDataSource {
-  static const List<EmergencyContact> emergencyContacts =
-      EmergencyContact.defaults;
+  static const List<EmergencyContact> emergencyContacts = [
+    EmergencyContact(
+      name: 'МЧС Кыргызстана',
+      phone: '112',
+      description: 'Единая служба спасения',
+      isPrimary: true,
+    ),
+    EmergencyContact(
+      name: 'Скорая помощь',
+      phone: '103',
+      description: 'Медицинская помощь',
+    ),
+    EmergencyContact(
+      name: 'Полиция',
+      phone: '102',
+      description: 'Правоохранительные органы',
+    ),
+  ];
 
   static const List<AppInfo> essentialApps = [
-    // Навигация
     AppInfo(
       name: '2GIS',
       description: 'Офлайн-карты городов Кыргызстана',
@@ -25,20 +40,8 @@ class SafetyLocalDataSource {
       color: Color(0xFF00A651),
       category: 'Навигация',
       fallbackUrl: 'https://maps.me',
-      assetPath: 'assets/icons/mapsme.png',
+      assetPath: 'assets/icons/maps.png',
     ),
-    AppInfo(
-      name: 'Windy',
-      description: 'Прогноз погоды и ветра в горах',
-      packageName: 'com.windyty.android',
-      appStoreId: '1161388052',
-      color: Color(0xFF00B4D8),
-      category: 'Погода',
-      fallbackUrl: 'https://windy.com',
-      assetPath: 'assets/icons/windy.png',
-    ),
-
-    // Финансы
     AppInfo(
       name: 'MBANK',
       description: 'Мобильный банкинг, переводы, оплата',
@@ -59,8 +62,6 @@ class SafetyLocalDataSource {
       fallbackUrl: 'https://elsom.kg',
       assetPath: 'assets/icons/elsom.png',
     ),
-
-    // Транспорт
     AppInfo(
       name: 'Yandex Go',
       description: 'Такси в Бишкеке и Оше',
@@ -79,55 +80,10 @@ class SafetyLocalDataSource {
       color: Color(0xFFE31E24),
       category: 'Транспорт',
       fallbackUrl: 'https://nambataxi.kg',
-      assetPath: 'assets/icons/namba.png',
-    ),
-
-    // Еда и жильё
-    AppInfo(
-      name: 'Namba Food',
-      description: 'Доставка еды в Бишкеке',
-      packageName: 'kg.nambafood.ios',
-      appStoreId: '1451605081',
-      color: Color(0xFFE31E24),
-      category: 'Еда',
-      fallbackUrl: 'https://nambafood.kg',
-      assetPath: 'assets/icons/nambafood.png',
-    ),
-    AppInfo(
-      name: 'Booking.com',
-      description: 'Отели и гостевые дома',
-      packageName: 'com.booking',
-      appStoreId: '367003839',
-      color: Color(0xFF003580),
-      category: 'Жильё',
-      fallbackUrl: 'https://booking.com',
-      assetPath: 'assets/icons/booking.png',
-    ),
-
-    // Инструменты
-    AppInfo(
-      name: 'Переводчик',
-      description: 'Google Translate — офлайн режим',
-      packageName: 'com.google.android.apps.translate',
-      appStoreId: '414706506',
-      color: Color(0xFF4285F4),
-      category: 'Инструменты',
-      fallbackUrl: 'https://translate.google.com',
-      assetPath: 'assets/icons/translate.png',
-    ),
-    AppInfo(
-      name: 'Компас',
-      description: 'Встроенный компас для ориентации',
-      packageName: 'com.vincentlee.compass',
-      appStoreId: '441338009',
-      color: Color(0xFF8B4513),
-      category: 'Инструменты',
-      fallbackUrl: 'https://play.google.com',
-      assetPath: 'assets/icons/compass.png',
+      assetPath: 'assets/icons/namba_taxi.png',
     ),
   ];
 
-  // 🔥 ДОБАВЛЕНЫ url и assetPath
   static const List<OperatorInfo> operators = [
     OperatorInfo(
       name: 'O!',
@@ -149,45 +105,6 @@ class SafetyLocalDataSource {
       color: Color(0xFFFFD700),
       url: 'https://beeline.kg/ru/',
       assetPath: 'assets/icons/beeline.png',
-    ),
-  ];
-
-  static const List<Phrase> phrases = [
-    Phrase(
-      kyrgyz: 'Саламатсызбы!',
-      russian: 'Здравствуйте',
-      transcription: 'Sa-la-mat-SYZ-by',
-      icon: Icons.waving_hand_outlined,
-    ),
-    Phrase(
-      kyrgyz: 'Чон рахмат!',
-      russian: 'Большое спасибо',
-      transcription: 'Chon rah-MAT',
-      icon: Icons.favorite_outline,
-    ),
-    Phrase(
-      kyrgyz: 'Бул канча турат?',
-      russian: 'Сколько стоит?',
-      transcription: 'Bul KAN-cha tu-RAT',
-      icon: Icons.payments_outlined,
-    ),
-    Phrase(
-      kyrgyz: 'Суу барбы?',
-      russian: 'Есть вода?',
-      transcription: 'SUU bar-BY',
-      icon: Icons.water_drop_outlined,
-    ),
-    Phrase(
-      kyrgyz: 'Жол көрсөтүп коюңузчу',
-      russian: 'Покажите дорогу',
-      transcription: 'Zhöl kör-SÖ-tüp ko-YUN-guz-chu',
-      icon: Icons.map_outlined,
-    ),
-    Phrase(
-      kyrgyz: 'Жакшы калыңыз!',
-      russian: 'До свидания',
-      transcription: 'Zhak-SHY ka-LYNG-yz',
-      icon: Icons.waving_hand,
     ),
   ];
 
@@ -269,6 +186,45 @@ class SafetyLocalDataSource {
           'Увидел машину с открытым капотом — остановись. В горах Кыргызстана взаимовыручка — неписаный закон.',
       category: SafetyCategory.practical,
       priority: 3,
+    ),
+  ];
+
+  static const List<ChecklistItem> preTripChecklist = [
+    ChecklistItem(
+      id: 'cash',
+      title: 'Наличные сомы (в горах карты не работают)',
+      icon: Icons.payments_outlined,
+      color: Color(0xFF00A651),
+    ),
+    ChecklistItem(
+      id: 'powerbank',
+      title: 'Пауэрбанк (10 000+ мАч)',
+      icon: Icons.battery_charging_full_outlined,
+      color: Color(0xFFFFA500),
+    ),
+    ChecklistItem(
+      id: 'water',
+      title: 'Вода (минимум 1.5л на человека)',
+      icon: Icons.water_drop_outlined,
+      color: Color(0xFF2688EB),
+    ),
+    ChecklistItem(
+      id: 'warm_clothes',
+      title: 'Теплая куртка/ветровка (погода меняется резко)',
+      icon: Icons.checkroom_outlined,
+      color: Color(0xFF9C27B0),
+    ),
+    ChecklistItem(
+      id: 'offline_maps',
+      title: 'Скачаны офлайн-карты (2GIS / Maps.me)',
+      icon: Icons.map_outlined,
+      color: Color(0xFFE31E24),
+    ),
+    ChecklistItem(
+      id: 'sun_protection',
+      title: 'Очки и крем от солнца (в горах солнце агрессивнее)',
+      icon: Icons.wb_sunny_outlined,
+      color: Color(0xFFFFD700),
     ),
   ];
 }

@@ -5,11 +5,14 @@ import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
-import 'package:jolutrip_app/core/utils/app_launcher.dart';
+import 'package:jolutrip_app/features/safety/data/models/safety_models.dart';
 import 'package:jolutrip_app/features/safety/view/bloc/safety_cubit.dart';
 import 'package:jolutrip_app/features/safety/view/bloc/safety_state.dart';
-import 'package:jolutrip_app/features/safety/data/models/safety_models.dart';
-import 'package:jolutrip_app/features/safety/view/widgets/widgets.dart';
+import 'package:jolutrip_app/features/safety/view/widgets/checklist_block.dart';
+import 'package:jolutrip_app/features/safety/view/widgets/digital_toolbox_block.dart';
+import 'package:jolutrip_app/features/safety/view/widgets/sos_block.dart';
+import 'package:jolutrip_app/features/safety/view/widgets/survival_guide_block.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SafetyScreen extends StatelessWidget {
   const SafetyScreen({super.key});
@@ -63,11 +66,7 @@ class SafetyScreen extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.arrow_back_rounded,
-              color: AppColors.textSecondary,
-              size: 18,
-            ),
+            const Icon(Icons.arrow_back_rounded, color: AppColors.textSecondary, size: 18),
             const SizedBox(width: 6),
             Text('Назад', style: AppTextStyles.subtext.copyWith(fontSize: 13)),
           ],
@@ -86,17 +85,12 @@ class SafetyScreen extends StatelessWidget {
             color: AppColors.error.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(AppDimens.radiusRound),
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.emergency, color: AppColors.error, size: 14),
-              const SizedBox(width: 6),
-              Text(
-                'SOS',
-                style: AppTextStyles.accentBadge.copyWith(
-                  color: AppColors.error,
-                ),
-              ),
+              SizedBox(width: 6),
+              Text('SOS', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700, fontSize: 12)),
             ],
           ),
         ),
@@ -134,7 +128,7 @@ class SafetyScreen extends StatelessWidget {
               coordinates: coordinates,
               isLoading: isLoading,
               onRefresh: () => context.read<SafetyCubit>().refreshLocation(),
-              onSos: () => AppLauncher.callEmergency(),
+              onSos: () => launchUrl(Uri.parse('tel:112'), mode: LaunchMode.externalApplication),
             );
           },
         ),
@@ -149,11 +143,11 @@ class SafetyScreen extends StatelessWidget {
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            ChecklistBlock(),
+            SizedBox(height: AppDimens.space32),
             DigitalToolboxBlock(),
             SizedBox(height: AppDimens.space32),
             SurvivalGuideBlock(),
-            SizedBox(height: AppDimens.space32),
-            PhrasesBlock(),
             SizedBox(height: 48),
           ],
         ),

@@ -29,10 +29,26 @@
             android:name="flutterEmbedding"
             android:value="2" />
     </application>
-    <queries>
+      <queries>
+        <!-- Разрешаем открывать любые http/https ссылки (браузеры) -->
         <intent>
-            <action android:name="android.intent.action.PROCESS_TEXT"/>
-            <data android:mimeType="text/plain"/>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
         </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
+        
+        <!-- Разрешаем открывать geo: ссылки -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+
+        <!-- Явные пакеты карт для надежности -->
+        <package android:name="ru.dublgis.dgismobile" /> <!-- 2GIS -->
+        <package android:name="ru.yandex.yandexmaps" /> <!-- Yandex Maps -->
+        <package android:name="com.google.android.apps.maps" /> <!-- Google Maps -->
     </queries>
 </manifest>

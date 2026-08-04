@@ -1,14 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/features/safety/domain/repositories/safety_repository.dart';
-
-import 'safety_state.dart';
+import 'package:jolutrip_app/features/safety/view/bloc/safety_state.dart';
 
 class SafetyCubit extends Cubit<SafetyState> {
   final SafetyRepository _repository;
 
   SafetyCubit({required SafetyRepository repository})
-    : _repository = repository,
-      super(SafetyInitial());
+      : _repository = repository,
+        super(SafetyInitial());
 
   Future<void> loadLocation() async {
     emit(const SafetyLocationLoading());

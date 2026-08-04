@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
+import 'package:jolutrip_app/core/ui/feedback/jolu_snackbar.dart';
 import 'package:jolutrip_app/features/location-detail/domain/domain.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class LocationSelfDriveSheet extends StatelessWidget {
   final LocationDetailEntity location;
@@ -29,7 +31,6 @@ class LocationSelfDriveSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Handle
           Center(
             child: Container(
               width: 40,
@@ -50,7 +51,6 @@ class LocationSelfDriveSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppDimens.space32),
 
-          // Координаты с кнопкой копирования
           Container(
             padding: const EdgeInsets.all(AppDimens.space16),
             decoration: BoxDecoration(
@@ -118,7 +118,6 @@ class LocationSelfDriveSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppDimens.space32),
 
-          // Разделитель
           Row(
             children: [
               Expanded(child: Divider(color: AppColors.borderDark)),
@@ -134,7 +133,6 @@ class LocationSelfDriveSheet extends StatelessWidget {
           ),
           const SizedBox(height: AppDimens.space32),
 
-          // Кнопки навигаторов — сетка 2x2
           Row(
             children: [
               Expanded(
@@ -142,7 +140,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: '2GIS',
                   icon: Icons.map,
                   color: const Color(0xFF00AAFF),
-                  onTap: () => _open2Gis(context),
+                  onTap: () => _openNavigator(context, '2gis'),
                 ),
               ),
               const SizedBox(width: AppDimens.space16),
@@ -151,7 +149,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: 'Google Maps',
                   icon: Icons.public,
                   color: const Color(0xFF34A853),
-                  onTap: () => _openGoogle(context),
+                  onTap: () => _openNavigator(context, 'google'),
                 ),
               ),
             ],
@@ -164,7 +162,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: 'Yandex Maps',
                   icon: Icons.location_city,
                   color: const Color(0xFFFF3333),
-                  onTap: () => _openYandex(context),
+                  onTap: () => _openNavigator(context, 'yandex'),
                 ),
               ),
               const SizedBox(width: AppDimens.space16),
@@ -173,13 +171,12 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: 'Apple Maps',
                   icon: Icons.apple,
                   color: Colors.white,
-                  onTap: () => _openApple(context),
+                  onTap: () => _openNavigator(context, 'apple'),
                 ),
               ),
             ],
           ),
 
-          // Дополнительно: поделиться
           const SizedBox(height: AppDimens.space32),
           GestureDetector(
             onTap: () => _shareLocation(context),
@@ -193,7 +190,11 @@ class LocationSelfDriveSheet extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.share, color: AppColors.textSecondary, size: 18),
+                  const Icon(
+                    Icons.share,
+                    color: AppColors.textSecondary,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text('Поделиться локацией', style: AppTextStyles.bodyMedium),
                 ],
@@ -207,36 +208,101 @@ class LocationSelfDriveSheet extends StatelessWidget {
 
   void _copyCoordinates(BuildContext context) {
     Clipboard.setData(ClipboardData(text: location.formattedCoordinates));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('Координаты скопированы'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppDimens.radiusM),
-        ),
-      ),
-    );
+    HapticFeedback.selectionClick();
+    if (context.mounted) {
+      JoluSnackbar.show(
+        context: context,
+        message: 'Координаты скопированы',
+        type: JoluSnackbarType.success,
+      );
+    }
   }
 
   void _shareLocation(BuildContext context) {
-    /* TODO: Share Plus */
+    // Можно интегрировать share_plus, если нужно, но пока оставим как есть
   }
 
-  void _open2Gis(BuildContext context) {
-    /* TODO: url_launcher */
-  }
+  // ✅ УЛУЧШЕННАЯ ЛОГИКА С ЛОГИРОВАНИЕМ
+  Future<void> _openNavigator(BuildContext context, String type) async {
+    final lat = location.latitude;
+    final lon = location.longitude;
 
-  void _openGoogle(BuildContext context) {
-    /* TODO: url_launcher */
-  }
+    debugPrint('🗺️ Попытка открыть навигатор: $type (Lat: $lat, Lon: $lon)');
 
-  void _openYandex(BuildContext context) {
-    /* TODO: url_launcher */
-  }
+    // 1. Формируем Deep Link для приложения
+    Uri appUri;
+    switch (type) {
+      case '2gis':
+        appUri = Uri.parse(
+          'geo:$lat,$lon',
+        ); // 2GIS отлично ловит стандартный geo
+        break;
+      case 'yandex':
+        // Yandex требует строгий формат pt=LON,LAT (долгота первая!)
+        appUri = Uri.parse(
+          'yandexmaps://maps.yandex.ru/?pt=$lon,$lat&z=15&l=map',
+        );
+        break;
+      case 'google':
+        appUri = Uri.parse(
+          'https://www.google.com/maps/dir/?api=1&destination=$lat,$lon',
+        );
+        break;
+      case 'apple':
+        appUri = Uri.parse('http://maps.apple.com/?daddr=$lat,$lon');
+        break;
+      default:
+        appUri = Uri.parse('geo:$lat,$lon');
+    }
 
-  void _openApple(BuildContext context) {
-    /* TODO: url_launcher */
+    // 2. Пытаемся открыть приложение
+    if (await canLaunchUrl(appUri)) {
+      debugPrint('✅ Открываю приложение по ссылке: $appUri');
+      await launchUrl(appUri, mode: LaunchMode.externalApplication);
+      return; // Успех, выходим
+    }
+
+    debugPrint('⚠️ Приложение не найдено, пробую веб-версию (fallback)...');
+
+    // 3. Fallback на веб-версию, если приложения нет
+    Uri webUri;
+    switch (type) {
+      case '2gis':
+        // 2GIS web принимает LON,LAT
+        webUri = Uri.parse('https://2gis.kg/geo/$lon,$lat');
+        break;
+      case 'yandex':
+        // Yandex web принимает LON,LAT
+        webUri = Uri.parse('https://yandex.ru/maps/?pt=$lon,$lat&z=15&l=map');
+        break;
+      case 'google':
+        // Google web принимает LAT,LON
+        webUri = Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=$lat,$lon',
+        );
+        break;
+      case 'apple':
+        webUri = Uri.parse('https://maps.apple.com/?daddr=$lat,$lon');
+        break;
+      default:
+        webUri = Uri.parse(
+          'https://www.google.com/maps/search/?api=1&query=$lat,$lon',
+        );
+    }
+
+    if (await canLaunchUrl(webUri)) {
+      debugPrint('✅ Открываю веб-версию по ссылке: $webUri');
+      await launchUrl(webUri, mode: LaunchMode.externalApplication);
+    } else {
+      debugPrint('❌ ОШИБКА: Не удалось открыть даже веб-версию: $webUri');
+      if (context.mounted) {
+        JoluSnackbar.show(
+          context: context,
+          message: 'Не удалось открыть карту. Проверьте интернет.',
+          type: JoluSnackbarType.error,
+        );
+      }
+    }
   }
 }
 

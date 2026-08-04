@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:jolutrip_app/features/safety/data/models/model.dart';
+import 'package:jolutrip_app/features/safety/data/models/safety_models.dart';
 
 abstract class SafetyState extends Equatable {
   const SafetyState();

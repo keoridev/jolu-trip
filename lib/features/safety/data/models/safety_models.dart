@@ -12,25 +12,6 @@ class EmergencyContact {
   final String phone;
   final String description;
   final bool isPrimary;
-
-  static const List<EmergencyContact> defaults = [
-    EmergencyContact(
-      name: 'МЧС Кыргызстана',
-      phone: '112',
-      description: 'Единая служба спасения',
-      isPrimary: true,
-    ),
-    EmergencyContact(
-      name: 'Скорая помощь',
-      phone: '103',
-      description: 'Медицинская помощь',
-    ),
-    EmergencyContact(
-      name: 'Полиция',
-      phone: '102',
-      description: 'Правоохранительные органы',
-    ),
-  ];
 }
 
 class GpsCoordinates {
@@ -44,8 +25,7 @@ class GpsCoordinates {
   final double longitude;
   final DateTime timestamp;
 
-  String get decimal =>
-      '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
+  String get decimal => '${latitude.toStringAsFixed(6)}, ${longitude.toStringAsFixed(6)}';
 
   String get dms => '${_toDms(latitude)} N, ${_toDms(longitude)} E';
 
@@ -58,16 +38,16 @@ class GpsCoordinates {
   }
 
   Map<String, dynamic> toJson() => {
-    'latitude': latitude,
-    'longitude': longitude,
-    'timestamp': timestamp.toIso8601String(),
-  };
+        'latitude': latitude,
+        'longitude': longitude,
+        'timestamp': timestamp.toIso8601String(),
+      };
 
   factory GpsCoordinates.fromJson(Map<String, dynamic> json) => GpsCoordinates(
-    latitude: (json['latitude'] as num).toDouble(),
-    longitude: (json['longitude'] as num).toDouble(),
-    timestamp: DateTime.parse(json['timestamp'] as String),
-  );
+        latitude: (json['latitude'] as num).toDouble(),
+        longitude: (json['longitude'] as num).toDouble(),
+        timestamp: DateTime.parse(json['timestamp'] as String),
+      );
 }
 
 enum SafetyCategory {
@@ -81,7 +61,6 @@ enum SafetyCategory {
   const SafetyCategory(this.title);
 }
 
-// 🔥 ВОЗВРАЩАЕМ AppInfo — нужен для DigitalToolboxBlock
 class AppInfo {
   const AppInfo({
     required this.name,
@@ -104,7 +83,6 @@ class AppInfo {
   final String? assetPath;
 }
 
-// 🔥 ОБНОВЛЁННЫЙ OperatorInfo с url и assetPath
 class OperatorInfo {
   const OperatorInfo({
     required this.name,
@@ -119,20 +97,6 @@ class OperatorInfo {
   final Color color;
   final String url;
   final String? assetPath;
-}
-
-class Phrase {
-  const Phrase({
-    required this.kyrgyz,
-    required this.russian,
-    required this.transcription,
-    required this.icon,
-  });
-
-  final String kyrgyz;
-  final String russian;
-  final String transcription;
-  final IconData icon;
 }
 
 class FaqCategory {
@@ -173,4 +137,18 @@ class SafetyTip {
   final String content;
   final SafetyCategory category;
   final int priority;
+}
+
+class ChecklistItem {
+  const ChecklistItem({
+    required this.id,
+    required this.title,
+    required this.icon,
+    required this.color,
+  });
+
+  final String id;
+  final String title;
+  final IconData icon;
+  final Color color;
 }
