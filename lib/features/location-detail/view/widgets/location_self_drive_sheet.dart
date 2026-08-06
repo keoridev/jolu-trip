@@ -5,6 +5,7 @@ import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 import 'package:jolutrip_app/core/ui/feedback/jolu_snackbar.dart';
 import 'package:jolutrip_app/features/location-detail/domain/domain.dart';
+import 'package:jolutrip_app/features/location-detail/view/widgets/trip_readiness_sheet.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class LocationSelfDriveSheet extends StatelessWidget {
@@ -140,7 +141,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: '2GIS',
                   icon: Icons.map,
                   color: const Color(0xFF00AAFF),
-                  onTap: () => _openNavigator(context, '2gis'),
+                  onTap: () =>  _prepareAndNavigate(context, '2gis'),
                 ),
               ),
               const SizedBox(width: AppDimens.space16),
@@ -149,7 +150,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: 'Google Maps',
                   icon: Icons.public,
                   color: const Color(0xFF34A853),
-                  onTap: () => _openNavigator(context, 'google'),
+                  onTap: () => _prepareAndNavigate(context, 'google'),
                 ),
               ),
             ],
@@ -162,7 +163,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: 'Yandex Maps',
                   icon: Icons.location_city,
                   color: const Color(0xFFFF3333),
-                  onTap: () => _openNavigator(context, 'yandex'),
+                  onTap: () => _prepareAndNavigate(context, 'yandex'),
                 ),
               ),
               const SizedBox(width: AppDimens.space16),
@@ -171,7 +172,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: 'Apple Maps',
                   icon: Icons.apple,
                   color: Colors.white,
-                  onTap: () => _openNavigator(context, 'apple'),
+                  onTap: () => _prepareAndNavigate(context, 'apple'),
                 ),
               ),
             ],
@@ -220,6 +221,21 @@ class LocationSelfDriveSheet extends StatelessWidget {
 
   void _shareLocation(BuildContext context) {
     // Можно интегрировать share_plus, если нужно, но пока оставим как есть
+  }
+
+  void _prepareAndNavigate(BuildContext context, String navigatorType) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => TripReadinessSheet(
+        location: location,
+        onReady: () {
+          // Этот колбэк сработает после того, как пользователь нажмет "Поехали"
+          _openNavigator(context, navigatorType);
+        },
+      ),
+    );
   }
 
   // ✅ УЛУЧШЕННАЯ ЛОГИКА С ЛОГИРОВАНИЕМ

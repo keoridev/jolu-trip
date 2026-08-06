@@ -30,12 +30,14 @@ class VisitRecordDto {
       visitedAt: entity.visitedAt.toIso8601String(),
       note: entity.note,
       photos: entity.photos
-          .map((p) => {
-                'id': p.id,
-                'localPath': p.localPath,
-                'remoteUrl': p.remoteUrl,
-                'synced': p.synced,
-              })
+          .map(
+            (p) => {
+              'id': p.id,
+              'localPath': p.localPath,
+              'remoteUrl': p.remoteUrl,
+              'synced': p.synced,
+            },
+          )
           .toList(),
       routeId: entity.routeId,
       isSynced: entity.isSynced,
@@ -50,12 +52,14 @@ class VisitRecordDto {
       visitedAt: DateTime.parse(visitedAt),
       note: note,
       photos: photos
-          .map((p) => VisitPhoto(
-                id: p['id'] as String,
-                localPath: p['localPath'] as String,
-                remoteUrl: p['remoteUrl'] as String?,
-                synced: p['synced'] as bool? ?? false,
-              ))
+          .map(
+            (p) => VisitPhoto(
+              id: p['id'] as String,
+              localPath: p['localPath'] as String,
+              remoteUrl: p['remoteUrl'] as String?,
+              synced: p['synced'] as bool? ?? false,
+            ),
+          )
           .toList(),
       routeId: routeId,
       isSynced: isSynced,
@@ -87,8 +91,8 @@ class VisitRecordDto {
           .map((e) => Map<String, dynamic>.from(e))
           .toList(),
       routeId: json['routeId'] as String?,
-      isSynced: json['isSynced'] as bool? ?? false,
-      syncId: json['syncId'] as String? ?? '',
+      isSynced: json['isSynced'] as bool? ?? false, // ✅ ДОЛЖНО БЫТЬ ТАК
+      syncId: json['syncId'] as String? ?? '', // ✅ ДОЛЖНО БЫТЬ ТАК
     );
   }
 }

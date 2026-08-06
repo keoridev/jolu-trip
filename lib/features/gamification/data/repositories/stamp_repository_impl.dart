@@ -90,6 +90,18 @@ class StampRepositoryImpl implements StampRepository {
       );
     }
 
+    if (!earnedIds.contains('first_step')) {
+      newStamps.add(
+        const Stamp(
+          id: 'first_step',
+          title: 'Первый шаг',
+          description: 'Вы начали своё путешествие по Кыргызстану',
+          imageAsset: 'assets/stamps/first_step.png',
+          rarity: StampRarity.common,
+        ),
+      );
+    }
+
     // Правило 2: Каньоны
     if (locationTags.contains('каньон') &&
         !earnedIds.contains('first_canyon')) {

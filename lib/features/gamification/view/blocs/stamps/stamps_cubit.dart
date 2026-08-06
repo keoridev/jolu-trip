@@ -71,6 +71,7 @@ class StampsCubit extends Cubit<StampsState> {
     }
   }
 
+  // ✅ ИСПРАВЛЕНО: Завершен метод для сброса флага анимации
   void animationShown() {
     final currentState = state;
     if (currentState is! StampsLoaded) return;

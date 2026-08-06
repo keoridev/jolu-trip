@@ -56,7 +56,6 @@ class CollectionDetailScreen extends StatelessWidget {
             ),
           ),
 
-          // Сетка печатей
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverGrid(

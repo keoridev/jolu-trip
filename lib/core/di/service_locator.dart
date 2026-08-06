@@ -175,9 +175,13 @@ void setupDependencies() {
   sl.registerLazySingleton(() => GetTravelerStatus());
 
   // BLoC
-  sl.registerFactory(() => JournalCubit(sl<JournalRepository>()));
-  sl.registerFactory(
+  sl.registerLazySingleton(() => JournalCubit(sl<JournalRepository>()));
+
+  // StampsCubit: один экземпляр на всё приложение (чтобы анимация срабатывала глобально)
+  sl.registerLazySingleton(
     () => StampsCubit(sl<StampRepository>(), sl<GetTravelerStatus>()),
   );
+
+  // CheckinCubit: создаётся заново для каждой локации (это правильно)
   sl.registerFactory(() => CheckinCubit(sl<PerformCheckin>()));
 }

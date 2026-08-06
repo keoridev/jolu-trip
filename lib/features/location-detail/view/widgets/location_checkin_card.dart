@@ -42,7 +42,7 @@ class _CheckinBody extends StatelessWidget {
       listener: (context, state) {
         if (state is CheckinSuccess) {
           HapticFeedback.mediumImpact();
-          context.read<StampsCubit>().onCheckinCompleted(state.newStamps);
+          sl<StampsCubit>().onCheckinCompleted(state.newStamps);
 
           JoluSnackbar.show(
             context: context,
@@ -56,7 +56,7 @@ class _CheckinBody extends StatelessWidget {
             // отмонтирован, и поиск по дереву упал бы с исключением.
             final router = GoRouter.of(context);
             Future.delayed(
-              const Duration(milliseconds: 600),
+              const Duration(milliseconds: 800),
               () => router.push('/stamps'),
             );
           }

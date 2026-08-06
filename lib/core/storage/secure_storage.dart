@@ -13,6 +13,7 @@ class SecureStorage {
   static const String _phoneKey = 'user_phone';
   static const String _nameKey = 'user_name';
   static const String _avatarKey = 'user_avatar';
+  static const String _ecoPoint = 'eco_points';
   static const String _roleKey = 'user_role';
   static const String _guideDataKey = 'guide_data';
   static const String _onboardingDataKey = 'onboarding_data';
@@ -31,7 +32,7 @@ class SecureStorage {
     await _storage.write(key: _tokenKey, value: token);
     await _storage.write(key: _userIdKey, value: userId);
     await _storage.write(key: _phoneKey, value: phone);
-    
+
     if (name != null) {
       await _storage.write(key: _nameKey, value: name);
     }
@@ -42,7 +43,7 @@ class SecureStorage {
       await _storage.write(key: _roleKey, value: role);
       debugPrint('🔑 Saved role: $role');
     }
-    
+
     _authController.add(null);
   }
 
@@ -66,12 +67,14 @@ class SecureStorage {
       final data = await _storage.read(key: _guideDataKey);
       if (data == null) return null;
       final json = jsonDecode(data) as Map<String, dynamic>;
-      
+
       return GuideEntity(
         id: json['id'] as String,
         fullName: json['fullName'] as String,
         phone: json['phone'] as String,
-        gender: json['gender'] == 'male' ? GuideGender.male : GuideGender.female,
+        gender: json['gender'] == 'male'
+            ? GuideGender.male
+            : GuideGender.female,
         avatarUrl: json['avatarUrl'] as String?,
         status: _parseStatus(json['status'] as String?),
         createdAt: DateTime.parse(json['createdAt'] as String),
@@ -120,17 +123,19 @@ class SecureStorage {
       final data = await _storage.read(key: _onboardingDataKey);
       if (data == null) return null;
       final json = jsonDecode(data) as Map<String, dynamic>;
-      
+
       return OnboardingEntity(
         experienceYears: json['experienceYears'] as int,
         carModel: json['carModel'] as String,
         carNumber: json['carNumber'] as String,
         languages: (json['languages'] as List<dynamic>).cast<String>(),
         passportMainPhotoUrl: json['passportMainPhotoUrl'] as String?,
-        passportRegistrationPhotoUrl: json['passportRegistrationPhotoUrl'] as String?,
+        passportRegistrationPhotoUrl:
+            json['passportRegistrationPhotoUrl'] as String?,
         licensePhotoFrontUrl: json['licensePhotoFrontUrl'] as String?,
         licensePhotoBackUrl: json['licensePhotoBackUrl'] as String?,
-        carPhotosUrls: (json['carPhotosUrls'] as List<dynamic>?)?.cast<String>(),
+        carPhotosUrls: (json['carPhotosUrls'] as List<dynamic>?)
+            ?.cast<String>(),
         presentationVideoUrl: json['presentationVideoUrl'] as String?,
         status: json['status'] as String?,
         fullName: json['fullName'] as String?,

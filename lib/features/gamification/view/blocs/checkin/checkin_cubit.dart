@@ -77,10 +77,12 @@ class CheckinCubit extends Cubit<CheckinState> {
         emit(CheckinFailure(result.message));
       }
     } catch (e) {
-      emit(CheckinFailure('Ошибка: $e'));
+      // ✅ ИСПРАВЛЕНО: Завершено сообщение об ошибке
+      emit(CheckinFailure('Ошибка при определении местоположения: ${e.toString()}'));
     }
   }
 
+  // ✅ ДОБАВЛЕНО: Метод для возврата в начальное состояние
   void reset() {
     emit(const CheckinIdle());
   }

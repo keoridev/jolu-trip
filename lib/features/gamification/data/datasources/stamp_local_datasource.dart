@@ -5,7 +5,6 @@ class StampLocalDatasource {
   static const String _stampsBoxName = 'stamps_box';
   static const String _collectionsBoxName = 'collections_box';
 
-  // ✅ ИСПРАВЛЕНО: Box<dynamic>
   Box<dynamic>? _stampsBox;
   Box<dynamic>? _collectionsBox;
   bool _initialized = false;
@@ -13,7 +12,6 @@ class StampLocalDatasource {
   Future<void> init() async {
     if (_initialized) return;
     
-    // ✅ ИСПРАВЛЕНО: Нетипизированное открытие
     _stampsBox = await Hive.openBox(_stampsBoxName);
     _collectionsBox = await Hive.openBox(_collectionsBoxName);
     await _initDefaultCollections();
@@ -21,10 +19,76 @@ class StampLocalDatasource {
   }
 
   Future<void> _initDefaultCollections() async {
-    if (_collectionsBox == null || _collectionsBox!.isNotEmpty) return;
+    if (_collectionsBox == null) return;
+    
+    // Если коллекции уже есть, мы НЕ перезаписываем их, чтобы не сбросить реальный прогресс пользователя
+    if (_collectionsBox!.isNotEmpty) return; 
 
+    // ═══════════════════════════════════════════════════
+    // SEEDING DEMO DATA (Только при первом запуске)
+    // ═══════════════════════════════════════════════════
+    final now = DateTime.now();
+
+    // 1. Добавляем несколько "уже полученных" печатей
+    await _stampsBox!.put('first_step', {
+      'id': 'first_step',
+      'title': 'Первый шаг',
+      'description': 'Начало путешествия по Кыргызстану',
+      'imageAsset': 'assets/stamps/first_step.png',
+      'rarity': 'common',
+      'earnedAt': now.subtract(const Duration(days: 10)).toIso8601String(),
+    });
+
+    await _stampsBox!.put('issyk_kul', {
+      'id': 'issyk_kul',
+      'title': 'Иссык-Куль',
+      'description': 'Жемчужина Кыргызстана',
+      'imageAsset': 'assets/stamps/issyk_kul.png',
+      'rarity': 'common',
+      'earnedAt': now.subtract(const Duration(days: 2)).toIso8601String(),
+    });
+
+    await _stampsBox!.put('first_canyon', {
+      'id': 'first_canyon',
+      'title': 'Исследователь каньонов',
+      'description': 'Первый каньон открыт',
+      'imageAsset': 'assets/stamps/canyon.png',
+      'rarity': 'silver',
+      'earnedAt': now.subtract(const Duration(days: 1)).toIso8601String(),
+    });
+
+    // 2. Создаем коллекции, где некоторые штампы УЖЕ получены (обрати внимание на earnedStampIds)
     final defaults = <Map<String, dynamic>>[
-      // ... (твой список defaults остается без изменений) ...
+      {
+        'id': 'kyrgyz_canyons',
+        'title': 'Каньоны Кыргызстана',
+        'description': 'Откройте все каньоны страны',
+        'stampIds': ['first_canyon', 'skazka', 'konorchek', 'fairytale'],
+        'earnedStampIds': ['first_canyon'], // ✅ 1 из 4 получено
+        'isSeasonal': false,
+        'validUntil': null,
+        'isArchived': false,
+      },
+      {
+        'id': 'issyk_kul_region',
+        'title': 'Иссык-Кульская область',
+        'description': 'Исследуйте жемчужину Кыргызстана',
+        'stampIds': ['issyk_kul', 'ala_archa', 'son_kul'],
+        'earnedStampIds': ['issyk_kul'], // ✅ 1 из 3 получено
+        'isSeasonal': false,
+        'validUntil': null,
+        'isArchived': false,
+      },
+      {
+        'id': 'autumn_2026',
+        'title': 'Золотая осень 2026',
+        'description': 'Посетите 3 осенних маршрута',
+        'stampIds': ['autumn_1', 'autumn_2', 'autumn_3'],
+        'earnedStampIds': <String>[], // Пока 0 из 3
+        'isSeasonal': true,
+        'validUntil': '2026-11-30T23:59:59Z',
+        'isArchived': false,
+      },
     ];
 
     for (final c in defaults) {

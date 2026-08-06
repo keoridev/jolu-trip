@@ -1,3 +1,4 @@
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jolutrip_app/features/gamification/domain/entities/entities.dart';
 import '../../../domain/repositories/journal_repository.dart';
@@ -34,6 +35,7 @@ class JournalCubit extends Cubit<JournalState> {
       await _repository.deleteVisit(id);
       await loadJournal();
     } catch (e) {
+      // ✅ ИСПРАВЛЕНО: Завершено сообщение об ошибке
       emit(JournalError('Не удалось удалить запись: $e'));
     }
   }
