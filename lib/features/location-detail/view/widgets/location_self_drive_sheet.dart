@@ -141,7 +141,7 @@ class LocationSelfDriveSheet extends StatelessWidget {
                   label: '2GIS',
                   icon: Icons.map,
                   color: const Color(0xFF00AAFF),
-                  onTap: () =>  _prepareAndNavigate(context, '2gis'),
+                  onTap: () => _prepareAndNavigate(context, '2gis'),
                 ),
               ),
               const SizedBox(width: AppDimens.space16),
@@ -238,23 +238,18 @@ class LocationSelfDriveSheet extends StatelessWidget {
     );
   }
 
-  // ✅ УЛУЧШЕННАЯ ЛОГИКА С ЛОГИРОВАНИЕМ
   Future<void> _openNavigator(BuildContext context, String type) async {
     final lat = location.latitude;
     final lon = location.longitude;
 
     debugPrint('🗺️ Попытка открыть навигатор: $type (Lat: $lat, Lon: $lon)');
 
-    // 1. Формируем Deep Link для приложения
     Uri appUri;
     switch (type) {
       case '2gis':
-        appUri = Uri.parse(
-          'geo:$lat,$lon',
-        ); // 2GIS отлично ловит стандартный geo
+        appUri = Uri.parse('geo:$lat,$lon');
         break;
       case 'yandex':
-        // Yandex требует строгий формат pt=LON,LAT (долгота первая!)
         appUri = Uri.parse(
           'yandexmaps://maps.yandex.ru/?pt=$lon,$lat&z=15&l=map',
         );
@@ -271,28 +266,23 @@ class LocationSelfDriveSheet extends StatelessWidget {
         appUri = Uri.parse('geo:$lat,$lon');
     }
 
-    // 2. Пытаемся открыть приложение
     if (await canLaunchUrl(appUri)) {
       debugPrint('✅ Открываю приложение по ссылке: $appUri');
       await launchUrl(appUri, mode: LaunchMode.externalApplication);
-      return; // Успех, выходим
+      return;
     }
 
     debugPrint('⚠️ Приложение не найдено, пробую веб-версию (fallback)...');
 
-    // 3. Fallback на веб-версию, если приложения нет
     Uri webUri;
     switch (type) {
       case '2gis':
-        // 2GIS web принимает LON,LAT
         webUri = Uri.parse('https://2gis.kg/geo/$lon,$lat');
         break;
       case 'yandex':
-        // Yandex web принимает LON,LAT
         webUri = Uri.parse('https://yandex.ru/maps/?pt=$lon,$lat&z=15&l=map');
         break;
       case 'google':
-        // Google web принимает LAT,LON
         webUri = Uri.parse(
           'https://www.google.com/maps/search/?api=1&query=$lat,$lon',
         );
