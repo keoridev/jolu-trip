@@ -441,8 +441,19 @@ class _ProfileContent extends StatelessWidget {
       builder: (_) => EditCarSheet(
         carModel: profile.carModel ?? '',
         carNumber: profile.carNumber ?? '',
-        onSave: (model, number) {
-          context.read<GuideProfileCubit>().updateCar(model, number);
+        carSeats: profile.carSeats,
+        carYear: profile.carYear,
+        steeringWheel: profile.steeringWheel,
+        carFeatures: profile.carFeatures,
+        onSave: (model, number, seats, year, steering, features) {
+          context.read<GuideProfileCubit>().updateCar(
+            model,
+            number,
+            seats,
+            year,
+            steering,
+            features,
+          );
         },
       ),
     );

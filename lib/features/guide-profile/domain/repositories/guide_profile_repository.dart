@@ -10,4 +10,7 @@ abstract class GuideProfileRepository {
   Future<Either<Failure, String>> uploadAvatar(List<int> bytes);
   Future<Either<Failure, String>> uploadPresentationVideo(List<int> bytes);
   Future<Either<Failure, String>> getVerificationStatus();
+  Future<Either<Failure, List<String>>> uploadCarPhotos(
+    List<List<int>> photosBytes,
+  );
 }

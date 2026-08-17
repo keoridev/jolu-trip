@@ -102,9 +102,15 @@ class SecureStorage {
     final json = {
       'experienceYears': onboarding.experienceYears,
       'carModel': onboarding.carModel,
+      'carCategory': onboarding.carCategory, // ← новое
+
       'carNumber': onboarding.carNumber,
       'languages': onboarding.languages,
       'passportMainPhotoUrl': onboarding.passportMainPhotoUrl,
+      'carSeats': onboarding.carSeats, // ← новое
+      'carYear': onboarding.carYear, // ← новое
+      'steeringWheel': onboarding.steeringWheel, // ← новое
+      'carFeatures': onboarding.carFeatures,
       'passportRegistrationPhotoUrl': onboarding.passportRegistrationPhotoUrl,
       'licensePhotoFrontUrl': onboarding.licensePhotoFrontUrl,
       'licensePhotoBackUrl': onboarding.licensePhotoBackUrl,
@@ -125,10 +131,17 @@ class SecureStorage {
       final json = jsonDecode(data) as Map<String, dynamic>;
 
       return OnboardingEntity(
-        experienceYears: json['experienceYears'] as int,
-        carModel: json['carModel'] as String,
-        carNumber: json['carNumber'] as String,
-        languages: (json['languages'] as List<dynamic>).cast<String>(),
+        experienceYears: json['experienceYears'] as int? ?? 0,
+        carCategory: json['carCategory'] as String? ?? '', // ← новое
+        carModel: json['carModel'] as String? ?? '',
+        carNumber: json['carNumber'] as String? ?? '',
+        carSeats: json['carSeats'] as int? ?? 0, // ← новое
+        carYear: json['carYear'] as int? ?? 0, // ← новое
+        steeringWheel: json['steeringWheel'] as String? ?? 'left', // ← новое
+        carFeatures:
+            (json['carFeatures'] as List<dynamic>?)?.cast<String>() ??
+            [], // ← новое
+        languages: (json['languages'] as List<dynamic>?)?.cast<String>() ?? [],
         passportMainPhotoUrl: json['passportMainPhotoUrl'] as String?,
         passportRegistrationPhotoUrl:
             json['passportRegistrationPhotoUrl'] as String?,

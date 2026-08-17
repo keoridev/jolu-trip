@@ -12,13 +12,16 @@ class Step3ReviewWidget extends StatelessWidget {
   final String carNumber;
   final List<String> languages;
   final bool hasPassportMain;
+  final String carYear; // ← новое
+  final String carSeats; // ← новое
+  final String steeringWheel; // ← новое
+  final List<String> carFeatures;
   final bool hasPassportRegistration;
   final bool hasLicenseFront;
   final bool hasLicenseBack;
   final int carPhotosCount;
   final bool hasVideo;
 
-  /// Переход к нужному шагу для правки прямо из сводки.
   final void Function(int step) onEditStep;
 
   const Step3ReviewWidget({
@@ -35,6 +38,10 @@ class Step3ReviewWidget extends StatelessWidget {
     required this.carPhotosCount,
     required this.hasVideo,
     required this.onEditStep,
+    required this.carYear,
+    required this.carSeats,
+    required this.steeringWheel,
+    required this.carFeatures,
   });
 
   int get _documentsDone =>
@@ -118,18 +125,9 @@ class Step3ReviewWidget extends StatelessWidget {
                 label: 'Паспорт — прописка',
                 isDone: hasPassportRegistration,
               ),
-              _ChecklistRow(
-                label: 'Права — лицевая',
-                isDone: hasLicenseFront,
-              ),
-              _ChecklistRow(
-                label: 'Права — оборот',
-                isDone: hasLicenseBack,
-              ),
-              _ChecklistRow(
-                label: 'Видео-визитка',
-                isDone: hasVideo,
-              ),
+              _ChecklistRow(label: 'Права — лицевая', isDone: hasLicenseFront),
+              _ChecklistRow(label: 'Права — оборот', isDone: hasLicenseBack),
+              _ChecklistRow(label: 'Видео-визитка', isDone: hasVideo),
               _ChecklistRow(
                 label: 'Фото автомобиля',
                 isDone: carPhotosCount >= carPhotoSlots.length,
@@ -169,10 +167,7 @@ class _ReadyBanner extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            tint.withValues(alpha: 0.16),
-            tint.withValues(alpha: 0.04),
-          ],
+          colors: [tint.withValues(alpha: 0.16), tint.withValues(alpha: 0.04)],
         ),
         borderRadius: BorderRadius.circular(AppDimens.radius20),
         border: Border.all(color: tint.withValues(alpha: 0.3)),
@@ -321,7 +316,10 @@ class _ReviewRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 2,
-            child: Text(label, style: AppTextStyles.subtext.copyWith(fontSize: 13)),
+            child: Text(
+              label,
+              style: AppTextStyles.subtext.copyWith(fontSize: 13),
+            ),
           ),
           const SizedBox(width: AppDimens.space12),
           Expanded(

@@ -9,6 +9,11 @@ class GuideProfileEntity extends Equatable {
   final String? avatarUrl;
   final String? presentationVideoUrl;
   final String? carCategory;
+
+  final int carSeats; // ← новое
+  final int carYear; // ← новое
+  final String steeringWheel; // ← новое
+  final List<String> carFeatures;
   final String? carModel;
   final String? carNumber;
   final int experienceYears;
@@ -28,6 +33,10 @@ class GuideProfileEntity extends Equatable {
     this.carCategory,
     this.carModel,
     this.carNumber,
+    this.carSeats = 0,
+    this.carYear = 0,
+    this.steeringWheel = 'left',
+    this.carFeatures = const [],
     this.experienceYears = 0,
     this.languages = const [],
     required this.status,
@@ -67,6 +76,10 @@ class GuideProfileEntity extends Equatable {
     String? carCategory,
     String? carModel,
     String? carNumber,
+    int? carSeats, // ← новое
+    int? carYear, // ← новое
+    String? steeringWheel, // ← новое
+    List<String>? carFeatures,
     int? experienceYears,
     List<String>? languages,
     String? status,
@@ -83,6 +96,10 @@ class GuideProfileEntity extends Equatable {
       presentationVideoUrl: presentationVideoUrl ?? this.presentationVideoUrl,
       carCategory: carCategory ?? this.carCategory,
       carModel: carModel ?? this.carModel,
+      carSeats: carSeats ?? this.carSeats, // ← новое
+      carYear: carYear ?? this.carYear, // ← новое
+      steeringWheel: steeringWheel ?? this.steeringWheel, // ← новое
+      carFeatures: carFeatures ?? this.carFeatures,
       carNumber: carNumber ?? this.carNumber,
       experienceYears: experienceYears ?? this.experienceYears,
       languages: languages ?? this.languages,
@@ -94,37 +111,47 @@ class GuideProfileEntity extends Equatable {
   }
 
   OnboardingEntity toOnboarding() => OnboardingEntity(
-        experienceYears: experienceYears,
-        carModel: carModel ?? '',
-        carNumber: carNumber ?? '',
-        languages: languages,
-        passportMainPhotoUrl: null,
-        passportRegistrationPhotoUrl: null,
-        licensePhotoFrontUrl: null,
-        licensePhotoBackUrl: null,
-        carPhotosUrls: null,
-        presentationVideoUrl: presentationVideoUrl,
-        status: status,
-        fullName: fullName,
-        phone: phone,
-      );
+    experienceYears: experienceYears,
+    carModel: carModel ?? '',
+    carCategory: carCategory ?? '', // ← новое
+
+    carNumber: carNumber ?? '',
+    languages: languages,
+    passportMainPhotoUrl: null,
+    passportRegistrationPhotoUrl: null,
+    licensePhotoFrontUrl: null,
+    carSeats: carSeats, // ← новое
+    carYear: carYear, // ← новое
+    steeringWheel: steeringWheel, // ← новое
+    carFeatures: carFeatures,
+    licensePhotoBackUrl: null,
+    carPhotosUrls: null,
+    presentationVideoUrl: presentationVideoUrl,
+    status: status,
+    fullName: fullName,
+    phone: phone,
+  );
 
   @override
   List<Object?> get props => [
-        id,
-        fullName,
-        phone,
-        gender,
-        avatarUrl,
-        presentationVideoUrl,
-        carCategory,
-        carModel,
-        carNumber,
-        experienceYears,
-        languages,
-        status,
-        rejectionReason,
-        createdAt,
-        updatedAt,
-      ];
+    id,
+    fullName,
+    phone,
+    gender,
+    avatarUrl,
+    presentationVideoUrl,
+    carCategory,
+    carModel,
+    carNumber,
+    experienceYears,
+    languages,
+    status,
+    rejectionReason,
+    createdAt,
+    updatedAt,
+    carSeats, // ← новое
+    carYear, // ← новое
+    steeringWheel, // ← новое
+    carFeatures,
+  ];
 }

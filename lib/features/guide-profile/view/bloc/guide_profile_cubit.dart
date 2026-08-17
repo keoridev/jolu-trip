@@ -62,6 +62,10 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     String? gender,
     String? carModel,
     String? carNumber,
+    int? carSeats, // ← новое
+    int? carYear, // ← новое
+    String? steeringWheel, // ← новое
+    List<String>? carFeatures, // ← новое
     int? experienceYears,
     List<String>? languages,
   }) async {
@@ -75,6 +79,11 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     if (gender != null) data['gender'] = gender;
     if (carModel != null) data['car_model'] = carModel;
     if (carNumber != null) data['car_number'] = carNumber;
+    if (carSeats != null) data['car_seats'] = carSeats; // ← новое
+    if (carYear != null) data['car_year'] = carYear; // ← новое
+    if (steeringWheel != null)
+      data['steering_wheel'] = steeringWheel; // ← новое
+    if (carFeatures != null) data['car_features'] = carFeatures; // ← новое
     if (experienceYears != null) data['experience_years'] = experienceYears;
     if (languages != null) data['languages'] = languages;
 
@@ -90,8 +99,38 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     );
   }
 
-  Future<void> updateCar(String carModel, String carNumber) async {
-    return updateProfile(carModel: carModel, carNumber: carNumber);
+  Future<void> updateCar(
+    String carModel,
+    String carNumber,
+    int carSeats,
+    int carYear,
+    String steeringWheel,
+    List<String> carFeatures,
+  ) async {
+    return updateProfile(
+      carModel: carModel,
+      carNumber: carNumber,
+      carSeats: carSeats,
+      carYear: carYear,
+      steeringWheel: steeringWheel,
+      carFeatures: carFeatures,
+    );
+  }
+
+  // Метод для замены фото авто (PUT /profile/car-photos)
+  Future<void> updateCarPhotos(List<Uint8List> photos) async {
+    final current = state;
+    if (current is! GuideProfileLoaded) return;
+
+    emit(const GuideProfileLoading());
+
+    final result = await _repository.uploadCarPhotos(
+      photos.map((e) => e.toList()).toList(),
+    );
+    result.fold((failure) => _handleFailure(failure), (photoUrls) {
+      // TODO: обновить carPhotosUrls в profile, если добавишь поле
+      emit(GuideProfileLoaded(profile: current.profile));
+    });
   }
 
   Future<void> updateExperience(
@@ -117,19 +156,18 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     });
   }
 
-  /// 🔥 ВЫХОД — полная очистка данных и навигация
   Future<void> logout() async {
     emit(const GuideProfileLoading());
-    
+
     try {
       // Опционально: вызвать logout на сервере (инвалидировать токен)
       // await _repository.logout();
-      
+
       // Очищаем всё локальное хранилище
       await SecureStorage.clearAll();
-      
+
       debugPrint('🔑 GuideProfileCubit: User logged out');
-      
+
       // Эмитим состояние выхода — экран перехватит и сделает редирект
       emit(const GuideProfileLoggedOut());
     } catch (e) {

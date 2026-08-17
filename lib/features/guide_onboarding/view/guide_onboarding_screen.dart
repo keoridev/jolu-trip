@@ -51,8 +51,12 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
   final _experienceController = TextEditingController();
   final _carModelController = TextEditingController();
   final _carNumberController = TextEditingController();
+  final _carYearController = TextEditingController(); // ← новое
+  final _carSeatsController = TextEditingController();
   final List<String> _selectedLanguages = ['ru'];
   String? _selectedCarCategory;
+  final List<String> _selectedCarFeatures = []; // ← новое
+  String _selectedSteeringWheel = 'left';
 
   // Шаг 2 — 4 фото документов + 4 фото авто (по слотам) + видео
   Uint8List? _passportMainPhotoBytes;
@@ -71,12 +75,13 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
   @override
   void initState() {
     super.initState();
-    // Доступность кнопки «Далее» зависит от текста в полях, поэтому её нужно
-    // пересчитывать на каждый ввод, а не только при выборе категории/языка.
+
     for (final controller in [
       _experienceController,
       _carModelController,
       _carNumberController,
+      _carYearController, // ← новое
+      _carSeatsController,
     ]) {
       controller.addListener(_onFormChanged);
     }
@@ -297,26 +302,39 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
       (_presentationVideoBytes != null ? 1 : 0);
 
   static const int _requiredFilesCount = 9;
+  int? get _carYear => int.tryParse(_carYearController.text.trim());
+  int? get _carSeats => int.tryParse(_carSeatsController.text.trim());
 
-  /// Что мешает уйти с шага [step]; null — можно идти дальше.
   String? _blockerFor(int step) {
     switch (step) {
       case 0:
+        final currentYear = DateTime.now().year;
         final missing = <String>[
           if (_experienceYears == null) 'стаж',
           if (_selectedCarCategory == null) 'категорию авто',
           if (_carModelController.text.trim().isEmpty) 'модель авто',
           if (_carNumberController.text.trim().isEmpty) 'гос. номер',
+          if (_carYear == null ||
+              _carYear! < 1950 ||
+              _carYear! > currentYear + 1)
+            'год выпуска',
+          if (_carSeats == null || _carSeats! < 1 || _carSeats! > 50)
+            'количество мест',
           if (_selectedLanguages.isEmpty) 'язык',
         ];
         if (missing.isEmpty) return null;
         return 'Укажите ${missing.join(', ')}';
 
       case 1:
-      case 2:
+        if (_carPhotos.whereType<Uint8List>().length != 4) {
+          return 'Должно быть ровно 4 фото автомобиля';
+        }
         final left = _requiredFilesCount - _uploadedFilesCount;
         if (left <= 0) return null;
         return 'Осталось загрузить файлов: $left';
+
+      case 2:
+        return null;
 
       default:
         return null;
@@ -324,12 +342,14 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
   }
 
   bool get _canProceed => _blockerFor(_currentPage) == null;
-
   void _submitOnboarding() {
-    // Проверяем оба шага, а не только текущий: иначе `!` ниже может
-    // выстрелить, если анкету собрали не по прямому пути.
     final years = _experienceYears;
+    final carYear = _carYear;
+    final carSeats = _carSeats;
+
     if (years == null ||
+        carYear == null ||
+        carSeats == null ||
         _selectedCarCategory == null ||
         _blockerFor(0) != null ||
         _blockerFor(1) != null) {
@@ -347,6 +367,10 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
       carCategory: _selectedCarCategory!,
       carModel: _carModelController.text.trim(),
       carNumber: _carNumberController.text.trim(),
+      carSeats: carSeats, // ← новое
+      carYear: carYear, // ← новое
+      steeringWheel: _selectedSteeringWheel, // ← новое
+      carFeatures: _selectedCarFeatures, // ← новое
       languages: _selectedLanguages,
       passportMainPhotoBytes: _passportMainPhotoBytes!.toList(),
       passportRegistrationPhotoBytes: _passportRegistrationPhotoBytes!.toList(),
@@ -465,14 +489,36 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
                           experienceController: _experienceController,
                           carModelController: _carModelController,
                           carNumberController: _carNumberController,
+                          carYearController: _carYearController, // ← новое
+                          carSeatsController: _carSeatsController, // ← новое
                           selectedLanguages: _selectedLanguages,
+                          selectedCarFeatures: _selectedCarFeatures, // ← новое
                           selectedCarCategory: _selectedCarCategory,
+                          selectedSteeringWheel:
+                              _selectedSteeringWheel, // ← новое
                           onToggleLanguage: _toggleLanguage,
                           onCategoryChanged: (value) {
                             HapticFeedback.selectionClick();
                             setState(() => _selectedCarCategory = value);
                           },
+                          onSteeringChanged: (value) {
+                            // ← новое
+                            HapticFeedback.selectionClick();
+                            setState(() => _selectedSteeringWheel = value);
+                          },
+                          onToggleFeature: (value) {
+                            // ← новое
+                            HapticFeedback.selectionClick();
+                            setState(() {
+                              if (_selectedCarFeatures.contains(value)) {
+                                _selectedCarFeatures.remove(value);
+                              } else {
+                                _selectedCarFeatures.add(value);
+                              }
+                            });
+                          },
                         ),
+
                         Step2DocumentsWidget(
                           passportMainPhotoBytes: _passportMainPhotoBytes,
                           passportRegistrationPhotoBytes:
@@ -502,14 +548,19 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
                           carCategory: _selectedCarCategory,
                           carModel: _carModelController.text.trim(),
                           carNumber: _carNumberController.text.trim(),
+                          carYear: _carYearController.text.trim(), // ← новое
+                          carSeats: _carSeatsController.text.trim(), // ← новое
+                          steeringWheel: _selectedSteeringWheel, // ← новое
+                          carFeatures: _selectedCarFeatures, // ← новое
                           languages: _selectedLanguages,
                           hasPassportMain: _passportMainPhotoBytes != null,
                           hasPassportRegistration:
                               _passportRegistrationPhotoBytes != null,
                           hasLicenseFront: _licensePhotoFrontBytes != null,
                           hasLicenseBack: _licensePhotoBackBytes != null,
-                          carPhotosCount:
-                              _carPhotos.whereType<Uint8List>().length,
+                          carPhotosCount: _carPhotos
+                              .whereType<Uint8List>()
+                              .length,
                           hasVideo: _presentationVideoBytes != null,
                           onEditStep: _goToStep,
                         ),
@@ -661,7 +712,6 @@ class _PendingDialog extends StatelessWidget {
           text: 'Перейти в профиль',
           variant: JoluButtonVariant.primary,
           size: JoluButtonSize.large,
-
 
           isFullWidth: true,
           onPressed: onDismiss,

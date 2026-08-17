@@ -10,6 +10,10 @@ abstract class GuideOnboardingRemoteDataSource {
     required String carCategory,
     required String carModel,
     required String carNumber,
+    required int carSeats, // ← новое
+    required int carYear, // ← новое
+    required String steeringWheel, // ← новое
+    required List<String> carFeatures, // ← новое
     required List<String> languages,
     required List<int> passportMainPhotoBytes,
     required List<int> passportRegistrationPhotoBytes,
@@ -23,7 +27,6 @@ abstract class GuideOnboardingRemoteDataSource {
 class GuideOnboardingRemoteDataSourceImpl
     implements GuideOnboardingRemoteDataSource {
   final Dio dio;
-
   GuideOnboardingRemoteDataSourceImpl({required this.dio});
 
   @override
@@ -33,6 +36,10 @@ class GuideOnboardingRemoteDataSourceImpl
     required String carCategory,
     required String carModel,
     required String carNumber,
+    required int carSeats,
+    required int carYear,
+    required String steeringWheel,
+    required List<String> carFeatures,
     required List<String> languages,
     required List<int> passportMainPhotoBytes,
     required List<int> passportRegistrationPhotoBytes,
@@ -50,10 +57,21 @@ class GuideOnboardingRemoteDataSourceImpl
         MapEntry('car_category', carCategory),
         MapEntry('car_model', carModel),
         MapEntry('car_number', carNumber),
-        MapEntry('languages', languages.join(',')),
+        MapEntry('car_seats', carSeats.toString()), // ← новое
+        MapEntry('car_year', carYear.toString()), // ← новое
+        MapEntry('steering_wheel', steeringWheel), // ← новое: 'left' | 'right'
       ]);
 
-      // Passport: главная страница
+      // Массивы отправляем как несколько полей с одинаковым ключом —
+      // так Django/FastAPI/Spring парсят их в array[string] корректно
+      for (final lang in languages) {
+        formData.fields.add(MapEntry('languages', lang));
+      }
+      for (final feature in carFeatures) {
+        formData.fields.add(MapEntry('car_features', feature));
+      }
+
+      // Passport
       formData.files.add(
         MapEntry(
           'passport_main_photo',
@@ -63,8 +81,6 @@ class GuideOnboardingRemoteDataSourceImpl
           ),
         ),
       );
-
-      // Passport: страница прописки
       formData.files.add(
         MapEntry(
           'passport_registration_photo',
@@ -75,7 +91,7 @@ class GuideOnboardingRemoteDataSourceImpl
         ),
       );
 
-      // License: лицевая сторона
+      // License
       formData.files.add(
         MapEntry(
           'license_photo_front',
@@ -85,8 +101,6 @@ class GuideOnboardingRemoteDataSourceImpl
           ),
         ),
       );
-
-      // License: оборотная сторона
       formData.files.add(
         MapEntry(
           'license_photo_back',
@@ -97,7 +111,13 @@ class GuideOnboardingRemoteDataSourceImpl
         ),
       );
 
-      // Car photos (ровно 4)
+      // Car photos — РОВНО 4
+      if (carPhotosBytes.length != 4) {
+        throw ServerException(
+          'Должно быть ровно 4 фото автомобиля (сейчас ${carPhotosBytes.length})',
+          statusCode: 400,
+        );
+      }
       for (int i = 0; i < carPhotosBytes.length; i++) {
         formData.files.add(
           MapEntry(
@@ -110,7 +130,7 @@ class GuideOnboardingRemoteDataSourceImpl
         );
       }
 
-      // Presentation video
+      // Video
       formData.files.add(
         MapEntry(
           'presentation_video',
@@ -143,7 +163,10 @@ class GuideOnboardingRemoteDataSourceImpl
     } on DioException catch (e) {
       final data = e.response?.data;
       final msg = data is Map ? (data['message'] ?? data['error']) : null;
-      throw ServerException(msg ?? 'Ошибка сети', statusCode: e.response?.statusCode);
+      throw ServerException(
+        msg ?? 'Ошибка сети',
+        statusCode: e.response?.statusCode,
+      );
     } catch (e) {
       throw ServerException(e.toString());
     }

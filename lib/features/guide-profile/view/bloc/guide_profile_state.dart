@@ -1,43 +1,43 @@
-import 'package:equatable/equatable.dart';
-import 'package:jolutrip_app/features/guide-profile/domain/entities/guide_profile_entity.dart';
+  import 'package:equatable/equatable.dart';
+  import 'package:jolutrip_app/features/guide-profile/domain/entities/guide_profile_entity.dart';
 
-sealed class GuideProfileState extends Equatable {
-  const GuideProfileState();
+  sealed class GuideProfileState extends Equatable {
+    const GuideProfileState();
 
-  @override
-  List<Object?> get props => [];
-}
+    @override
+    List<Object?> get props => [];
+  }
 
-final class GuideProfileInitial extends GuideProfileState {
-  const GuideProfileInitial();
-}
+  final class GuideProfileInitial extends GuideProfileState {
+    const GuideProfileInitial();
+  }
 
-final class GuideProfileLoading extends GuideProfileState {
-  const GuideProfileLoading();
-}
+  final class GuideProfileLoading extends GuideProfileState {
+    const GuideProfileLoading();
+  }
 
-final class GuideProfileLoaded extends GuideProfileState {
-  final GuideProfileEntity profile;
+  final class GuideProfileLoaded extends GuideProfileState {
+    final GuideProfileEntity profile;
 
-  const GuideProfileLoaded({required this.profile});
+    const GuideProfileLoaded({required this.profile});
 
-  @override
-  List<Object?> get props => [profile];
-}
+    @override
+    List<Object?> get props => [profile];
+  }
 
-final class GuideProfileError extends GuideProfileState {
-  final String message;
+  final class GuideProfileError extends GuideProfileState {
+    final String message;
 
-  const GuideProfileError(this.message);
+    const GuideProfileError(this.message);
 
-  @override
-  List<Object?> get props => [message];
-}
+    @override
+    List<Object?> get props => [message];
+  }
 
-final class GuideProfileNotFound extends GuideProfileState {
-  const GuideProfileNotFound();
-}
+  final class GuideProfileNotFound extends GuideProfileState {
+    const GuideProfileNotFound();
+  }
 
-final class GuideProfileLoggedOut extends GuideProfileState {
-  const GuideProfileLoggedOut();
-}
+  final class GuideProfileLoggedOut extends GuideProfileState {
+    const GuideProfileLoggedOut();
+  }

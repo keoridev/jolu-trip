@@ -42,6 +42,7 @@ class AppConfig {
   // PATCH профиля и аватар
   static String get guideProfile => '$guides/profile';
   static String get guideAvatar => '$guides/profile/avatar';
+  static String get guideCarPhotos => '$guides/profile/car-photos';
   static String get guidePresentationVideo =>
       '$guides/profile/presentation-video';
   static String get guideMe => '$guides/me';

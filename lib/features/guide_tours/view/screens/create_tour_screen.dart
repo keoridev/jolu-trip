@@ -3,8 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
 import 'package:jolutrip_app/core/ui/jolu_ui.dart';
-import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
-import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_state.dart';
 import 'package:jolutrip_app/features/guide_tours/view/bloc/guide_tours_cubit.dart';
 import 'package:jolutrip_app/features/guide_tours/view/create_tour_contrloller.dart';
 import 'package:jolutrip_app/features/guide_tours/view/widgets/create_tour_app_bar.dart';

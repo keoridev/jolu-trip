@@ -122,3 +122,28 @@ const List<CarPhotoSlot> carPhotoSlots = [
     icon: Icons.luggage_rounded,
   ),
 ];
+
+class CarFeatureOption {
+  final String value;
+  final String label;
+
+  const CarFeatureOption({required this.value, required this.label});
+}
+
+const List<CarFeatureOption> carFeatureOptions = [
+  CarFeatureOption(value: 'ac', label: 'Кондиционер'),
+  CarFeatureOption(value: 'child_seat', label: 'Детское кресло'),
+  CarFeatureOption(value: 'wifi', label: 'Wi-Fi'),
+  CarFeatureOption(value: 'usb_charging', label: 'Зарядка USB'),
+  CarFeatureOption(value: 'large_trunk', label: 'Большой багажник'),
+  CarFeatureOption(value: 'leather_seats', label: 'Кожаный салон'),
+  CarFeatureOption(value: 'panoramic_roof', label: 'Панорамная крыша'),
+  CarFeatureOption(value: 'heated_seats', label: 'Подогрев сидений'),
+];
+
+String carFeatureLabel(String value) {
+  for (final option in carFeatureOptions) {
+    if (option.value == value) return option.label;
+  }
+  return value;
+}

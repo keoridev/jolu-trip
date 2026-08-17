@@ -1,8 +1,13 @@
 class OnboardingEntity {
   final int experienceYears;
+  final String carCategory;
   final String carModel;
   final String carNumber;
   final List<String> languages;
+  final int carSeats;
+  final int carYear;
+  final String steeringWheel;
+  final List<String> carFeatures;
   final String? passportMainPhotoUrl;
   final String? passportRegistrationPhotoUrl;
   final String? licensePhotoFrontUrl;
@@ -19,6 +24,11 @@ class OnboardingEntity {
     required this.carModel,
     required this.carNumber,
     required this.languages,
+    required this.carCategory,
+    required this.carSeats,
+    required this.carYear,
+    required this.steeringWheel,
+    required this.carFeatures,
     this.passportMainPhotoUrl,
     this.passportRegistrationPhotoUrl,
     this.licensePhotoFrontUrl,
