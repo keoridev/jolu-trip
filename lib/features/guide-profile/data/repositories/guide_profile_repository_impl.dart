@@ -65,9 +65,22 @@ class GuideProfileRepositoryImpl implements GuideProfileRepository {
     List<int> bytes,
   ) async {
     try {
-
       final url = await _remote.uploadPresentationVideo(bytes);
       return Right(url);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message, statusCode: e.statusCode));
+    } on NetworkException catch (e) {
+      return Left(NetworkFailure(e.message));
+    }
+  }
+
+  @override  // ← новое
+  Future<Either<Failure, List<String>>> uploadCarPhotos(
+    List<List<int>> photosBytes,
+  ) async {
+    try {
+      final urls = await _remote.uploadCarPhotos(photosBytes);
+      return Right(urls);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message, statusCode: e.statusCode));
     } on NetworkException catch (e) {

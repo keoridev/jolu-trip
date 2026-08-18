@@ -12,14 +12,20 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
 
   GuideProfileCubit(this._repository) : super(const GuideProfileLoading());
 
+  void _safeEmit(GuideProfileState state) {
+    if (!isClosed) emit(state);
+  }
+
   Future<void> loadProfile() async {
-    emit(const GuideProfileLoading());
+    _safeEmit(const GuideProfileLoading());
     debugPrint('🔍 GuideProfileCubit.loadProfile()');
 
     final result = await _repository.getMe();
+    if (isClosed) return;
+
     result.fold(
       (failure) => _handleFailure(failure),
-      (profile) => emit(GuideProfileLoaded(profile: profile)),
+      (profile) => _safeEmit(GuideProfileLoaded(profile: profile)),
     );
   }
 
@@ -27,6 +33,8 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     debugPrint('🔍 GuideProfileCubit.checkVerificationStatus()');
 
     final result = await _repository.getVerificationStatus();
+    if (isClosed) return;
+
     result.fold(
       (failure) =>
           debugPrint('❌ Verification status error: ${failure.message}'),
@@ -35,13 +43,15 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
         final current = state;
         if (current is GuideProfileLoaded) {
           final updatedProfile = current.profile.copyWith(status: status);
-          emit(GuideProfileLoaded(profile: updatedProfile));
+          _safeEmit(GuideProfileLoaded(profile: updatedProfile));
         }
       },
     );
   }
 
   void _handleFailure(Failure failure) {
+    if (isClosed) return;
+
     if (failure is ServerFailure && failure.statusCode == 404) {
       debugPrint(
         '⚠️ GuideProfileCubit: Account not found (404), clearing auth data',
@@ -49,12 +59,13 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
       _clearAuthAndEmitNotFound();
       return;
     }
-    emit(GuideProfileError(failure.message));
+    _safeEmit(GuideProfileError(failure.message));
   }
 
   Future<void> _clearAuthAndEmitNotFound() async {
     await SecureStorage.clearAll();
-    emit(const GuideProfileNotFound());
+    if (isClosed) return;
+    _safeEmit(const GuideProfileNotFound());
   }
 
   Future<void> updateProfile({
@@ -62,40 +73,41 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     String? gender,
     String? carModel,
     String? carNumber,
-    int? carSeats, // ← новое
-    int? carYear, // ← новое
-    String? steeringWheel, // ← новое
-    List<String>? carFeatures, // ← новое
+    int? carSeats,
+    int? carYear,
+    String? steeringWheel,
+    List<String>? carFeatures,
     int? experienceYears,
     List<String>? languages,
   }) async {
     final current = state;
     if (current is! GuideProfileLoaded) return;
 
-    emit(const GuideProfileLoading());
+    _safeEmit(const GuideProfileLoading());
 
     final data = <String, dynamic>{};
     if (fullName != null) data['full_name'] = fullName;
     if (gender != null) data['gender'] = gender;
     if (carModel != null) data['car_model'] = carModel;
     if (carNumber != null) data['car_number'] = carNumber;
-    if (carSeats != null) data['car_seats'] = carSeats; // ← новое
-    if (carYear != null) data['car_year'] = carYear; // ← новое
-    if (steeringWheel != null)
-      data['steering_wheel'] = steeringWheel; // ← новое
-    if (carFeatures != null) data['car_features'] = carFeatures; // ← новое
+    if (carSeats != null) data['car_seats'] = carSeats;
+    if (carYear != null) data['car_year'] = carYear;
+    if (steeringWheel != null) data['steering_wheel'] = steeringWheel;
+    if (carFeatures != null) data['car_features'] = carFeatures;
     if (experienceYears != null) data['experience_years'] = experienceYears;
     if (languages != null) data['languages'] = languages;
 
     if (data.isEmpty) {
-      emit(GuideProfileLoaded(profile: current.profile));
+      _safeEmit(GuideProfileLoaded(profile: current.profile));
       return;
     }
 
     final result = await _repository.updateProfile(data);
+    if (isClosed) return;
+
     result.fold(
       (failure) => _handleFailure(failure),
-      (profile) => emit(GuideProfileLoaded(profile: profile)),
+      (profile) => _safeEmit(GuideProfileLoaded(profile: profile)),
     );
   }
 
@@ -117,22 +129,6 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     );
   }
 
-  // Метод для замены фото авто (PUT /profile/car-photos)
-  Future<void> updateCarPhotos(List<Uint8List> photos) async {
-    final current = state;
-    if (current is! GuideProfileLoaded) return;
-
-    emit(const GuideProfileLoading());
-
-    final result = await _repository.uploadCarPhotos(
-      photos.map((e) => e.toList()).toList(),
-    );
-    result.fold((failure) => _handleFailure(failure), (photoUrls) {
-      // TODO: обновить carPhotosUrls в profile, если добавишь поле
-      emit(GuideProfileLoaded(profile: current.profile));
-    });
-  }
-
   Future<void> updateExperience(
     int experienceYears,
     List<String> languages,
@@ -147,49 +143,63 @@ class GuideProfileCubit extends Cubit<GuideProfileState> {
     final current = state;
     if (current is! GuideProfileLoaded) return;
 
-    emit(const GuideProfileLoading());
+    _safeEmit(const GuideProfileLoading());
 
     final result = await _repository.uploadAvatar(bytes.toList());
+    if (isClosed) return;
+
     result.fold((failure) => _handleFailure(failure), (avatarUrl) {
       final updatedProfile = current.profile.copyWith(avatarUrl: avatarUrl);
-      emit(GuideProfileLoaded(profile: updatedProfile));
+      _safeEmit(GuideProfileLoaded(profile: updatedProfile));
     });
-  }
-
-  Future<void> logout() async {
-    emit(const GuideProfileLoading());
-
-    try {
-      // Опционально: вызвать logout на сервере (инвалидировать токен)
-      // await _repository.logout();
-
-      // Очищаем всё локальное хранилище
-      await SecureStorage.clearAll();
-
-      debugPrint('🔑 GuideProfileCubit: User logged out');
-
-      // Эмитим состояние выхода — экран перехватит и сделает редирект
-      emit(const GuideProfileLoggedOut());
-    } catch (e) {
-      debugPrint('❌ Error during logout: $e');
-      // Даже при ошибке очищаем локально и выходим
-      await SecureStorage.clearAll();
-      emit(const GuideProfileLoggedOut());
-    }
   }
 
   Future<void> updatePresentationVideo(Uint8List bytes) async {
     final current = state;
     if (current is! GuideProfileLoaded) return;
 
-    emit(const GuideProfileLoading());
+    _safeEmit(const GuideProfileLoading());
 
     final result = await _repository.uploadPresentationVideo(bytes.toList());
+    if (isClosed) return;
+
     result.fold((failure) => _handleFailure(failure), (videoUrl) {
       final updatedProfile = current.profile.copyWith(
         presentationVideoUrl: videoUrl,
       );
-      emit(GuideProfileLoaded(profile: updatedProfile));
+      _safeEmit(GuideProfileLoaded(profile: updatedProfile));
     });
+  }
+
+  Future<void> updateCarPhotos(List<Uint8List> photos) async {
+    final current = state;
+    if (current is! GuideProfileLoaded) return;
+
+    _safeEmit(const GuideProfileLoading());
+
+    final result = await _repository.uploadCarPhotos(
+      photos.map((e) => e.toList()).toList(),
+    );
+    if (isClosed) return;
+
+    result.fold((failure) => _handleFailure(failure), (photoUrls) {
+      loadProfile();
+    });
+  }
+
+  Future<void> logout() async {
+    _safeEmit(const GuideProfileLoading());
+
+    try {
+      await SecureStorage.clearAll();
+      debugPrint('🔑 GuideProfileCubit: User logged out');
+      if (isClosed) return;
+      _safeEmit(const GuideProfileLoggedOut());
+    } catch (e) {
+      debugPrint('❌ Error during logout: $e');
+      await SecureStorage.clearAll();
+      if (isClosed) return;
+      _safeEmit(const GuideProfileLoggedOut());
+    }
   }
 }

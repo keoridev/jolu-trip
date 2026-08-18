@@ -7,6 +7,10 @@ class GuideOnboardingCubit extends Cubit<GuideOnboardingState> {
 
   GuideOnboardingCubit(this._repository) : super(GuideOnboardingInitial());
 
+  void _safeEmit(GuideOnboardingState state) {
+    if (!isClosed) emit(state);
+  }
+
   Future<void> submitOnboarding({
     required String token,
     required int experienceYears,
@@ -25,7 +29,7 @@ class GuideOnboardingCubit extends Cubit<GuideOnboardingState> {
     required List<List<int>> carPhotosBytes,
     required List<int> presentationVideoBytes,
   }) async {
-    emit(GuideOnboardingLoading());
+    _safeEmit(GuideOnboardingLoading());
 
     final result = await _repository.submitOnboarding(
       token: token,
@@ -46,9 +50,11 @@ class GuideOnboardingCubit extends Cubit<GuideOnboardingState> {
       presentationVideoBytes: presentationVideoBytes,
     );
 
+    if (isClosed) return;
+
     result.fold(
-      (failure) => emit(GuideOnboardingError(failure.message)),
-      (onboarding) => emit(GuideOnboardingSubmitted(onboarding: onboarding)),
+      (failure) => _safeEmit(GuideOnboardingError(failure.message)),
+      (onboarding) => _safeEmit(GuideOnboardingSubmitted(onboarding: onboarding)),
     );
   }
 }

@@ -1,4 +1,4 @@
-import 'package:jolutrip_app/features/guide-profile/domain/entities/guide_profile_entity.dart';
+import 'package:jolutrip_app/features/guide-profile/guide_profile.dart';
 
 class GuideProfileModel {
   final String id;
@@ -10,10 +10,17 @@ class GuideProfileModel {
   final String? carCategory;
   final String? carModel;
   final String? carNumber;
+  final int carSeats; // ← новое
+  final int carYear; // ← новое
+  final String steeringWheel; // ← новое
+  final List<String> carFeatures; // ← новое
+  final List<String> carPhotos; // ← новое
   final int experienceYears;
   final List<String> languages;
   final String status;
-  final String? rejectionReason;
+  final int toursConducted; // ← новое
+  final double averageRating; // ← новое
+  final int reviewsCount; // ← новое
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -27,10 +34,17 @@ class GuideProfileModel {
     this.carCategory,
     this.carModel,
     this.carNumber,
+    this.carSeats = 0,
+    this.carYear = 0,
+    this.steeringWheel = 'left',
+    this.carFeatures = const [],
+    this.carPhotos = const [],
     this.experienceYears = 0,
     this.languages = const [],
     required this.status,
-    this.rejectionReason,
+    this.toursConducted = 0,
+    this.averageRating = 0.0,
+    this.reviewsCount = 0,
     this.createdAt,
     this.updatedAt,
   });
@@ -46,10 +60,18 @@ class GuideProfileModel {
       carCategory: json['car_category'] as String?,
       carModel: json['car_model'] as String?,
       carNumber: json['car_number'] as String?,
-      experienceYears: (json['experience_years'] as num?)?.toInt() ?? 0,
-      languages: _parseLanguages(json['languages']),
-      status: json['status'] as String,
-      rejectionReason: json['rejection_reason'] as String?,
+      carSeats: json['car_seats'] as int? ?? 0,
+      carYear: json['car_year'] as int? ?? 0,
+      steeringWheel: json['steering_wheel'] as String? ?? 'left',
+      carFeatures:
+          (json['car_features'] as List<dynamic>?)?.cast<String>() ?? [],
+      carPhotos: (json['car_photos'] as List<dynamic>?)?.cast<String>() ?? [],
+      experienceYears: json['experience_years'] as int? ?? 0,
+      languages: (json['languages'] as List<dynamic>?)?.cast<String>() ?? [],
+      status: json['status'] as String? ?? 'unverified',
+      toursConducted: json['tours_conducted'] as int? ?? 0,
+      averageRating: (json['average_rating'] as num?)?.toDouble() ?? 0.0,
+      reviewsCount: json['reviews_count'] as int? ?? 0,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)
           : null,
@@ -59,74 +81,24 @@ class GuideProfileModel {
     );
   }
 
-  /// Парсит languages из разных форматов backend:
-  /// - ["en,ky"] → ["en", "ky"]
-  /// - ["en", "ky"] → ["en", "ky"]
-  /// - "en,ky" → ["en", "ky"]
-  static List<String> _parseLanguages(dynamic value) {
-    if (value == null) return const [];
-
-    if (value is List) {
-      final result = <String>[];
-      for (final item in value) {
-        final str = item.toString();
-        if (str.contains(',')) {
-          result.addAll(
-            str.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty),
-          );
-        } else {
-          result.add(str.trim());
-        }
-      }
-      return result;
-    }
-
-    if (value is String) {
-      return value
-          .split(',')
-          .map((s) => s.trim())
-          .where((s) => s.isNotEmpty)
-          .toList();
-    }
-
-    return const [];
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'full_name': fullName,
-      'phone': phone,
-      'gender': gender,
-      'avatar_url': avatarUrl,
-      'presentation_video_url': presentationVideoUrl,
-      'car_category': carCategory,
-      'car_model': carModel,
-      'car_number': carNumber,
-      'experience_years': experienceYears,
-      'languages': languages,
-      'status': status,
-      'rejection_reason': rejectionReason,
-      'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-    };
-  }
-
   GuideProfileEntity toEntity() => GuideProfileEntity(
-        id: id,
-        fullName: fullName,
-        phone: phone,
-        gender: gender,
-        avatarUrl: avatarUrl,
-        presentationVideoUrl: presentationVideoUrl,
-        carCategory: carCategory,
-        carModel: carModel,
-        carNumber: carNumber,
-        experienceYears: experienceYears,
-        languages: languages,
-        status: status,
-        rejectionReason: rejectionReason,
-        createdAt: createdAt,
-        updatedAt: updatedAt,
-      );
+    id: id,
+    fullName: fullName,
+    phone: phone,
+    gender: gender,
+    avatarUrl: avatarUrl,
+    presentationVideoUrl: presentationVideoUrl,
+    carCategory: carCategory,
+    carModel: carModel,
+    carNumber: carNumber,
+    carSeats: carSeats,
+    carYear: carYear,
+    steeringWheel: steeringWheel,
+    carFeatures: carFeatures,
+    experienceYears: experienceYears,
+    languages: languages,
+    status: status,
+    createdAt: createdAt,
+    updatedAt: updatedAt,
+  );
 }

@@ -24,17 +24,21 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
   String? _currentPhone;
   String? _currentFullName;
   GuideGender? _currentGender;
-  bool _isLoginMode = true; // ← флаг режима
+  bool _isLoginMode = true;
 
   GuideAuthCubit(this._repository) : super(GuideAuthInitial());
 
   String? get currentToken => _currentToken;
   GuideEntity? get currentGuide => _currentGuide;
-  bool get isLoginMode => _isLoginMode; // ← геттер для UI
+  bool get isLoginMode => _isLoginMode;
+
+  void _safeEmit(GuideAuthState state) {
+    if (!isClosed) emit(state);
+  }
 
   void selectMode(bool isLogin) {
     _isLoginMode = isLogin;
-    emit(GuideAuthModeSelection(isLogin: isLogin));
+    _safeEmit(GuideAuthModeSelection(isLogin: isLogin));
   }
 
   void reset() {
@@ -46,10 +50,8 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     _currentFullName = null;
     _currentGender = null;
     _isLoginMode = true;
-    emit(GuideAuthInitial());
+    _safeEmit(GuideAuthInitial());
   }
-
-  // ============= ТАЙМЕР =============
 
   void _startTimer() {
     _stopTimer();
@@ -85,36 +87,36 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     final currentState = state;
 
     if (currentState is GuideLoginOtpSent) {
-      emit(
+      _safeEmit(
         currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
       );
     } else if (currentState is GuideRegisterOtpSent) {
-      emit(
+      _safeEmit(
         currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
       );
     } else if (currentState is GuideOtpInvalid) {
-      emit(
+      _safeEmit(
         currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
       );
     } else if (currentState is GuideSmsResent) {
-      emit(
+      _safeEmit(
         currentState.copyWith(secondsLeft: _secondsLeft, canResend: _canResend),
       );
     }
   }
-
-  // ============= ЛОГИН =============
 
   Future<void> sendLoginOtp(String phone) async {
     _currentPhone = phone;
     _isLoginMode = true;
     _otpAttempt = 0;
 
-    emit(GuideAuthLoading());
+    _safeEmit(GuideAuthLoading());
     final result = await _repository.sendLoginOtp(phone);
-    result.fold((failure) => emit(GuideAuthError(failure.message)), (_) {
+    if (isClosed) return;
+
+    result.fold((failure) => _safeEmit(GuideAuthError(failure.message)), (_) {
       _startTimer();
-      emit(
+      _safeEmit(
         GuideLoginOtpSent(
           phone: phone,
           secondsLeft: _secondsLeft,
@@ -125,20 +127,20 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
   }
 
   Future<void> verifyLoginOtp(String phone, String code) async {
-    emit(GuideAuthLoading());
+    _safeEmit(GuideAuthLoading());
     final result = await _repository.verifyLoginOtp(phone, code);
+    if (isClosed) return;
+
     result.fold(
       (failure) => _handleOtpFailure(failure, phone),
       (data) => _handleAuthResponse(data),
     );
   }
 
-  // ============= РЕГИСТРАЦИЯ =============
-
   void proceedToRegister(String phone) {
     _currentPhone = phone;
     _isLoginMode = false;
-    emit(GuideRegisterStep1(phone));
+    _safeEmit(GuideRegisterStep1(phone));
   }
 
   Future<void> sendRegisterOtp({
@@ -152,15 +154,17 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     _isLoginMode = false;
     _otpAttempt = 0;
 
-    emit(GuideAuthLoading());
+    _safeEmit(GuideAuthLoading());
     final result = await _repository.sendRegisterOtp(
       fullName: fullName,
       gender: gender,
       phone: phone,
     );
-    result.fold((failure) => emit(GuideAuthError(failure.message)), (_) {
+    if (isClosed) return;
+
+    result.fold((failure) => _safeEmit(GuideAuthError(failure.message)), (_) {
       _startTimer();
-      emit(
+      _safeEmit(
         GuideRegisterOtpSent(
           fullName: fullName,
           gender: gender,
@@ -178,24 +182,26 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     required String phone,
     required String code,
   }) async {
-    emit(GuideAuthLoading());
+    _safeEmit(GuideAuthLoading());
     final result = await _repository.verifyRegisterOtp(
       fullName: fullName,
       gender: gender,
       phone: phone,
       code: code,
     );
+    if (isClosed) return;
+
     result.fold(
       (failure) => _handleOtpFailure(failure, phone),
       (data) => _handleAuthResponse(data),
     );
   }
 
-  // ============= ПОВТОРНАЯ ОТПРАВКА =============
-
   Future<void> resendSms(String phone) async {
     final result = await _repository.resendSms(phone);
-    result.fold((failure) => emit(GuideAuthError(failure.message)), (_) {
+    if (isClosed) return;
+
+    result.fold((failure) => _safeEmit(GuideAuthError(failure.message)), (_) {
       _otpAttempt = 0;
       _startTimer();
 
@@ -204,13 +210,12 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
         secondsLeft: _secondsLeft,
         canResend: _canResend,
       );
-      emit(resentState);
+      _safeEmit(resentState);
 
-      // Переходим в соответствующее OTP-состояние
       Future.delayed(const Duration(milliseconds: 100), () {
         if (isClosed) return;
         if (_isLoginMode) {
-          emit(
+          _safeEmit(
             GuideLoginOtpSent(
               phone: phone,
               secondsLeft: _secondsLeft,
@@ -218,7 +223,7 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
             ),
           );
         } else {
-          emit(
+          _safeEmit(
             GuideRegisterOtpSent(
               fullName: _currentFullName!,
               gender: _currentGender!,
@@ -232,25 +237,22 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
     });
   }
 
-  // ============= HELPERS =============
-
   void _handleOtpFailure(Failure failure, String phone) {
     if (_isOtpFailure(failure)) {
-      emit(
+      _safeEmit(
         GuideOtpInvalid(
           phone: phone,
           message: failure.message,
           attempt: ++_otpAttempt,
           secondsLeft: _secondsLeft,
           canResend: _canResend,
-          isLoginMode: _isLoginMode, // ← передаём флаг
+          isLoginMode: _isLoginMode,
         ),
       );
-      // Возвращаемся в OTP-состояние
       Future.delayed(Duration.zero, () {
         if (isClosed) return;
         if (_isLoginMode) {
-          emit(
+          _safeEmit(
             GuideLoginOtpSent(
               phone: phone,
               secondsLeft: _secondsLeft,
@@ -258,7 +260,7 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
             ),
           );
         } else {
-          emit(
+          _safeEmit(
             GuideRegisterOtpSent(
               fullName: _currentFullName!,
               gender: _currentGender!,
@@ -270,7 +272,7 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
         }
       });
     } else {
-      emit(GuideAuthError(failure.message));
+      _safeEmit(GuideAuthError(failure.message));
     }
   }
 
@@ -279,21 +281,21 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
   }
 
   void _handleAuthResponse(Map<String, dynamic> data) {
+    if (isClosed) return;
+
     try {
       final token = data['token'] as String?;
       if (token == null) {
-        emit(const GuideAuthError('Ошибка: токен не получен от сервера'));
+        _safeEmit(const GuideAuthError('Ошибка: токен не получен от сервера'));
         return;
       }
 
-      // Парсим гида из ответа сервера (не из JWT!)
       final guide = GuideModel.fromLoginResponse(data);
 
       _currentToken = token;
       _currentGuide = guide;
       _stopTimer();
 
-      // Сохраняем токен и данные
       SecureStorage.saveAuthData(
         token: token,
         userId: guide.id,
@@ -308,23 +310,22 @@ class GuideAuthCubit extends Cubit<GuideAuthState> {
         '🔑 Login success. Status: ${guide.status}, Token: ${token.substring(0, 20)}...',
       );
 
-      // Редирект на основе статуса
       switch (guide.status) {
         case GuideStatus.pending:
-          emit(GuideNeedsOnboarding(token: token, guide: guide));
+          _safeEmit(GuideNeedsOnboarding(token: token, guide: guide));
           break;
         case GuideStatus.unverified:
-          emit(GuideOnboardingPending(guide: guide));
+          _safeEmit(GuideOnboardingPending(guide: guide));
           break;
         case GuideStatus.verified:
         case GuideStatus.rejected:
-          emit(GuideAuthSuccess(token: token, guide: guide));
+          _safeEmit(GuideAuthSuccess(token: token, guide: guide));
           break;
       }
     } catch (e, stackTrace) {
       debugPrint('❌ Error parsing auth response: $e');
       debugPrint(stackTrace.toString());
-      emit(GuideAuthError('Ошибка обработки ответа: $e'));
+      _safeEmit(GuideAuthError('Ошибка обработки ответа: $e'));
     }
   }
 

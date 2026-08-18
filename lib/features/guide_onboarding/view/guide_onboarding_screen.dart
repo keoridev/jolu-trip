@@ -93,6 +93,8 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
       _experienceController,
       _carModelController,
       _carNumberController,
+      _carYearController, // ← ДОБАВЬ
+      _carSeatsController,
     ]) {
       controller.removeListener(_onFormChanged);
       controller.dispose();
@@ -320,6 +322,8 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
             'год выпуска',
           if (_carSeats == null || _carSeats! < 1 || _carSeats! > 50)
             'количество мест',
+          if (_selectedCarFeatures.isEmpty)
+            'хотя бы одно преимущество', // ← НОВОЕ
           if (_selectedLanguages.isEmpty) 'язык',
         ];
         if (missing.isEmpty) return null;
@@ -335,14 +339,13 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
 
       case 2:
         return null;
-
       default:
         return null;
     }
   }
 
   bool get _canProceed => _blockerFor(_currentPage) == null;
-  void _submitOnboarding() {
+  Future<void> _submitOnboarding() async {
     final years = _experienceYears;
     final carYear = _carYear;
     final carSeats = _carSeats;
@@ -361,26 +364,66 @@ class _GuideOnboardingScreenState extends State<GuideOnboardingScreen> {
       return;
     }
 
+    // 🔑 РЕЗЕРВНЫЙ ИСТОЧНИК ТОКЕНА
+    String effectiveToken = widget.token;
+    if (effectiveToken.isEmpty) {
+      effectiveToken = await SecureStorage.getToken() ?? '';
+      debugPrint('⚠️ widget.token пустой, берём из SecureStorage');
+    }
+    debugPrint('🔑 Effective token len: ${effectiveToken.length}');
+
+    if (effectiveToken.isEmpty) {
+      if (!mounted) return;
+      JoluSnackbar.show(
+        context: context,
+        message: 'Ошибка авторизации. Войдите заново',
+        type: JoluSnackbarType.error,
+      );
+      return;
+    }
+
+    // 🔍 ЧТО РЕАЛЬНО ОТПРАВЛЯЕТСЯ
+    debugPrint('🔍 === ONBOARDING SUBMIT ===');
+    debugPrint(
+      '🔍 token: ${effectiveToken.substring(0, effectiveToken.length > 20 ? 20 : effectiveToken.length)}...',
+    );
+    debugPrint(
+      '🔍 carFeatures (${_selectedCarFeatures.length}): $_selectedCarFeatures',
+    );
+    debugPrint('🔍 languages: $_selectedLanguages');
+
+    // ⚡ Выгружаем подготовку в отдельный тик, чтобы не было "Skipped frames"
+    await Future<void>.delayed(Duration.zero);
+
+    final passportMain = _passportMainPhotoBytes!.toList();
+    final passportReg = _passportRegistrationPhotoBytes!.toList();
+    final licenseFront = _licensePhotoFrontBytes!.toList();
+    final licenseBack = _licensePhotoBackBytes!.toList();
+    final carPhotosList = _carPhotos
+        .whereType<Uint8List>()
+        .map((e) => e.toList())
+        .toList();
+    final video = _presentationVideoBytes!.toList();
+
+    if (!mounted) return;
+
     context.read<GuideOnboardingCubit>().submitOnboarding(
-      token: widget.token,
+      token: effectiveToken, // ← используем эффективный токен
       experienceYears: years,
       carCategory: _selectedCarCategory!,
       carModel: _carModelController.text.trim(),
       carNumber: _carNumberController.text.trim(),
-      carSeats: carSeats, // ← новое
-      carYear: carYear, // ← новое
-      steeringWheel: _selectedSteeringWheel, // ← новое
-      carFeatures: _selectedCarFeatures, // ← новое
+      carSeats: carSeats,
+      carYear: carYear,
+      steeringWheel: _selectedSteeringWheel,
+      carFeatures: _selectedCarFeatures,
       languages: _selectedLanguages,
-      passportMainPhotoBytes: _passportMainPhotoBytes!.toList(),
-      passportRegistrationPhotoBytes: _passportRegistrationPhotoBytes!.toList(),
-      licensePhotoFrontBytes: _licensePhotoFrontBytes!.toList(),
-      licensePhotoBackBytes: _licensePhotoBackBytes!.toList(),
-      carPhotosBytes: _carPhotos
-          .whereType<Uint8List>()
-          .map((e) => e.toList())
-          .toList(),
-      presentationVideoBytes: _presentationVideoBytes!.toList(),
+      passportMainPhotoBytes: passportMain,
+      passportRegistrationPhotoBytes: passportReg,
+      licensePhotoFrontBytes: licenseFront,
+      licensePhotoBackBytes: licenseBack,
+      carPhotosBytes: carPhotosList,
+      presentationVideoBytes: video,
     );
   }
 

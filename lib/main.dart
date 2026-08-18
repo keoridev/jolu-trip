@@ -20,6 +20,6 @@ void main() async {
   await initializeDateFormatting('ru_RU', null);
 
   GoogleFonts.config.allowRuntimeFetching = false;
-  GoogleFonts.config.allowRuntimeFetching = false;
   runApp(const JoluTripApp());
 }
+    

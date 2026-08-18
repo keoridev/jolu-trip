@@ -21,7 +21,7 @@ class DioClient {
       ),
     );
 
-    // Логгер — первым, чтобы видеть исходный запрос
+    // Логгер — первым
     if (kDebugMode) {
       dio.interceptors.add(
         LogInterceptor(
@@ -37,17 +37,23 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
+          // 🔑 КЛЮЧЕВОЕ: для FormData сбрасываем Content-Type
+          // чтобы Dio сам поставил multipart/form-data с boundary
+          if (options.data is FormData) {
+            options.headers.remove('Content-Type');
+            debugPrint('🔍 FormData detected — removed Content-Type header');
+          }
+
+          // Автоматически добавляем токен (не надо вручную в datasource)
           final token = await SecureStorage.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          
-          // Используем _safeBody здесь, если нужно логгировать
+
           debugPrint('📤 ${options.method} ${options.uri}');
           return handler.next(options);
         },
         onError: (error, handler) {
-          // Обработка 401 — можно добавить refresh token логику
           if (error.response?.statusCode == 401) {
             // TODO: refresh token или logout
           }

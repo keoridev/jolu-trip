@@ -4,10 +4,15 @@ import 'package:jolutrip_app/core/theme/app_dimens.dart';
 import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 import 'package:jolutrip_app/core/ui/buttons/jolu_icon_button.dart';
 import 'package:jolutrip_app/features/guide_onboarding/domain/entities/onboarding_entity.dart';
+import 'package:jolutrip_app/features/guide_onboarding/view/widgets/shared/onboarding_options.dart';
 
 /// Блок автомобиля гида.
 ///
-/// Структура: фото машины на всю ширину → таблица характеристик.
+/// Структура:
+/// - Фото машины (с горизонтальной прокруткой, если несколько)
+/// - Заголовок: "Внедорожник · Toyota Sequoia"
+/// - Таблица характеристик (год, места, руль, гос. номер)
+/// - Преимущества авто (чипсы, если есть)
 class GuideCarBlock extends StatelessWidget {
   final OnboardingEntity onboarding;
   final bool isEditable;
@@ -30,15 +35,22 @@ class GuideCarBlock extends StatelessWidget {
           children: [
             _buildHeader(),
             const SizedBox(height: AppDimens.space16),
-            _buildCarPhoto(),
+            _buildCarPhotos(),
             const SizedBox(height: AppDimens.space16),
+            _buildTitleRow(),
+            const SizedBox(height: AppDimens.space12),
             _buildSpecsTable(),
+            if (onboarding.carFeatures.isNotEmpty) ...[
+              const SizedBox(height: AppDimens.space16),
+              _buildFeatures(),
+            ],
           ],
         ),
       ),
     );
   }
 
+  // ─── Header: иконка + кнопка "Изменить" ──────────────────────────────
   Widget _buildHeader() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -47,7 +59,7 @@ class GuideCarBlock extends StatelessWidget {
           children: [
             Icon(
               Icons.directions_car_outlined,
-              color: AppColors.primary,
+              color: AppColors.accent,
               size: 20,
             ),
             const SizedBox(width: AppDimens.space8),
@@ -66,38 +78,63 @@ class GuideCarBlock extends StatelessWidget {
     );
   }
 
-  Widget _buildCarPhoto() {
-    final photoUrl = onboarding.carPhotosUrls?.firstOrNull;
+  // ─── Фото машины (1 или 4) ──────────────────────────────────────────
+  Widget _buildCarPhotos() {
+    final photos = onboarding.carPhotosUrls ?? const [];
 
+    if (photos.isEmpty) {
+      return _buildPhotoPlaceholder();
+    }
+
+    if (photos.length == 1) {
+      return _buildPhotoTile(photos.first);
+    }
+
+    // Горизонтальная галерея для нескольких фото
+    return SizedBox(
+      height: 180,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: photos.length,
+        separatorBuilder: (_, __) => const SizedBox(width: AppDimens.space8),
+        itemBuilder: (context, index) =>
+            SizedBox(width: 240, child: _buildPhotoTile(photos[index])),
+      ),
+    );
+  }
+
+  Widget _buildPhotoTile(String url) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppDimens.radiusM),
       child: AspectRatio(
         aspectRatio: 16 / 9,
-        child: photoUrl != null && photoUrl.isNotEmpty
-            ? Image.network(
-                photoUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _buildPhotoPlaceholder(),
-                loadingBuilder: (_, child, progress) {
-                  if (progress == null) return child;
-                  return _buildPhotoPlaceholder(
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: AppColors.primary,
-                    ),
-                  );
-                },
-              )
-            : _buildPhotoPlaceholder(),
+        child: Image.network(
+          url,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _buildPhotoPlaceholder(),
+          loadingBuilder: (_, child, progress) {
+            if (progress == null) return child;
+            return _buildPhotoPlaceholder(
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.accent,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildPhotoPlaceholder({Widget? child}) {
     return Container(
-      color: AppColors.cardDark,
+      decoration: BoxDecoration(
+        color: AppColors.bgElevated,
+        borderRadius: BorderRadius.circular(AppDimens.radiusM),
+      ),
       child: Center(
-        child: child ??
+        child:
+            child ??
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -119,33 +156,71 @@ class GuideCarBlock extends StatelessWidget {
     );
   }
 
+  // ─── Заголовок: "Внедорожник · Toyota Sequoia" ──────────────────────
+  Widget _buildTitleRow() {
+    final category = carCategoryByValue(onboarding.carCategory);
+    final categoryLabel = category?.label;
+    final model = onboarding.carModel.isNotEmpty ? onboarding.carModel : null;
+
+    String title;
+    if (categoryLabel != null && model != null) {
+      title = '$categoryLabel · $model';
+    } else if (categoryLabel != null) {
+      title = categoryLabel;
+    } else if (model != null) {
+      title = model;
+    } else {
+      title = 'Автомобиль не указан';
+    }
+
+    return Text(
+      title,
+      style: AppTextStyles.headlineSmall.copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  // ─── Таблица характеристик ──────────────────────────────────────────
   Widget _buildSpecsTable() {
+    final year = onboarding.carYear;
+    final seats = onboarding.carSeats;
+    final steering = onboarding.steeringWheel;
+    final number = onboarding.carNumber;
+
     final specs = <_SpecRow>[
+      if (year > 0)
+        _SpecRow(
+          icon: Icons.calendar_today_outlined,
+          label: 'Год выпуска',
+          value: '$year',
+        ),
+      if (seats > 0)
+        _SpecRow(
+          icon: Icons.airline_seat_recline_normal_outlined,
+          label: 'Количество мест',
+          value: '$seats ${_pluralSeats(seats)}',
+        ),
       _SpecRow(
-        icon: Icons.directions_car_outlined,
-        label: 'Модель',
-        value: onboarding.carModel.isNotEmpty
-            ? onboarding.carModel
-            : 'Не указана',
+        icon: Icons.circle_outlined,
+        label: 'Руль',
+        value: steering == 'right' ? 'Правый' : 'Левый',
       ),
-      _SpecRow(
-        icon: Icons.confirmation_number_outlined,
-        label: 'Гос. номер',
-        value: onboarding.carNumber.isNotEmpty
-            ? onboarding.carNumber.toUpperCase()
-            : 'Не указан',
-      ),
-      _SpecRow(
-        icon: Icons.people_outline,
-        label: 'Вместимость',
-        value: '8 пассажиров', // TODO: добавить в onboarding если нужно
-      ),
-      _SpecRow(
-        icon: Icons.calendar_today_outlined,
-        label: 'Год выпуска',
-        value: '2022', // TODO: добавить в onboarding если нужно
-      ),
+      if (number.isNotEmpty)
+        _SpecRow(
+          icon: Icons.confirmation_number_outlined,
+          label: 'Гос. номер',
+          value: number.toUpperCase(),
+        ),
     ];
+
+    if (specs.isEmpty) {
+      return Text(
+        'Характеристики не указаны',
+        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textTertiary),
+      );
+    }
 
     return Column(
       children: specs.asMap().entries.map((entry) {
@@ -164,7 +239,7 @@ class GuideCarBlock extends StatelessWidget {
             children: [
               Icon(
                 spec.icon,
-                color: AppColors.textSecondary.withValues(alpha: 0.5),
+                color: AppColors.textSecondary.withValues(alpha: 0.6),
                 size: 18,
               ),
               const SizedBox(width: AppDimens.space12),
@@ -185,13 +260,60 @@ class GuideCarBlock extends StatelessWidget {
             ],
           ),
         ),
-        if (showDivider)
-          Divider(
-            height: 1,
-            color: AppColors.borderDark,
-          ),
+        if (showDivider) Divider(height: 1, color: AppColors.borderDark),
       ],
     );
+  }
+
+  // ─── Преимущества авто (чипсы) ──────────────────────────────────────
+  Widget _buildFeatures() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Преимущества',
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppDimens.space8),
+        Wrap(
+          spacing: AppDimens.space8,
+          runSpacing: AppDimens.space8,
+          children: onboarding.carFeatures.map((feature) {
+            return Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppDimens.space12,
+                vertical: AppDimens.space6,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.bgElevated,
+                borderRadius: BorderRadius.circular(AppDimens.radiusRound),
+                border: Border.all(color: AppColors.borderDark),
+              ),
+              child: Text(
+                carFeatureLabel(feature),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textPrimary,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  String _pluralSeats(int n) {
+    final last = n % 10;
+    final lastTwo = n % 100;
+    if (lastTwo >= 11 && lastTwo <= 14) return 'мест';
+    if (last == 1) return 'место';
+    if (last >= 2 && last <= 4) return 'места';
+    return 'мест';
   }
 }
 

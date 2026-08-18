@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:jolutrip_app/core/config/app_config.dart';
 import 'package:jolutrip_app/core/errors/exceptions.dart';
 import 'package:jolutrip_app/features/guide_onboarding/data/models/model.dart';
@@ -10,10 +11,10 @@ abstract class GuideOnboardingRemoteDataSource {
     required String carCategory,
     required String carModel,
     required String carNumber,
-    required int carSeats, // ← новое
-    required int carYear, // ← новое
-    required String steeringWheel, // ← новое
-    required List<String> carFeatures, // ← новое
+    required int carSeats,
+    required int carYear,
+    required String steeringWheel,
+    required List<String> carFeatures,
     required List<String> languages,
     required List<int> passportMainPhotoBytes,
     required List<int> passportRegistrationPhotoBytes,
@@ -51,67 +52,41 @@ class GuideOnboardingRemoteDataSourceImpl
     try {
       final formData = FormData();
 
-      // Text fields
+      // ─── Text fields ─────────────────────────────────────────────
       formData.fields.addAll([
         MapEntry('experience_years', experienceYears.toString()),
         MapEntry('car_category', carCategory),
         MapEntry('car_model', carModel),
         MapEntry('car_number', carNumber),
-        MapEntry('car_seats', carSeats.toString()), // ← новое
-        MapEntry('car_year', carYear.toString()), // ← новое
-        MapEntry('steering_wheel', steeringWheel), // ← новое: 'left' | 'right'
+        MapEntry('car_seats', carSeats.toString()),
+        MapEntry('car_year', carYear.toString()),
+        MapEntry('steering_wheel', steeringWheel),
+        // 🔑 ОДНА строка через запятую — самый надёжный формат для простых беков
+        MapEntry('languages', languages.join(',')),
+        MapEntry('car_features', carFeatures.join(',')),
       ]);
 
-      // Массивы отправляем как несколько полей с одинаковым ключом —
-      // так Django/FastAPI/Spring парсят их в array[string] корректно
-      for (final lang in languages) {
-        formData.fields.add(MapEntry('languages', lang));
-      }
-      for (final feature in carFeatures) {
-        formData.fields.add(MapEntry('car_features', feature));
-      }
+      // ─── Passport ────────────────────────────────────────────────
+      formData.files.add(MapEntry(
+        'passport_main_photo',
+        MultipartFile.fromBytes(passportMainPhotoBytes, filename: 'passport_main.jpg'),
+      ));
+      formData.files.add(MapEntry(
+        'passport_registration_photo',
+        MultipartFile.fromBytes(passportRegistrationPhotoBytes, filename: 'passport_registration.jpg'),
+      ));
 
-      // Passport
-      formData.files.add(
-        MapEntry(
-          'passport_main_photo',
-          MultipartFile.fromBytes(
-            passportMainPhotoBytes,
-            filename: 'passport_main.jpg',
-          ),
-        ),
-      );
-      formData.files.add(
-        MapEntry(
-          'passport_registration_photo',
-          MultipartFile.fromBytes(
-            passportRegistrationPhotoBytes,
-            filename: 'passport_registration.jpg',
-          ),
-        ),
-      );
+      // ─── License ─────────────────────────────────────────────────
+      formData.files.add(MapEntry(
+        'license_photo_front',
+        MultipartFile.fromBytes(licensePhotoFrontBytes, filename: 'license_front.jpg'),
+      ));
+      formData.files.add(MapEntry(
+        'license_photo_back',
+        MultipartFile.fromBytes(licensePhotoBackBytes, filename: 'license_back.jpg'),
+      ));
 
-      // License
-      formData.files.add(
-        MapEntry(
-          'license_photo_front',
-          MultipartFile.fromBytes(
-            licensePhotoFrontBytes,
-            filename: 'license_front.jpg',
-          ),
-        ),
-      );
-      formData.files.add(
-        MapEntry(
-          'license_photo_back',
-          MultipartFile.fromBytes(
-            licensePhotoBackBytes,
-            filename: 'license_back.jpg',
-          ),
-        ),
-      );
-
-      // Car photos — РОВНО 4
+      // ─── Car photos (ровно 4) ────────────────────────────────────
       if (carPhotosBytes.length != 4) {
         throw ServerException(
           'Должно быть ровно 4 фото автомобиля (сейчас ${carPhotosBytes.length})',
@@ -119,37 +94,29 @@ class GuideOnboardingRemoteDataSourceImpl
         );
       }
       for (int i = 0; i < carPhotosBytes.length; i++) {
-        formData.files.add(
-          MapEntry(
-            'car_photos',
-            MultipartFile.fromBytes(
-              carPhotosBytes[i],
-              filename: 'car_photo_$i.jpg',
-            ),
-          ),
-        );
+        formData.files.add(MapEntry(
+          'car_photos',
+          MultipartFile.fromBytes(carPhotosBytes[i], filename: 'car_photo_$i.jpg'),
+        ));
       }
 
-      // Video
-      formData.files.add(
-        MapEntry(
-          'presentation_video',
-          MultipartFile.fromBytes(
-            presentationVideoBytes,
-            filename: 'presentation_video.mp4',
-          ),
-        ),
-      );
+      // ─── Presentation video ──────────────────────────────────────
+      formData.files.add(MapEntry(
+        'presentation_video',
+        MultipartFile.fromBytes(presentationVideoBytes, filename: 'presentation_video.mp4'),
+      ));
 
+      // ─── Debug ───────────────────────────────────────────────────
+      debugPrint('🔍 === FORM DATA DEBUG ===');
+      for (final field in formData.fields) {
+        debugPrint('🔍   [${field.key}] = ${field.value}');
+      }
+      debugPrint('🔍 files count: ${formData.files.length}');
+
+      // ─── Отправка — БЕЗ options, пусть DioClient сам решит ───────
       final response = await dio.post(
         AppConfig.guideProfileVerify,
         data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Content-Type': 'multipart/form-data',
-          },
-        ),
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {

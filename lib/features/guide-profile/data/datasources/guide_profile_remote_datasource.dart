@@ -10,6 +10,7 @@ abstract class GuideProfileRemoteDataSource {
   Future<String> uploadAvatar(List<int> bytes);
   Future<VerificationStatusModel> getVerificationStatus();
   Future<String> uploadPresentationVideo(List<int> bytes);
+  Future<List<String>> uploadCarPhotos(List<List<int>> photosBytes);  // ← новое
 }
 
 class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {
@@ -62,6 +63,7 @@ class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {
     }
   }
 
+  @override  // ← добавлен
   Future<String> uploadPresentationVideo(List<int> bytes) async {
     try {
       final formData = FormData.fromMap({
@@ -72,6 +74,40 @@ class GuideProfileRemoteDataSourceImpl implements GuideProfileRemoteDataSource {
         data: formData,
       );
       return response.data['presentation_video_url'] as String;
+    } on DioException catch (e) {
+      throw _mapDioError(e);
+    }
+  }
+
+  @override  // ← новое
+  Future<List<String>> uploadCarPhotos(List<List<int>> photosBytes) async {
+    if (photosBytes.length != 4) {
+      throw ServerException(
+        'Должно быть ровно 4 фото автомобиля (сейчас ${photosBytes.length})',
+        statusCode: 400,
+      );
+    }
+
+    try {
+      final formData = FormData();
+      for (int i = 0; i < photosBytes.length; i++) {
+        formData.files.add(MapEntry(
+          'photos',
+          MultipartFile.fromBytes(photosBytes[i], filename: 'car_photo_$i.jpg'),
+        ));
+      }
+
+      final response = await _dio.put(
+        AppConfig.guideCarPhotos,
+        data: formData,
+        options: Options(headers: {'Content-Type': 'multipart/form-data'}),
+      );
+
+      final data = response.data;
+      if (data is Map && data['car_photos'] is List) {
+        return (data['car_photos'] as List).cast<String>();
+      }
+      return [];
     } on DioException catch (e) {
       throw _mapDioError(e);
     }
