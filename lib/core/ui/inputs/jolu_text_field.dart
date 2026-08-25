@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
@@ -19,6 +18,9 @@ class JoluTextField extends StatelessWidget {
   final void Function(String)? onChanged;
   final List<TextInputFormatter>? inputFormatters;
   final TextCapitalization textCapitalization;
+  final int? maxLines;     // ← новое
+  final int? minLines;     // ← новое
+  final bool readOnly;     // ← новое (пригодится)
 
   const JoluTextField({
     super.key,
@@ -35,10 +37,22 @@ class JoluTextField extends StatelessWidget {
     this.onChanged,
     this.inputFormatters,
     this.textCapitalization = TextCapitalization.none,
+    this.maxLines = 1,
+    this.minLines,
+    this.readOnly = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Для многострочных полей выравнивание сверху — иначе hint будет по центру
+    final isMultiline = (maxLines ?? 1) > 1;
+    final effectivePadding = EdgeInsets.fromLTRB(
+      AppDimens.space16,
+      AppDimens.space14,
+      AppDimens.space16,
+      isMultiline ? AppDimens.space14 : AppDimens.space16,
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -47,7 +61,7 @@ class JoluTextField extends StatelessWidget {
             label!,
             style: AppTextStyles.subtext.copyWith(fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: AppDimens.space12),
+          const SizedBox(height: AppDimens.space8),
         ],
         TextFormField(
           controller: controller,
@@ -57,6 +71,10 @@ class JoluTextField extends StatelessWidget {
           onChanged: onChanged,
           inputFormatters: inputFormatters,
           textCapitalization: textCapitalization,
+          maxLines: obscureText ? 1 : maxLines,
+          minLines: minLines,
+          readOnly: readOnly,
+          textAlignVertical: isMultiline ? TextAlignVertical.top : null,
           style: AppTextStyles.body,
           decoration: InputDecoration(
             hintText: hint,
@@ -77,10 +95,7 @@ class JoluTextField extends StatelessWidget {
             enabledBorder: _buildBorder(),
             focusedBorder: _buildFocusedBorder(),
             errorBorder: _buildErrorBorder(),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: AppDimens.space16,
-              vertical: AppDimens.space16,
-            ),
+            contentPadding: effectivePadding,
           ),
         ),
       ],

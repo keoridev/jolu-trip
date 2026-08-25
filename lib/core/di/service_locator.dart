@@ -55,6 +55,10 @@ import 'package:jolutrip_app/features/gamification/domain/repositories/journal_r
 import 'package:jolutrip_app/features/gamification/domain/repositories/stamp_repository.dart';
 import 'package:jolutrip_app/features/gamification/domain/usecases/perform_checkin.dart';
 import 'package:jolutrip_app/features/gamification/domain/usecases/get_traveler_status.dart';
+import 'package:jolutrip_app/features/tourist_health_card/data/datasources/health_card_remote_datasource.dart';
+import 'package:jolutrip_app/features/tourist_health_card/data/repositories/health_card_repository_impl.dart';
+import 'package:jolutrip_app/features/tourist_health_card/domain/repositories/health_card_repository.dart';
+import 'package:jolutrip_app/features/tourist_health_card/view/bloc/health_card_cubit.dart';
 
 final sl = GetIt.instance;
 
@@ -98,6 +102,15 @@ void setupDependencies() {
   sl.registerFactory<GuideOnboardingCubit>(
     () => GuideOnboardingCubit(sl<GuideOnboardingRepository>()),
   );
+
+  // ─── Tourist Health Card ─────────────────────────────────
+  sl.registerLazySingleton<HealthCardRemoteDataSource>(
+    () => HealthCardRemoteDataSourceImpl(dio: sl<Dio>()),
+  );
+  sl.registerLazySingleton<HealthCardRepository>(
+    () => HealthCardRepositoryImpl(sl<HealthCardRemoteDataSource>()),
+  );
+  sl.registerFactory(() => HealthCardCubit(sl<HealthCardRepository>()));
 
   // ─── Guide Profile ─────────────────────────────
   sl.registerLazySingleton<GuideProfileRemoteDataSource>(

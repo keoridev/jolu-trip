@@ -21,6 +21,9 @@ class AppConfig {
   static String get locations => '$baseUrl/locations/reels';
   static String locationDetail(String id) => '$baseUrl/locations/$id';
 
+  //health-card
+  static String get touristHealthCard => '$baseUrl/tourist/health-card';
+
   // Tours
   static String get tours => '$baseUrl/tours';
 

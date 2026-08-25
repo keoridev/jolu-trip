@@ -28,6 +28,8 @@ import 'package:jolutrip_app/features/profile/view/bloc/profile_cubit.dart';
 import 'package:jolutrip_app/features/profile/view/profile_router_screen.dart';
 import 'package:jolutrip_app/features/reels/view/bloc/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/view/reels_screen.dart';
+import 'package:jolutrip_app/features/tourist_health_card/view/bloc/health_card_cubit.dart';
+import 'package:jolutrip_app/features/tourist_health_card/view/health_card_screen.dart';
 
 class AppRouterWithShell {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -104,6 +106,14 @@ class AppRouterWithShell {
         builder: (context, state) => BlocProvider<GuideToursCubit>(
           create: (_) => sl<GuideToursCubit>()..reset(),
           child: const CreateTourScreen(),
+        ),
+      ),
+
+      GoRoute(
+        path: '/tourist/health-card',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<HealthCardCubit>(),
+          child: const HealthCardScreen(),
         ),
       ),
 
