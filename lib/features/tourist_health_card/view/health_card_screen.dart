@@ -40,7 +40,6 @@ class _HealthCardScreenState extends State<HealthCardScreen> {
   @override
   void initState() {
     super.initState();
-    // Загружаем карточку при открытии
     context.read<HealthCardCubit>().load();
   }
 
@@ -491,9 +490,6 @@ class _HealthCardScreenState extends State<HealthCardScreen> {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// Section Wrapper
-// ═══════════════════════════════════════════════════════════════
 class _Section extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -513,6 +509,7 @@ class _Section extends StatelessWidget {
       padding: const EdgeInsets.all(AppDimens.space20),
       decoration: BoxDecoration(
         color: AppColors.cardDark,
+
         borderRadius: BorderRadius.circular(AppDimens.radius16),
         border: Border.all(color: AppColors.borderDark),
       ),

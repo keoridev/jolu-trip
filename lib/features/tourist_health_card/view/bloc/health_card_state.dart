@@ -11,7 +11,6 @@ class HealthCardInitial extends HealthCardState {}
 
 class HealthCardLoading extends HealthCardState {}
 
-/// Карточка загружена с сервера (может быть null = ещё не создана)
 class HealthCardLoaded extends HealthCardState {
   final HealthCardEntity? card;
   const HealthCardLoaded(this.card);
@@ -20,7 +19,6 @@ class HealthCardLoaded extends HealthCardState {
 }
 
 class HealthCardSaving extends HealthCardState {
-  /// Текущее состояние формы, чтобы UI не терял данные при лоадинге
   final HealthCardEntity draft;
   const HealthCardSaving(this.draft);
   @override

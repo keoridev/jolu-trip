@@ -7,13 +7,6 @@ import 'package:jolutrip_app/core/theme/app_text_styles.dart';
 import 'package:jolutrip_app/features/tourist_health_card/domain/entities/health_card_entity.dart';
 import 'package:jolutrip_app/features/tourist_health_card/domain/repositories/health_card_repository.dart';
 
-/// Умный блок статуса карточки здоровья для профиля туриста.
-///
-/// Сам загружает данные через репозиторий и показывает:
-/// - Скелетон (пока грузится)
-/// - Оранжевый баннер с призывом заполнить (если карточки нет)
-/// - Зелёный баннер с бейджем группы крови (если заполнена)
-/// - Серый баннер с retry (если ошибка сети)
 class HealthCardStatusBlock extends StatefulWidget {
   const HealthCardStatusBlock({super.key});
 
@@ -71,7 +64,6 @@ class _HealthCardStatusBlockState extends State<HealthCardStatusBlock> {
     return _buildFilledBanner(_card!);
   }
 
-  // ─── Скелетон ───────────────────────────────────────────────────────
   Widget _buildSkeleton() {
     return Container(
       width: double.infinity,
@@ -102,7 +94,6 @@ class _HealthCardStatusBlockState extends State<HealthCardStatusBlock> {
     );
   }
 
-  // ─── Пустая карточка — призыв заполнить ─────────────────────────────
   Widget _buildEmptyBanner() {
     return _BaseBanner(
       accentColor: AppColors.warning,

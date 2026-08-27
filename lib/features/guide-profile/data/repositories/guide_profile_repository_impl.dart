@@ -74,7 +74,7 @@ class GuideProfileRepositoryImpl implements GuideProfileRepository {
     }
   }
 
-  @override  // ← новое
+  @override // ← новое
   Future<Either<Failure, List<String>>> uploadCarPhotos(
     List<List<int>> photosBytes,
   ) async {

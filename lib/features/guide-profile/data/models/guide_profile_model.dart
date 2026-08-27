@@ -10,17 +10,17 @@ class GuideProfileModel {
   final String? carCategory;
   final String? carModel;
   final String? carNumber;
-  final int carSeats; // ← новое
-  final int carYear; // ← новое
-  final String steeringWheel; // ← новое
-  final List<String> carFeatures; // ← новое
-  final List<String> carPhotos; // ← новое
+  final int carSeats;
+  final int carYear;
+  final String steeringWheel;
+  final List<String> carFeatures;
+  final List<String> carPhotos;
   final int experienceYears;
   final List<String> languages;
   final String status;
-  final int toursConducted; // ← новое
-  final double averageRating; // ← новое
-  final int reviewsCount; // ← новое
+  final int toursConducted;
+  final double averageRating;
+  final int reviewsCount;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
