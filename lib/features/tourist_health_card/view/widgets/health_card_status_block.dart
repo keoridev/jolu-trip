@@ -50,7 +50,7 @@ class _HealthCardStatusBlockState extends State<HealthCardStatusBlock> {
   }
 
   void _goToHealthCard() {
-    context.push('/tourist/health-card');
+    context.push('/tourist/health-card/view'); // ← было '/tourist/health-card'
   }
 
   @override
@@ -102,19 +102,24 @@ class _HealthCardStatusBlockState extends State<HealthCardStatusBlock> {
       subtitle:
           'Группа крови, аллергии и экстренный контакт — для вашей безопасности в поездках',
       actionLabel: 'Заполнить',
-      onTap: _goToHealthCard,
+      onTap: () async {
+        await context.push('/tourist/health-card');
+        if (mounted) _loadCard(); // перезагружаем после редактирования
+      },
     );
   }
 
-  // ─── Заполненная карточка ───────────────────────────────────────────
   Widget _buildFilledBanner(HealthCardEntity card) {
     return _BaseBanner(
       accentColor: AppColors.success,
       icon: Icons.verified_user_rounded,
       title: 'Карточка здоровья заполнена',
       subtitle: _buildSummary(card),
-      actionLabel: 'Изменить',
-      onTap: _goToHealthCard,
+      actionLabel: 'Посмотреть',
+      onTap: () async {
+        await context.push('/tourist/health-card/view');
+        if (mounted) _loadCard();
+      },
       trailing: card.bloodType.isNotEmpty ? _BloodBadge(card.bloodType) : null,
     );
   }

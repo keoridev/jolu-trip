@@ -10,12 +10,22 @@ class HealthCardModel extends HealthCardEntity {
   });
 
   factory HealthCardModel.fromJson(Map<String, dynamic> json) {
-    final contactJson = json['emergency_contact'] as Map<String, dynamic>?;
+    // Бек может вернуть в двух форматах:
+    // 1. Прямой объект: {"blood_type": "...", ...}
+    // 2. Обёрнутый: {"health_card": {...}, "status": "ok"}
+    final Map<String, dynamic> data;
+    if (json.containsKey('health_card') && json['health_card'] is Map) {
+      data = json['health_card'] as Map<String, dynamic>;
+    } else {
+      data = json;
+    }
+
+    final contactJson = data['emergency_contact'] as Map<String, dynamic>?;
     return HealthCardModel(
-      bloodType: json['blood_type'] as String? ?? '',
-      allergies: json['allergies'] as String? ?? '',
-      chronicDiseases: json['chronic_diseases'] as String? ?? '',
-      additionalInfo: json['additional_info'] as String? ?? '',
+      bloodType: data['blood_type'] as String? ?? '',
+      allergies: data['allergies'] as String? ?? '',
+      chronicDiseases: data['chronic_diseases'] as String? ?? '',
+      additionalInfo: data['additional_info'] as String? ?? '',
       emergencyContact: contactJson != null
           ? EmergencyContact(
               name: contactJson['name'] as String? ?? '',
@@ -24,7 +34,6 @@ class HealthCardModel extends HealthCardEntity {
           : const EmergencyContact(name: '', phone: ''),
     );
   }
-
   Map<String, dynamic> toJson() {
     return {
       'blood_type': bloodType,

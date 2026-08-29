@@ -1,39 +1,30 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // === Primary (зеленый — основной CTA) ===
-  static const Color primary = Color(0xFF1B5E3A); // Темно-зеленый
-  static const Color accent = Color(0xFF2DD4BF); // Бирюзовый вспомогательный
-
-  // primary — это цвет ПОВЕРХНОСТИ, он слишком темный для текста и иконок:
-  // #1B5E3A на cardDark даёт ~1.9:1, а черный на #1B5E3A — ~1.6:1.
-  // WCAG AA требует 4.5:1, поэтому ниже два производных токена.
-
-  /// Светлый оттенок бренда — для ТЕКСТА и ИКОНОК на темном фоне (~7:1 на cardDark).
-  static const Color primaryBright = Color(0xFF4FBF83);
-
-  /// Цвет текста и иконок ПОВЕРХ поверхности primary (~7.9:1).
+  // === Brand ===
+  static const Color primary = Color(0xFF2D7A4F); // ← светлее
+  static const Color accent = Color(0xFF86A789); // ← sage green
+  static const Color primaryBright = Color(0xFF6BAF8A); // ← менее кислотный
   static const Color onPrimary = Color(0xFFFFFFFF);
 
-  // === Сигнальные ===
-  static const Color success = Color(0xFF34D399);
-  static const Color warning = Color(0xFFFBBF24);
-  static const Color error = Color(0xFFF87171);
+  static const Color success = Color(0xFF6B9F78); // было 34D399
+  static const Color warning = Color(0xFFD4A574); // было FBBF24
+  static const Color error = Color(0xFFC97878);
 
-  static const Color bgDark = Color(0xFF121212); // Основной фон
-  static const Color cardDark = Color(0xFF1E1E1E); // Карточки
-  static const Color bgElevated = Color(0xFF282828); // Bottom sheet / диалоги
-  static const Color cardElevated = Color(0xFF2C2C2E); // Elevated card
+  // === Surfaces (оставить) ===
+  static const Color bgDark = Color(0xFF121212);
+  static const Color cardDark = Color(0xFF1C1C1C);
+  static const Color bgElevated = Color(0xFF242424);
+  static const Color cardElevated = Color(0xFF282828);
 
-  // === Разделители (вместо теней) ===
-  static const Color borderDark = Color(0x1AFFFFFF); // ~10% белого
-  static const Color borderSoft = Color(0x1AFFFFFF); // ~10% белого
+  static const Color borderDark = Color(0x1FFFFFFF);
+  static const Color borderSoft = Color(0x14FFFFFF); // чуть мягче
 
-  // === Текст ===
-  static const Color textPrimary = Color(0xFFF5F5F5); // Основной текст
-  static const Color textSecondary = Color(0x99F5F5F5); // 60% прозрачности
-  static const Color textTertiary = Color(0x66F5F5F5); // 40% прозрачности
-  static const Color textMuted = Color(0x4DF5F5F5); // 30% прозрачности
+  // === Text (оставить) ===
+  static const Color textPrimary = Color(0xFFF5F5F5);
+  static const Color textSecondary = Color(0xA0F5F5F5); // 63%
+  static const Color textTertiary = Color(0x70F5F5F5); // 44%
+  static const Color textMuted = Color(0x50F5F5F5);
 
   static Color get primarySoft => primary.withValues(alpha: 0.2);
   static Color get accentSoft => accent.withValues(alpha: 0.2);
@@ -122,9 +113,7 @@ class AppColors {
         foregroundColor: primary,
         elevation: 0,
         shadowColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
     ),
@@ -134,13 +123,8 @@ class AppColors {
         foregroundColor: textPrimary,
         elevation: 0,
         shadowColor: Colors.transparent,
-        side: const BorderSide(
-          color: borderDark,
-          width: 1,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
+        side: const BorderSide(color: borderDark, width: 1),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
         minimumSize: const Size(double.infinity, 52),
       ),
@@ -164,41 +148,26 @@ class AppColors {
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12), // 12px
-        borderSide: const BorderSide(
-          color: borderDark,
-          width: 1,
-        ),
+        borderSide: const BorderSide(color: borderDark, width: 1),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(
-          color: borderDark,
-          width: 1,
-        ),
+        borderSide: const BorderSide(color: borderDark, width: 1),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(
-          color: primary,
-          width: 1.5,
-        ),
+        borderSide: const BorderSide(color: primary, width: 1.5),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(
-          color: error,
-          width: 1,
-        ),
+        borderSide: const BorderSide(color: error, width: 1),
       ),
       contentPadding: const EdgeInsets.all(16), // 16px
     ),
     chipTheme: ChipThemeData(
       backgroundColor: Colors.transparent,
       selectedColor: primarySoft,
-      side: const BorderSide(
-        color: borderDark,
-        width: 1,
-      ),
+      side: const BorderSide(color: borderDark, width: 1),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20), // 20px
       ),
@@ -215,7 +184,6 @@ class AppColors {
         fontWeight: FontWeight.w500,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(
       backgroundColor: cardDark,

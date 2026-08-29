@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:jolutrip_app/core/di/service_locator.dart';
 import 'package:jolutrip_app/core/theme/app_colors.dart';
-import 'package:jolutrip_app/core/ui/jolu_ui.dart';
 import 'package:jolutrip_app/features/auth/view/auth_screen.dart';
 import 'package:jolutrip_app/features/auth/view/bloc/auth_cubit.dart';
 import 'package:jolutrip_app/features/auth/view/role_selection_screen.dart';
@@ -13,8 +12,7 @@ import 'package:jolutrip_app/features/gamification/view/blocs/journal/journal_cu
 import 'package:jolutrip_app/features/gamification/view/blocs/stamps/stamps_cubit.dart';
 import 'package:jolutrip_app/features/gamification/view/pages/journal_screen.dart';
 import 'package:jolutrip_app/features/gamification/view/pages/stamps_screen.dart';
-import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_cubit.dart';
-import 'package:jolutrip_app/features/guide-profile/view/bloc/guide_profile_state.dart';
+
 import 'package:jolutrip_app/features/guide_auth/view/bloc/guide_auth_cubit.dart';
 import 'package:jolutrip_app/features/guide_auth/view/guide_auth_screen.dart';
 import 'package:jolutrip_app/features/guide_onboarding/view/bloc/guide_onboarding_cubit.dart';
@@ -30,6 +28,7 @@ import 'package:jolutrip_app/features/reels/view/bloc/reels_cubit.dart';
 import 'package:jolutrip_app/features/reels/view/reels_screen.dart';
 import 'package:jolutrip_app/features/tourist_health_card/view/bloc/health_card_cubit.dart';
 import 'package:jolutrip_app/features/tourist_health_card/view/health_card_screen.dart';
+import 'package:jolutrip_app/features/tourist_health_card/view/health_card_view_screen.dart';
 
 class AppRouterWithShell {
   static final GlobalKey<NavigatorState> _rootNavigatorKey =
@@ -61,6 +60,32 @@ class AppRouterWithShell {
         builder: (context, state) => BlocProvider<AuthCubit>(
           create: (_) => sl<AuthCubit>(),
           child: const AuthScreen(),
+        ),
+      ),
+
+      GoRoute(
+        path: '/tourist/health-card',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<HealthCardCubit>(),
+          child: const HealthCardScreen(),
+        ),
+      ),
+
+      // НОВЫЙ маршрут (просмотр)
+      GoRoute(
+        path: '/tourist/health-card/view',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<HealthCardCubit>(),
+          child: const HealthCardViewScreen(),
+        ),
+      ),
+
+      // Можно добавить алиас /health → тоже на просмотр
+      GoRoute(
+        path: '/health',
+        builder: (context, state) => BlocProvider(
+          create: (_) => sl<HealthCardCubit>(),
+          child: const HealthCardViewScreen(),
         ),
       ),
 
@@ -106,14 +131,6 @@ class AppRouterWithShell {
         builder: (context, state) => BlocProvider<GuideToursCubit>(
           create: (_) => sl<GuideToursCubit>()..reset(),
           child: const CreateTourScreen(),
-        ),
-      ),
-
-      GoRoute(
-        path: '/tourist/health-card',
-        builder: (context, state) => BlocProvider(
-          create: (_) => sl<HealthCardCubit>(),
-          child: const HealthCardScreen(),
         ),
       ),
 
