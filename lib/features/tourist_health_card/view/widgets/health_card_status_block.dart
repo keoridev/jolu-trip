@@ -98,7 +98,7 @@ class _HealthCardStatusBlockState extends State<HealthCardStatusBlock> {
     return _BaseBanner(
       accentColor: AppColors.warning,
       icon: Icons.shield_outlined,
-      title: 'Заполните карточку здоровья',
+      title: 'Заполните карточку  здоровье ',
       subtitle:
           'Группа крови, аллергии и экстренный контакт — для вашей безопасности в поездках',
       actionLabel: 'Заполнить',
@@ -113,7 +113,7 @@ class _HealthCardStatusBlockState extends State<HealthCardStatusBlock> {
     return _BaseBanner(
       accentColor: AppColors.success,
       icon: Icons.verified_user_rounded,
-      title: 'Карточка здоровья заполнена',
+      title: 'Карточка здорвоье заполнена',
       subtitle: _buildSummary(card),
       actionLabel: 'Посмотреть',
       onTap: () async {

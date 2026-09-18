@@ -85,7 +85,6 @@ class _HealthCardScreenState extends State<HealthCardScreen> {
   String _buildPhone() {
     final unmasked = _maskFormatter.getUnmaskedText() ?? '';
     if (unmasked.isEmpty) return '';
-    // Если уже начинается с + — оставляем, иначе добавляем
     return unmasked.startsWith('+') ? unmasked : '+$unmasked';
   }
 

@@ -45,9 +45,9 @@ class TourModel extends Equatable {
   }
 
   Map<String, dynamic> toJson() {
-    final String tourId = id; // ✅ Локальная переменная с явным типом
+    final String tourId = id;
     return {
-      'id': tourId, // ✅ Используем локальную переменную
+      'id': tourId,
       'title': title,
       'promo_video_url': promoVideoUrl,
       'departure_at': departureAt,

@@ -15,13 +15,13 @@ class JournalLocalDatasource {
 
   Future<List<VisitRecordDto>> getAllVisits() async {
     if (_box == null) await init();
-    
+
     // ✅ БЕЗОПАСНОЕ ЧТЕНИЕ: Сначала фильтруем Map, затем кастим к String keys
     final values = _box!.values
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
-        
+
     return values.map((data) => VisitRecordDto.fromJson(data)).toList();
   }
 
@@ -48,6 +48,8 @@ class JournalLocalDatasource {
     if (_box == null) await init();
     await _box!.clear();
   }
+
+  
 
   Future<bool> hasVisited(String locationId) async {
     if (_box == null) await init();

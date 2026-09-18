@@ -19,15 +19,9 @@ class ReelsLoaded extends ReelsState {
   final List<ReelModel> reels;
   final int currentIndex;
 
-  const ReelsLoaded({
-    required this.reels,
-    this.currentIndex = 0,
-  });
+  const ReelsLoaded({required this.reels, this.currentIndex = 0});
 
-  ReelsLoaded copyWith({
-    List<ReelModel>? reels,
-    int? currentIndex,
-  }) {
+  ReelsLoaded copyWith({List<ReelModel>? reels, int? currentIndex}) {
     return ReelsLoaded(
       reels: reels ?? this.reels,
       currentIndex: currentIndex ?? this.currentIndex,
@@ -43,4 +37,10 @@ class ReelsError extends ReelsState {
   const ReelsError(this.message);
   @override
   List<Object?> get props => [message];
+}
+
+
+
+class ReelsEmpty extends ReelsState {
+  const ReelsEmpty();
 }

@@ -11,7 +11,7 @@ class StampLocalDatasource {
 
   Future<void> init() async {
     if (_initialized) return;
-    
+
     _stampsBox = await Hive.openBox(_stampsBoxName);
     _collectionsBox = await Hive.openBox(_collectionsBoxName);
     await _initDefaultCollections();
@@ -20,16 +20,11 @@ class StampLocalDatasource {
 
   Future<void> _initDefaultCollections() async {
     if (_collectionsBox == null) return;
-    
-    // Если коллекции уже есть, мы НЕ перезаписываем их, чтобы не сбросить реальный прогресс пользователя
-    if (_collectionsBox!.isNotEmpty) return; 
 
-    // ═══════════════════════════════════════════════════
-    // SEEDING DEMO DATA (Только при первом запуске)
-    // ═══════════════════════════════════════════════════
+    if (_collectionsBox!.isNotEmpty) return;
+
     final now = DateTime.now();
 
-    // 1. Добавляем несколько "уже полученных" печатей
     await _stampsBox!.put('first_step', {
       'id': 'first_step',
       'title': 'Первый шаг',
@@ -57,7 +52,6 @@ class StampLocalDatasource {
       'earnedAt': now.subtract(const Duration(days: 1)).toIso8601String(),
     });
 
-    // 2. Создаем коллекции, где некоторые штампы УЖЕ получены (обрати внимание на earnedStampIds)
     final defaults = <Map<String, dynamic>>[
       {
         'id': 'kyrgyz_canyons',
@@ -74,7 +68,7 @@ class StampLocalDatasource {
         'title': 'Иссык-Кульская область',
         'description': 'Исследуйте жемчужину Кыргызстана',
         'stampIds': ['issyk_kul', 'ala_archa', 'son_kul'],
-        'earnedStampIds': ['issyk_kul'], // ✅ 1 из 3 получено
+        'earnedStampIds': ['issyk_kul'],
         'isSeasonal': false,
         'validUntil': null,
         'isArchived': false,
@@ -84,7 +78,7 @@ class StampLocalDatasource {
         'title': 'Золотая осень 2026',
         'description': 'Посетите 3 осенних маршрута',
         'stampIds': ['autumn_1', 'autumn_2', 'autumn_3'],
-        'earnedStampIds': <String>[], // Пока 0 из 3
+        'earnedStampIds': <String>[],
         'isSeasonal': true,
         'validUntil': '2026-11-30T23:59:59Z',
         'isArchived': false,
@@ -102,15 +96,21 @@ class StampLocalDatasource {
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
-        
-    return values.map((map) => Stamp(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      description: map['description'] as String,
-      imageAsset: map['imageAsset'] as String,
-      rarity: StampRarity.values.byName(map['rarity'] as String),
-      earnedAt: map['earnedAt'] != null ? DateTime.parse(map['earnedAt'] as String) : null,
-    )).toList();
+
+    return values
+        .map(
+          (map) => Stamp(
+            id: map['id'] as String,
+            title: map['title'] as String,
+            description: map['description'] as String,
+            imageAsset: map['imageAsset'] as String,
+            rarity: StampRarity.values.byName(map['rarity'] as String),
+            earnedAt: map['earnedAt'] != null
+                ? DateTime.parse(map['earnedAt'] as String)
+                : null,
+          ),
+        )
+        .toList();
   }
 
   Future<void> saveStamp(Stamp stamp) async {
@@ -131,20 +131,30 @@ class StampLocalDatasource {
         .whereType<Map>()
         .map((e) => Map<String, dynamic>.from(e))
         .toList();
-        
-    return values.map((map) => Collection(
-      id: map['id'] as String,
-      title: map['title'] as String,
-      description: map['description'] as String,
-      stampIds: (map['stampIds'] as List<dynamic>).cast<String>(),
-      earnedStampIds: (map['earnedStampIds'] as List<dynamic>).cast<String>(),
-      isSeasonal: map['isSeasonal'] as bool? ?? false,
-      validUntil: map['validUntil'] != null ? DateTime.parse(map['validUntil'] as String) : null,
-      isArchived: map['isArchived'] as bool? ?? false,
-    )).toList();
+
+    return values
+        .map(
+          (map) => Collection(
+            id: map['id'] as String,
+            title: map['title'] as String,
+            description: map['description'] as String,
+            stampIds: (map['stampIds'] as List<dynamic>).cast<String>(),
+            earnedStampIds: (map['earnedStampIds'] as List<dynamic>)
+                .cast<String>(),
+            isSeasonal: map['isSeasonal'] as bool? ?? false,
+            validUntil: map['validUntil'] != null
+                ? DateTime.parse(map['validUntil'] as String)
+                : null,
+            isArchived: map['isArchived'] as bool? ?? false,
+          ),
+        )
+        .toList();
   }
 
-  Future<void> updateCollectionProgress(String collectionId, String stampId) async {
+  Future<void> updateCollectionProgress(
+    String collectionId,
+    String stampId,
+  ) async {
     await init();
     final data = _collectionsBox!.get(collectionId);
     if (data is! Map) return;

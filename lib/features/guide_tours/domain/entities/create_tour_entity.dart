@@ -50,7 +50,7 @@ class CreateTourEntity extends Equatable {
     pricePerSeat: pricePerSeat ?? this.pricePerSeat,
     promoVideoUrl: promoVideoUrl ?? this.promoVideoUrl,
     includedServices: includedServices ?? this.includedServices,
-    gearRequirements: gearRequirements ?? this.gearRequirements,
+
     itinerary: itinerary ?? this.itinerary,
   );
 
